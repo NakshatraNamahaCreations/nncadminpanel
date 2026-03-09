@@ -1,0 +1,280 @@
+.tb {
+  position: relative;
+  width: 100%;
+  min-height: 96px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.08), transparent 22%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 48%, #f1f6ff 100%);
+  box-shadow:
+    0 14px 36px rgba(15, 23, 42, 0.07),
+    0 4px 12px rgba(15, 23, 42, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+
+.tbGlow {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(40px);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.tbGlowOne {
+  width: 180px;
+  height: 180px;
+  right: -20px;
+  top: -70px;
+  background: rgba(59, 130, 246, 0.16);
+}
+
+.tbGlowTwo {
+  width: 140px;
+  height: 140px;
+  left: 20%;
+  bottom: -70px;
+  background: rgba(147, 51, 234, 0.1);
+}
+
+.tbGlowThree {
+  width: 150px;
+  height: 150px;
+  left: 55%;
+  top: -90px;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.tbLeft {
+  position: relative;
+  z-index: 1;
+  min-width: 250px;
+  flex: 1;
+}
+
+.tbHeadingBlock {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tbIconBadge {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  color: #1d4ed8;
+  background: linear-gradient(135deg, #ffffff 0%, #dbeafe 100%);
+  border: 1px solid #dbeafe;
+  box-shadow:
+    0 10px 24px rgba(37, 99, 235, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.tbTitleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tbMiniLabel {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+  color: #64748b;
+}
+
+.tbTitle {
+  margin: 0;
+  font-size: 31px;
+  line-height: 1.03;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+}
+
+.tbSubRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tbRole {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #ffe17a 0%, #ffbf1b 100%);
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 7px 12px;
+  border-radius: 999px;
+  box-shadow: 0 8px 18px rgba(255, 191, 27, 0.22);
+}
+
+.tbRoleDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.13);
+}
+
+.tbStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #dbe5f1;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+}
+
+.tbRight {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tbSlot {
+  display: flex;
+  align-items: center;
+}
+
+.tbBtn {
+  height: 46px;
+  border: none;
+  outline: none;
+  border-radius: 14px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+  white-space: nowrap;
+}
+
+.tbBtn:hover {
+  transform: translateY(-1px);
+}
+
+.tbBtnGhost {
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  border: 1px solid #dbe5f1;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+.tbBtnGhost:hover {
+  background: #ffffff;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+}
+
+.tbBtnPrimary {
+  background: linear-gradient(135deg, #2f66f6 0%, #1748d4 100%);
+  color: #ffffff;
+  box-shadow: 0 12px 22px rgba(47, 102, 246, 0.28);
+}
+
+.tbBtnPrimary:hover {
+  box-shadow: 0 14px 26px rgba(47, 102, 246, 0.32);
+}
+
+.tbBtnDanger {
+  background: linear-gradient(135deg, #ff8585 0%, #ef4444 100%);
+  color: #ffffff;
+  box-shadow: 0 12px 22px rgba(239, 68, 68, 0.2);
+}
+
+.tbBtnDanger:hover {
+  box-shadow: 0 14px 26px rgba(239, 68, 68, 0.24);
+}
+
+@media (max-width: 992px) {
+  .tb {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tbLeft,
+  .tbRight {
+    width: 100%;
+  }
+
+  .tbRight {
+    justify-content: flex-start;
+  }
+
+  .tbSlot {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .tb {
+    padding: 14px;
+    border-radius: 18px;
+    min-height: auto;
+  }
+
+  .tbHeadingBlock {
+    align-items: flex-start;
+  }
+
+  .tbIconBadge {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+    border-radius: 14px;
+  }
+
+  .tbTitle {
+    font-size: 24px;
+  }
+
+  .tbMiniLabel {
+    font-size: 10px;
+  }
+
+  .tbBtn {
+    width: 100%;
+  }
+
+  .tbRight {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tbSlot {
+    width: 100%;
+  }
+}

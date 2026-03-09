@@ -1,0 +1,390 @@
+.loginWrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: #f3f7fc;
+  box-sizing: border-box;
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 1320px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.loginGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 720px;
+}
+
+@media (min-width: 1024px) {
+  .loginGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.leftPanel {
+  position: relative;
+  overflow: hidden;
+}
+
+.leftBg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0a2b57 0%, #1d4c9c 45%, #3b82f6 100%);
+}
+
+.leftGlow {
+  position: absolute;
+  inset: 0;
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+.glow1 {
+  background: radial-gradient(circle at 20% 20%, white 0%, transparent 55%);
+}
+
+.glow2 {
+  background: radial-gradient(circle at 80% 70%, white 0%, transparent 55%);
+}
+
+.leftInner {
+  position: relative;
+  height: 100%;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  .leftInner {
+    padding: 56px;
+  }
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandIcon {
+  height: 48px;
+  width: 48px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.brandText {
+  color: #fff;
+}
+
+.brandTitle {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.brandSub {
+  margin-top: -2px;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.hero {
+  margin-top: 72px;
+}
+
+@media (min-width: 1024px) {
+  .hero {
+    margin-top: 88px;
+  }
+}
+
+.heroTitle {
+  color: #fff;
+  font-weight: 900;
+  line-height: 1.05;
+  font-size: 48px;
+  margin: 0;
+}
+
+@media (min-width: 1024px) {
+  .heroTitle {
+    font-size: 60px;
+  }
+}
+
+.heroDesc {
+  margin-top: 18px;
+  max-width: 520px;
+  color: rgba(255, 255, 255, 0.86);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+@media (min-width: 1024px) {
+  .heroDesc {
+    font-size: 16px;
+  }
+}
+
+.statsRow {
+  margin-top: 48px;
+  display: flex;
+  gap: 40px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.statValue {
+  color: #fff;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.statLabel {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+.sliderRow {
+  margin-top: auto;
+  padding-top: 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.circleBtn {
+  height: 36px;
+  width: 36px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.circleBtn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  height: 8px;
+  width: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  transition: 0.2s;
+}
+
+.dot.active {
+  width: 30px;
+  background: white;
+}
+
+.rightPanel {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .rightPanel {
+    padding: 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .rightPanel {
+    padding: 56px;
+  }
+}
+
+.rightInner {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.rightTitle {
+  font-size: 38px;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+}
+
+.rightDesc {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.roleBlock {
+  margin-top: 36px;
+}
+
+.blockLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 12px;
+}
+
+.roleGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .roleGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.roleCard {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  text-align: left;
+  transition: 0.2s;
+}
+
+.roleCard:hover {
+  background: #f8fafc;
+}
+
+.roleCard.selected {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.15);
+}
+
+.roleIcon {
+  height: 40px;
+  width: 40px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #334155;
+  display: grid;
+  place-items: center;
+}
+
+.roleIcon.selected {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.roleTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.roleSub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.formBlock {
+  margin-top: 26px;
+  display: grid;
+  gap: 18px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.field input {
+  margin-top: 8px;
+  width: 100%;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  padding: 0 14px;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+  box-sizing: border-box;
+}
+
+.field input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.15);
+}
+
+.primaryBtn {
+  width: 100%;
+  height: 48px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  transition: 0.2s;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
+}
+
+.primaryBtn:hover {
+  background: #1d4ed8;
+}
+
+.primaryBtn:active {
+  background: #1e40af;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.footerNote {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.copy {
+  margin-top: 8px;
+  color: #94a3b8;
+}

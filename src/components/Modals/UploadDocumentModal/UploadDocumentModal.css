@@ -1,0 +1,110 @@
+.udmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.udmModal {
+  width: 100%;
+  max-width: 720px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+}
+
+.udmHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.udmHeader h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.udmClose {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 22px;
+}
+
+.udmForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.udmGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.udmField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.udmField label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.udmField input,
+.udmField select,
+.udmField textarea {
+  width: 100%;
+  border: 1px solid #d8e1ee;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 14px;
+  outline: none;
+}
+
+.udmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.udmBtnGhost,
+.udmBtnPrimary {
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  padding: 0 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.udmBtnGhost {
+  background: #eef2f7;
+  color: #0f172a;
+}
+
+.udmBtnPrimary {
+  background: #2f66f6;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .udmGrid {
+    grid-template-columns: 1fr;
+  }
+}

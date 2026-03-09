@@ -1,0 +1,534 @@
+.calLayout {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+}
+
+.calMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+/* old topbar styles kept harmless if still referenced anywhere */
+.calTopBar {
+  display: none;
+}
+
+.calTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.calPageTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.calAdminBadge {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #ffe17a 0%, #ffbf1b 100%);
+  color: #111827;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 5px 10px;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(255, 213, 74, 0.28);
+}
+
+.calTopActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calSearchWrap {
+  width: 280px;
+  height: 38px;
+  border: 1px solid #dce4ee;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.calSearchIcon {
+  color: #94a3b8;
+  font-size: 14px;
+  user-select: none;
+}
+
+.calSearchWrap input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* shared search input used inside Topbar */
+.docsSearch {
+  height: 44px;
+  min-width: 280px;
+  border: 1px solid #dbe5f1;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  border-radius: 14px;
+  padding: 0 14px;
+  outline: none;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+  transition: all 0.2s ease;
+}
+
+.docsSearch:focus {
+  border-color: #2f66f6;
+  box-shadow: 0 0 0 4px rgba(47, 102, 246, 0.08);
+}
+
+.calBtn {
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calBtn:hover {
+  transform: translateY(-1px);
+}
+
+.calBtn.ghost {
+  background: #ffffff;
+  border: 1px solid #dce4ee;
+  color: #334155;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.calBtn.primary {
+  background: linear-gradient(135deg, #2f66f6 0%, #1748d4 100%);
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(47, 102, 246, 0.22);
+}
+
+.calBtn.small {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.calContent {
+  padding-top: 2px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 18px;
+  align-items: start;
+}
+
+.calBoard {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border: 1px solid #e5edf7;
+  border-radius: 22px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.calBoardTop {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid #edf2f7;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+}
+
+.calMonthNav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calMonthNav h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.monthArrow {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #dce4ee;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  color: #334155;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+.monthArrow:hover {
+  transform: translateY(-1px);
+  border-color: #c5d4eb;
+  background: #f8fbff;
+}
+
+.calLegend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.legendItem {
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legendItem.urgent {
+  color: #ef4444;
+}
+
+.legendItem.task {
+  color: #3b82f6;
+}
+
+.legendItem.done {
+  color: #10b981;
+}
+
+.legendItem.follow {
+  color: #f59e0b;
+}
+
+.calState,
+.calError {
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.calState {
+  color: #475569;
+}
+
+.calError {
+  color: #dc2626;
+}
+
+.calWeekHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid #edf2f7;
+  border-bottom: 1px solid #edf2f7;
+  background: linear-gradient(180deg, #fbfdff 0%, #f5f9ff 100%);
+}
+
+.calWeekCell {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 900;
+  color: #94a3b8;
+  border-right: 1px solid #edf2f7;
+  letter-spacing: 0.8px;
+}
+
+.calWeekCell:last-child {
+  border-right: none;
+}
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calCell {
+  min-height: 118px;
+  border-right: 1px solid #edf2f7;
+  border-bottom: 1px solid #edf2f7;
+  padding: 10px 10px 8px;
+  position: relative;
+  background: #ffffff;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.calCell:hover {
+  background: #fbfdff;
+}
+
+.calCell.blank {
+  background: #fcfdff;
+}
+
+.calCell.today {
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+  box-shadow: inset 0 0 0 2px rgba(47, 102, 246, 0.18);
+}
+
+.calDate {
+  font-size: 13px;
+  font-weight: 900;
+  color: #334155;
+}
+
+.calCell.today .calDate {
+  color: #1748d4;
+}
+
+.calDayMeta {
+  margin-top: 7px;
+}
+
+.calDayCount {
+  font-size: 11px;
+  font-weight: 900;
+  color: #2457e6;
+}
+
+.calDayValue {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.calMiniList {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.calMiniTag {
+  min-height: 22px;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.2s ease;
+}
+
+.calMiniTag.urgent {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.calMiniTag.task {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.calMiniTag.done {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.calMiniTag.follow {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.calMiniTag.clickable {
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.calMiniTag.clickable:hover {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.calSidePanel {
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  border: 1px solid #e5edf7;
+  border-radius: 22px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  padding: 16px;
+}
+
+.calSideHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.calSideHead h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.overdueBadge {
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.sideCardsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sideInfoCard {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.sideInfoCard.overdue,
+.sideInfoCard.urgent {
+  background: linear-gradient(180deg, #fff1f2 0%, #ffe9ec 100%);
+}
+
+.sideInfoCard.task {
+  background: linear-gradient(180deg, #eff6ff 0%, #e8f0ff 100%);
+}
+
+.sideInfoCard.done {
+  background: linear-gradient(180deg, #ecfdf5 0%, #e6fbf1 100%);
+}
+
+.sideInfoCard.follow {
+  background: linear-gradient(180deg, #fffbeb 0%, #fff7d6 100%);
+}
+
+.sideInfoTop,
+.sideInfoDate {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+}
+
+.sideInfoTitle {
+  margin-top: 5px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.sideInfoMeta {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.sideEmpty {
+  padding: 18px 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+  border: 1px dashed #d9e4f0;
+  border-radius: 14px;
+  background: #fcfdff;
+}
+
+.clickableCard {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.clickableCard:hover {
+  border-color: #cfd8e3;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.05);
+}
+
+@media (max-width: 1100px) {
+  .calContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .calBoardTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .calLegend {
+    width: 100%;
+  }
+
+  .calGrid {
+    grid-template-columns: repeat(7, minmax(110px, 1fr));
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 576px) {
+  .calMain {
+    padding: 14px;
+  }
+
+  .docsSearch {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .calMonthNav h2 {
+    font-size: 18px;
+  }
+
+  .calBoardTop {
+    padding: 14px;
+  }
+
+  .calWeekCell {
+    font-size: 10px;
+    padding: 10px 6px;
+  }
+
+  .calCell {
+    min-height: 100px;
+    padding: 8px 8px 6px;
+  }
+
+  .calSidePanel {
+    padding: 14px;
+  }
+}

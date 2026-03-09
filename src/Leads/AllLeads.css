@@ -1,0 +1,289 @@
+.leadsLayout{
+  display:flex;
+  min-height:100vh;
+  background:
+    radial-gradient(900px 400px at 20% 0%, rgba(37,99,235,0.10), transparent 55%),
+    radial-gradient(900px 400px at 80% 0%, rgba(99,102,241,0.10), transparent 55%),
+    linear-gradient(180deg, #f7f9ff 0%, #f5f7fb 100%);
+}
+
+.leadsMain{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+}
+
+.leadsBody{
+  padding:18px;
+}
+
+/* Filter card */
+.filterCard{
+  background: rgba(255,255,255,0.92);
+  border:1px solid #e7edff;
+  border-radius:18px;
+  padding:14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  box-shadow: 0 18px 46px rgba(15,23,42,0.08);
+  backdrop-filter: blur(10px);
+}
+
+.filterLeft{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.filterLabel{
+  font-size:11px;
+  font-weight:1000;
+  color:#94a3b8;
+  letter-spacing:0.4px;
+  margin-right:2px;
+}
+
+.filterCard select{
+  height:34px;
+  border-radius:12px;
+  border:1px solid #e7edff;
+  background:#fff;
+  padding:0 10px;
+  font-weight:900;
+  font-size:12px;
+  color:#0f172a;
+  outline:none;
+}
+
+.filterRight{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.totalText{
+  font-size:12px;
+  font-weight:1000;
+  color:#94a3b8;
+}
+
+.exportBtn{
+  height:34px;
+  padding:0 12px;
+  border-radius:12px;
+  border:1px solid #e7edff;
+  background:#fff;
+  font-weight:1000;
+  font-size:12px;
+  cursor:pointer;
+}
+
+.exportBtn:hover{
+  background:#f8fafc;
+}
+
+/* Table card */
+.tableCard{
+  margin-top:12px;
+  background: rgba(255,255,255,0.92);
+  border:1px solid #e7edff;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow: 0 18px 46px rgba(15,23,42,0.08);
+  backdrop-filter: blur(10px);
+}
+
+/* Table */
+.leadsTable{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+}
+
+.leadsTable thead th{
+  text-align:left;
+  font-size:11px;
+  font-weight:1000;
+  color:#64748b;
+  padding:12px 14px;
+  background: rgba(255,255,255,0.95);
+  border-bottom:1px solid #eef2ff;
+  white-space:nowrap;
+}
+
+.leadsTable tbody td{
+  padding:12px 14px;
+  border-bottom:1px solid #f0f4ff;
+  font-size:13px;
+  color:#0f172a;
+  vertical-align:middle;
+  white-space:nowrap;
+}
+
+.leadsTable tbody tr:hover{
+  background:#f8fbff;
+}
+
+/* Lead / contact */
+.leadName{
+  font-weight:1000;
+  color:#0f172a;
+}
+
+.leadPhone{
+  font-size:11px;
+  color:#94a3b8;
+  margin-top:2px;
+}
+
+/* Pills */
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:1000;
+  border:1px solid rgba(15,23,42,0.05);
+}
+
+.pill.gray{ background:#f1f5f9; color:#475569; }
+
+.pill.branch.bangalore{ background:#eff6ff; color:#1d4ed8; }
+.pill.branch.mysore{ background:#ecfeff; color:#0e7490; }
+.pill.branch.mumbai{ background:#fff7ed; color:#c2410c; }
+
+/* stage */
+.pill.stage.capture{ background:#eff6ff; color:#1d4ed8; }
+.pill.stage.reachable{ background:#eef2ff; color:#4338ca; }
+.pill.stage.proposal{ background:#f5f3ff; color:#6d28d9; }
+.pill.stage.qualified{ background:#fffbeb; color:#b45309; }
+.pill.stage.closed{ background:#ecfdf5; color:#047857; }
+
+/* bant */
+.bant{
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:1000;
+  display:inline-block;
+}
+.bant.ok{ background:#ecfdf5; color:#047857; }
+.bant.mid{ background:#eff6ff; color:#1d4ed8; }
+.bant.bad{ background:#fee2e2; color:#b91c1c; }
+
+/* priority */
+.prio{
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:1000;
+}
+.prio.hot{ background:#fee2e2; color:#b91c1c; }
+.prio.warm{ background:#fffbeb; color:#b45309; }
+.prio.cold{ background:#e0f2fe; color:#0369a1; }
+
+.value{
+  font-weight:1000;
+  color:#1d4ed8;
+}
+
+/* docs badge */
+.docs{
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:1000;
+  background:#f1f5f9;
+  color:#475569;
+}
+.docs.has{
+  background:#ecfdf5;
+  color:#047857;
+}
+/* keep your existing CSS as is above... */
+
+/* ✅ Search UI (premium) */
+.searchWrap{
+  height:34px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 10px;
+  border-radius:12px;
+  border:1px solid #e7edff;
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 10px 20px rgba(15,23,42,0.06);
+}
+
+.searchIcon{
+  font-size:14px;
+  color:#64748b;
+  transform: translateY(-1px);
+  user-select:none;
+}
+
+.filterSearch{
+  height:32px;
+  border:0;
+  outline:none;
+  width:220px;
+  min-width:180px;
+  font-size:12px;
+  font-weight:900;
+  color:#0f172a;
+  background:transparent;
+}
+
+.filterSearch::placeholder{
+  color:#94a3b8;
+  font-weight:900;
+}
+
+.searchClear{
+  height:22px;
+  width:22px;
+  border-radius:999px;
+  border:0;
+  cursor:pointer;
+  font-weight:1000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#f1f5f9;
+  color:#475569;
+}
+
+.searchClear:hover{
+  background:#e2e8f0;
+}
+
+/* ✅ Focus effect */
+.searchWrap:focus-within{
+  border-color:#c7d2fe;
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.15), 0 10px 20px rgba(15,23,42,0.08);
+}
+
+/* ✅ Stage pill FIX (your cls("Lead Capture") => "lead-capture") */
+.pill.stage.lead-capture{ background:#eff6ff; color:#1d4ed8; }
+
+/* Keep your other stage styles */
+.pill.stage.reachable{ background:#eef2ff; color:#4338ca; }
+.pill.stage.proposal{ background:#f5f3ff; color:#6d28d9; }
+.pill.stage.qualified{ background:#fffbeb; color:#b45309; }
+.pill.stage.closed{ background:#ecfdf5; color:#047857; }
+
+.rowClickable{
+  cursor:pointer;
+}
+.rowClickable:hover{
+  background:#f8fbff;
+}
+.rowClickable:active{
+  transform: scale(0.999);
+}

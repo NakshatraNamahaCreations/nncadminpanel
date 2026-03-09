@@ -1,0 +1,214 @@
+.docsLayout {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f7fb;
+  width: 100%;
+}
+
+.docsPage {
+  flex: 1;
+  min-width: 0;
+  padding: 18px;
+  background: #f5f7fb;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.docsSearch {
+  height: 42px;
+  min-width: 260px;
+  border: 1px solid #d9e2ef;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.docsSearch:focus {
+  border-color: #2f66f6;
+  box-shadow: 0 0 0 3px rgba(47, 102, 246, 0.08);
+}
+
+.docsTabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.docsTab {
+  border: 1px solid #d8e1ee;
+  background: #fff;
+  color: #334155;
+  border-radius: 12px;
+  height: 40px;
+  padding: 0 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.docsTab:hover {
+  background: #f8fbff;
+  border-color: #c9d7ea;
+}
+
+.docsTab.active {
+  background: #2f66f6;
+  color: #fff;
+  border-color: #2f66f6;
+}
+
+.docsMain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 18px;
+  align-items: start;
+}
+
+.docsGridWrap {
+  min-width: 0;
+}
+
+.docsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.docsEmpty {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.docsSidebarCard {
+  background: #fff;
+  border: 1px solid #e5eaf2;
+  border-radius: 18px;
+  padding: 18px;
+  height: fit-content;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  position: sticky;
+  top: 18px;
+}
+
+.docsSidebarCard h3 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.statItem.green {
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.statItem.blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.statItem.yellow {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.statItem.purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.statFooter {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid #eef2f7;
+  padding-top: 14px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+}
+
+@media (max-width: 1400px) {
+  .docsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1100px) {
+  .docsMain {
+    grid-template-columns: 1fr;
+  }
+
+  .docsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .docsSidebarCard {
+    position: static;
+  }
+}
+
+@media (max-width: 992px) {
+  .docsLayout {
+    flex-direction: column;
+  }
+
+  .docsPage {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .docsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .docsTabs {
+    gap: 8px;
+  }
+
+  .docsTab {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 576px) {
+  .docsPage {
+    padding: 12px;
+  }
+
+  .docsSearch {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .docsEmpty {
+    padding: 28px 16px;
+  }
+
+  .docsSidebarCard {
+    padding: 14px;
+  }
+}

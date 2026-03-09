@@ -1,0 +1,554 @@
+.pipelineLayoutNew {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.pipelineMainNew {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pipelineTopShell {
+  padding: 14px 18px 8px;
+  background: #f5f7fb;
+  border-bottom: 1px solid #e8edf5;
+}
+
+.pipelineHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.pipelineHeroLeft {
+  min-width: 260px;
+}
+
+.pipelineTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.pipelineTitleMain {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 900;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.pipelineAdminBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffd54a;
+  color: #111827;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 5px 10px;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(255, 213, 74, 0.28);
+}
+
+.pipelineHeroRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pipelineSearchWrap {
+  width: 280px;
+  height: 38px;
+  border: 1px solid #dce4ee;
+  border-radius: 10px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.pipelineSearchIcon {
+  color: #94a3b8;
+  font-size: 14px;
+  user-select: none;
+}
+
+.pipelineSearchWrap input {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.pipelineSearchWrap input::placeholder {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.pipelineMiniBtn {
+  height: 38px;
+  border: none;
+  border-radius: 10px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pipelineMiniBtn.ghost {
+  background: #ffffff;
+  border: 1px solid #dce4ee;
+  color: #334155;
+}
+
+.pipelineMiniBtn.primary {
+  background: #2f66f6;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(47, 102, 246, 0.22);
+}
+
+.pipelineFilterBar {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pipelineFilterLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.branchTabs {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.branchTab {
+  height: 32px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.branchTab.active {
+  background: #eaf1ff;
+  color: #2457e6;
+  box-shadow: inset 0 0 0 1px #d7e4ff;
+}
+
+.repSelect {
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #dce4ee;
+  background: #ffffff;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  outline: none;
+}
+
+.pipelineFilterRight {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.pipelineBoardWrap {
+  padding: 14px 18px 18px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.pipelineInfoState {
+  margin-bottom: 12px;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.pipelineInfoError {
+  margin-bottom: 12px;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.pipelineBoardNew {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 12px;
+  align-items: start;
+  min-width: 1120px;
+}
+
+.kanbanColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kanbanHeader {
+  min-height: 28px;
+  border-radius: 10px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kanbanHeaderTitle {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+}
+
+.kanbanHeaderCount {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.kanbanHeader.lead-capture {
+  background: #e6efff;
+  color: #2457e6;
+}
+
+.kanbanHeader.lead-capture .kanbanHeaderCount {
+  color: #2457e6;
+}
+
+.kanbanHeader.reachable {
+  background: #e8faef;
+  color: #0a9b52;
+}
+
+.kanbanHeader.reachable .kanbanHeaderCount {
+  color: #0a9b52;
+}
+
+.kanbanHeader.qualified {
+  background: #fff4df;
+  color: #de8a00;
+}
+
+.kanbanHeader.qualified .kanbanHeaderCount {
+  color: #de8a00;
+}
+
+.kanbanHeader.proposal {
+  background: #f2eaff;
+  color: #7c3aed;
+}
+
+.kanbanHeader.proposal .kanbanHeaderCount {
+  color: #7c3aed;
+}
+
+.kanbanHeader.closed {
+  background: #e7f7ef;
+  color: #0c9f61;
+}
+
+.kanbanHeader.closed .kanbanHeaderCount {
+  color: #0c9f61;
+}
+
+.kanbanColumnBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kanbanEmptyCard {
+  min-height: 120px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px dashed #d8e1ec;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.pipelineLeadCard {
+  background: #ffffff;
+  border: 1px solid #dce4ee;
+  border-radius: 10px;
+  padding: 10px 11px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.pipelineLeadCard:hover {
+  transform: translateY(-1px);
+  border-color: #cdd9e8;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.leadCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.leadCardName {
+  font-size: 13px;
+  font-weight: 900;
+  color: #111827;
+  line-height: 1.35;
+}
+
+.leadCardSubline {
+  margin-top: 2px;
+  color: #8b97a8;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.leadCardTags {
+  margin-top: 9px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.miniTag {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.stageTag.lead-capture {
+  background: #eaf1ff;
+  color: #2563eb;
+}
+
+.stageTag.reachable {
+  background: #e8fff1;
+  color: #16a34a;
+}
+
+.stageTag.qualified {
+  background: #fff4df;
+  color: #d97706;
+}
+
+.stageTag.proposal {
+  background: #f3e8ff;
+  color: #7c3aed;
+}
+
+.stageTag.closed {
+  background: #e8fff1;
+  color: #16a34a;
+}
+
+.sourceTag {
+  background: #f3f6fb;
+  color: #7b8794;
+}
+
+.leadCardBantRow {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bantLabel {
+  font-size: 11px;
+  font-weight: 800;
+  color: #8793a5;
+}
+
+.bantValue {
+  font-size: 11px;
+  font-weight: 900;
+  color: #94a3b8;
+}
+
+.bantProgressTrack {
+  margin-top: 4px;
+  height: 4px;
+  width: 100%;
+  border-radius: 999px;
+  background: #edf2f7;
+  overflow: hidden;
+}
+
+.bantProgressFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.bantProgressFill.lead-capture {
+  background: #2563eb;
+}
+
+.bantProgressFill.reachable {
+  background: #3b82f6;
+}
+
+.bantProgressFill.qualified {
+  background: #f59e0b;
+}
+
+.bantProgressFill.proposal {
+  background: #3b82f6;
+}
+
+.bantProgressFill.closed {
+  background: #34d399;
+}
+
+.leadCardFooter {
+  margin-top: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.leadValue {
+  font-size: 14px;
+  font-weight: 900;
+  color: #1d4ed8;
+}
+
+.leadAgo {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a1a1aa;
+  white-space: nowrap;
+}
+
+.pipelineHiddenTopbar {
+  display: none;
+}
+
+@media (max-width: 1200px) {
+  .pipelineHero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pipelineHeroRight {
+    justify-content: flex-start;
+  }
+
+  .pipelineSearchWrap {
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .pipelineFilterBar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .pipelineTopShell {
+    padding: 12px;
+  }
+
+  .pipelineBoardWrap {
+    padding: 12px;
+  }
+
+  .pipelineTitleMain {
+    font-size: 18px;
+  }
+
+  .pipelineMiniBtn {
+    width: 100%;
+  }
+
+  .pipelineHeroRight {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pipelineSearchWrap {
+    width: 100%;
+    max-width: none;
+  }
+
+  .branchTabs {
+    flex-wrap: wrap;
+  }
+}
+
+.docsSearch {
+  height: 44px;
+  min-width: 260px;
+  border: 1px solid #dbe5f1;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0f172a;
+  border-radius: 14px;
+  padding: 0 14px;
+  outline: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.docsSearch:focus {
+  border-color: #2f66f6;
+  box-shadow: 0 0 0 4px rgba(47, 102, 246, 0.08);
+}
+
+@media (max-width: 576px) {
+  .docsSearch {
+    width: 100%;
+    min-width: 100%;
+  }
+}
