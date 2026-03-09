@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Upload, Plus, LogOut, Sparkles, ShieldCheck } from "lucide-react";
+import { Upload, Plus, Sparkles, ShieldCheck } from "lucide-react";
 import "./Topbar.css";
 import AddLeadModal from "../Modals/AddLeadModal/AddLeadModal";
 import UploadDocumentModal from "../Modals/UploadDocumentModal/UploadDocumentModal";
@@ -7,12 +7,10 @@ import UploadDocumentModal from "../Modals/UploadDocumentModal/UploadDocumentMod
 export default function Topbar({
   title = "Documents",
   roleLabel = "Master Admin",
-  onLogout,
   onCreateLead,
   onUploadDocument,
   showUpload = true,
   showAddLead = true,
-  showLogout = true,
   uploadLabel = "Upload",
   addLeadLabel = "Add Lead",
   children,
@@ -41,16 +39,6 @@ export default function Topbar({
     } catch (error) {
       console.error("handleSaveDocument error:", error);
       alert(error?.message || "Failed to upload document");
-    }
-  };
-
-  const handleLogoutClick = async () => {
-    try {
-      if (onLogout) {
-        await onLogout();
-      }
-    } catch (error) {
-      console.error("handleLogoutClick error:", error);
     }
   };
 
@@ -108,17 +96,6 @@ export default function Topbar({
             >
               <Plus size={16} />
               <span>{addLeadLabel}</span>
-            </button>
-          )}
-
-          {showLogout && (
-            <button
-              type="button"
-              className="tbBtn tbBtnDanger"
-              onClick={handleLogoutClick}
-            >
-              <LogOut size={16} />
-              <span>Logout</span>
             </button>
           )}
         </div>
