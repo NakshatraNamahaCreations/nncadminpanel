@@ -65,6 +65,16 @@ export const getProfile = async () => {
   }
 };
 
+export const getDashboardData = async () => {
+  try {
+    const response = await api.get("/dashboard");
+    return response;
+  } catch (error) {
+    console.error("getDashboardData error:", error);
+    throw error;
+  }
+};
+
 // If your backend is app.use("/api/leads", leadRoutes)
 // then these should call /leads, not /pipeline
 export const getPipelineBoard = async (params) => {

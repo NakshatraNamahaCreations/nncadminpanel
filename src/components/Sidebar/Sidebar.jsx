@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -9,7 +9,6 @@ import {
   BarChart3,
   Trophy,
   Building2,
-  ShieldCheck,
   LogOut,
   Sparkles,
 } from "lucide-react";
@@ -19,7 +18,7 @@ export default function Sidebar() {
   const nav = useNavigate();
   const location = useLocation();
 
-  const storedUser = (() => {
+  const storedUser = useMemo(() => {
     try {
       const user = localStorage.getItem("nnc_user");
       return user ? JSON.parse(user) : null;
@@ -27,22 +26,22 @@ export default function Sidebar() {
       console.error("Parse user error:", error);
       return null;
     }
-  })();
+  }, []);
 
   const userName = storedUser?.name || "Master Admin";
   const userRole = storedUser?.role || "master_admin";
 
-  const initials = (() => {
+  const initials = useMemo(() => {
     try {
       if (!userName) return "MA";
       const parts = userName.trim().split(" ").filter(Boolean);
       if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-      return `${parts[0][0] || ""}${parts[1][0] || ""}`.toUpperCase();
+      return `${parts[0]?.[0] || ""}${parts[1]?.[0] || ""}`.toUpperCase();
     } catch (error) {
       console.error("Initials error:", error);
       return "MA";
     }
-  })();
+  }, [userName]);
 
   const roleLabelMap = {
     master_admin: "Master Admin",
@@ -53,12 +52,83 @@ export default function Sidebar() {
 
   const userRoleLabel = roleLabelMap[userRole] || "Admin";
 
-  const isActive = (paths) => {
+  const menuSections = [
+    {
+      title: "Overview",
+      items: [
+        {
+          label: "Dashboard",
+          path: "/dashboard",
+          icon: <LayoutDashboard size={16} />,
+        },
+      ],
+    },
+    {
+      title: "Sales",
+      items: [
+        {
+          label: "Pipeline",
+          path: "/pipeline",
+          icon: <KanbanSquare size={16} />,
+        },
+        {
+          label: "All Leads",
+          path: "/leads",
+          icon: <Users size={16} />,
+        },
+        {
+          label: "Calendar",
+          path: "/calendar",
+          icon: <CalendarDays size={16} />,
+        },
+      ],
+    },
+    {
+      title: "Documents",
+      items: [
+        {
+          label: "Documents",
+          path: "/documents",
+          icon: <FileText size={16} />,
+        },
+      ],
+    },
+    {
+      title: "Analytics",
+      items: [
+        {
+          label: "Analytics",
+          path: "/analytics",
+          icon: <BarChart3 size={16} />,
+        },
+        {
+          label: "Leaderboard",
+          path: "/leaderboard",
+          icon: <Trophy size={16} />,
+        },
+        {
+          label: "Branch Reports",
+          path: "/branch-reports",
+          icon: <Building2 size={16} />,
+        },
+      ],
+    },
+  ];
+
+  const isActive = (path) => {
     try {
-      return paths.includes(location.pathname);
+      return location.pathname === path;
     } catch (error) {
       console.error("isActive error:", error);
       return false;
+    }
+  };
+
+  const goTo = (path) => {
+    try {
+      nav(path);
+    } catch (error) {
+      console.error(`Navigation error for ${path}:`, error);
     }
   };
 
@@ -79,16 +149,12 @@ export default function Sidebar() {
     <aside className="sb">
       <div
         className="sbTop"
-        onClick={() => {
-          try {
-            nav("/pipeline");
-          } catch (error) {
-            console.error("Navigate to pipeline error:", error);
-          }
-        }}
+        onClick={() => goTo("/dashboard")}
         style={{ cursor: "pointer" }}
       >
         <div className="sbTopGlow" />
+        <div className="sbTopGlow2" />
+
         <div className="sbBrandRow">
           <div className="sbLogoWrap">
             <div className="sbLogo">NNC</div>
@@ -101,139 +167,29 @@ export default function Sidebar() {
         </div>
 
         <div className="sbMiniPill">
-          <Sparkles size={12} />
-          <span>Premium</span>
+          <Sparkles size={11} />
+          <span>Premium Panel</span>
         </div>
       </div>
 
-      <div className="sbScroll">
-        <div className="sbGroup">
-          <div className="sbGroupTitle">OVERVIEW</div>
-          <Item
-            icon={<LayoutDashboard size={17} />}
-            label="Dashboard"
-            active={isActive(["/dashboard"])}
-            onClick={() => {
-              try {
-                nav("/dashboard");
-              } catch (error) {
-                console.error("Navigate to dashboard error:", error);
-              }
-            }}
-          />
-        </div>
+      <div className="sbContent">
+        {menuSections.map((section) => (
+          <div className="sbGroup" key={section.title}>
+            <div className="sbGroupTitle">{section.title}</div>
 
-        <div className="sbGroup">
-          <div className="sbGroupTitle">SALES</div>
-          <Item
-            icon={<KanbanSquare size={17} />}
-            label="Pipeline"
-            active={isActive(["/pipeline"])}
-            onClick={() => {
-              try {
-                nav("/pipeline");
-              } catch (error) {
-                console.error("Navigate to pipeline error:", error);
-              }
-            }}
-          />
-          <Item
-            icon={<Users size={17} />}
-            label="All Leads"
-            active={isActive(["/leads"])}
-            onClick={() => {
-              try {
-                nav("/leads");
-              } catch (error) {
-                console.error("Navigate to leads error:", error);
-              }
-            }}
-          />
-          <Item
-            icon={<CalendarDays size={17} />}
-            label="Calendar"
-            active={isActive(["/calendar"])}
-            onClick={() => {
-              try {
-                nav("/calendar");
-              } catch (error) {
-                console.error("Navigate to calendar error:", error);
-              }
-            }}
-          />
-        </div>
-
-        <div className="sbGroup">
-          <div className="sbGroupTitle">DOCUMENTS</div>
-          <Item
-            icon={<FileText size={17} />}
-            label="Documents"
-            active={isActive(["/documents"])}
-            onClick={() => {
-              try {
-                nav("/documents");
-              } catch (error) {
-                console.error("Navigate to documents error:", error);
-              }
-            }}
-          />
-        </div>
-
-        <div className="sbGroup">
-          <div className="sbGroupTitle">ANALYTICS</div>
-          <Item
-            icon={<BarChart3 size={17} />}
-            label="Analytics"
-            active={isActive(["/analytics"])}
-            onClick={() => {
-              try {
-                nav("/analytics");
-              } catch (error) {
-                console.error("Navigate to analytics error:", error);
-              }
-            }}
-          />
-          <Item
-            icon={<Trophy size={17} />}
-            label="Leaderboard"
-            active={isActive(["/leaderboard"])}
-            onClick={() => {
-              try {
-                nav("/leaderboard");
-              } catch (error) {
-                console.error("Navigate to leaderboard error:", error);
-              }
-            }}
-          />
-          <Item
-            icon={<Building2 size={17} />}
-            label="Branch Reports"
-            active={isActive(["/branch-reports"])}
-            onClick={() => {
-              try {
-                nav("/branch-reports");
-              } catch (error) {
-                console.error("Navigate to branch reports error:", error);
-              }
-            }}
-          />
-        </div>
-
-        <div className="sbGroup">
-          <div className="sbGroupTitle">ADMIN</div>
-          <Item
-            icon={<ShieldCheck size={17} />}
-            label="Master Admin"
-            active={isActive(["/admin", "/master-admin"])}
-            onClick={() => {
-              try {
-                nav("/master-admin");
-              } catch (error) {
-                console.error("Navigate to master admin error:", error);
-              }
-            }}
-          />
-        </div>
+            <div className="sbGroupItems">
+              {section.items.map((item) => (
+                <Item
+                  key={item.path}
+                  icon={item.icon}
+                  label={item.label}
+                  active={isActive(item.path)}
+                  onClick={() => goTo(item.path)}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="sbBottomWrap">
@@ -246,15 +202,13 @@ export default function Sidebar() {
               <div className="sbUserSub">{userRoleLabel}</div>
             </div>
 
-            <span className="sbTag">
-              {userRole === "master_admin" ? "MASTER" : "USER"}
-            </span>
+            <div className="sbTag">LIVE</div>
           </div>
         </div>
 
         <button type="button" className="sbLogoutBtn" onClick={handleLogout}>
           <span className="sbLogoutIcon">
-            <LogOut size={16} />
+            <LogOut size={15} />
           </span>
           <span>Logout</span>
         </button>
@@ -277,7 +231,6 @@ function Item({ label, badge, active, onClick, icon }) {
       <span className="sbLabel">{label}</span>
 
       {badge ? <span className="sbBadge">{badge}</span> : null}
-
       {active ? <span className="sbActiveDot" /> : null}
     </button>
   );

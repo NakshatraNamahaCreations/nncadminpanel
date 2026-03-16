@@ -2,10 +2,14 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import LoginScreen from "./LoginScreen/LoginScreen";
+import Dashboard from "./pages/Dashboard";
 import Documents from "./Documents/Documents";
 import AllLeads from "./Leads/AllLeads";
 import PipelinePage from "./pages/PipelinePage";
 import CalendarPage from "./pages/CalendarPage";
+import Analytics from "./pages/Analytics/Analytics";
+import Leaderboard from "./pages/Leaderboard/Leaderboard";
+import BranchReports from "./pages/BranchReports/BranchReports";
 
 function isAuthed() {
   try {
@@ -30,6 +34,15 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LoginScreen />} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/documents"
@@ -67,7 +80,34 @@ export default function App() {
         }
       />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/leaderboard"
+        element={
+          <ProtectedRoute>
+            <Leaderboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/branch-reports"
+        element={
+          <ProtectedRoute>
+            <BranchReports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
