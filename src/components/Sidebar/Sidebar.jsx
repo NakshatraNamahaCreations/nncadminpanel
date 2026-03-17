@@ -11,7 +11,9 @@ import {
   Building2,
   LogOut,
   Sparkles,
+  CreditCard,
 } from "lucide-react";
+import nncLogo from "../../assets/nnclogo.png"; // adjust path if needed
 import "./Sidebar.css";
 
 export default function Sidebar() {
@@ -59,7 +61,7 @@ export default function Sidebar() {
         {
           label: "Dashboard",
           path: "/dashboard",
-          icon: <LayoutDashboard size={16} />,
+          icon: <LayoutDashboard size={18} />,
         },
       ],
     },
@@ -69,17 +71,17 @@ export default function Sidebar() {
         {
           label: "Pipeline",
           path: "/pipeline",
-          icon: <KanbanSquare size={16} />,
+          icon: <KanbanSquare size={18} />,
         },
         {
           label: "All Leads",
           path: "/leads",
-          icon: <Users size={16} />,
+          icon: <Users size={18} />,
         },
         {
           label: "Calendar",
           path: "/calendar",
-          icon: <CalendarDays size={16} />,
+          icon: <CalendarDays size={18} />,
         },
       ],
     },
@@ -89,7 +91,7 @@ export default function Sidebar() {
         {
           label: "Documents",
           path: "/documents",
-          icon: <FileText size={16} />,
+          icon: <FileText size={18} />,
         },
       ],
     },
@@ -99,17 +101,27 @@ export default function Sidebar() {
         {
           label: "Analytics",
           path: "/analytics",
-          icon: <BarChart3 size={16} />,
+          icon: <BarChart3 size={18} />,
         },
         {
           label: "Leaderboard",
           path: "/leaderboard",
-          icon: <Trophy size={16} />,
+          icon: <Trophy size={18} />,
         },
         {
           label: "Branch Reports",
           path: "/branch-reports",
-          icon: <Building2 size={16} />,
+          icon: <Building2 size={18} />,
+        },
+        {
+          label: "Payment Tracker",
+          path: "/payment-tracker",
+          icon: <CreditCard size={18} />,
+        },
+         {
+          label: "Setting",
+          path: "/settings",
+          icon: <CreditCard size={18} />,
         },
       ],
     },
@@ -157,7 +169,7 @@ export default function Sidebar() {
 
         <div className="sbBrandRow">
           <div className="sbLogoWrap">
-            <div className="sbLogo">NNC</div>
+            <img src={nncLogo} alt="NNC Logo" className="sbLogoImage" />
           </div>
 
           <div className="sbBrandText">
@@ -218,20 +230,25 @@ export default function Sidebar() {
 }
 
 function Item({ label, badge, active, onClick, icon }) {
-  return (
-    <button
-      type="button"
-      className={`sbItem ${active ? "active" : ""}`}
-      onClick={onClick}
-    >
-      <span className="sbIconWrap">
-        <span className="sbIcon">{icon}</span>
-      </span>
+  try {
+    return (
+      <button
+        type="button"
+        className={`sbItem ${active ? "active" : ""}`}
+        onClick={onClick}
+      >
+        <span className="sbIconWrap">
+          <span className="sbIcon">{icon}</span>
+        </span>
 
-      <span className="sbLabel">{label}</span>
+        <span className="sbLabel">{label}</span>
 
-      {badge ? <span className="sbBadge">{badge}</span> : null}
-      {active ? <span className="sbActiveDot" /> : null}
-    </button>
-  );
+        {badge ? <span className="sbBadge">{badge}</span> : null}
+        {active ? <span className="sbActiveDot" /> : null}
+      </button>
+    );
+  } catch (error) {
+    console.error("Sidebar item render error:", error);
+    return null;
+  }
 }

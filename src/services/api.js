@@ -55,6 +55,26 @@ export const loginAdmin = async (payload) => {
   }
 };
 
+export const forgotPassword = async (payload) => {
+  try {
+    const response = await api.post("/auth/forgot-password", payload);
+    return response;
+  } catch (error) {
+    console.error("forgotPassword error:", error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (token, payload) => {
+  try {
+    const response = await api.post(`/auth/reset-password/${token}`, payload);
+    return response;
+  } catch (error) {
+    console.error("resetPassword error:", error);
+    throw error;
+  }
+};
+
 export const getProfile = async () => {
   try {
     const response = await api.get("/auth/profile");

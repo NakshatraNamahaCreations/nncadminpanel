@@ -1,285 +1,287 @@
 .sb {
-  width: 265px;
-  min-width: 265px;
+  width: 290px;
+  min-width: 290px;
   height: 100vh;
-  position: sticky;
-  top: 0;
-  align-self: flex-start;
-  background:
-    radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 24%),
-    linear-gradient(180deg, #f8fbff 0%, #f4f8ff 100%);
-  border-right: 1px solid #e7edf6;
+  background: linear-gradient(180deg, #0f172a 0%, #111827 55%, #0b1220 100%);
+  color: #ffffff;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 10px;
+  padding: 20px 16px 16px;
   box-sizing: border-box;
-  font-family: Inter, sans-serif;
-  box-shadow: 8px 0 24px rgba(15, 23, 42, 0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  position: sticky;
+  top: 0;
   overflow: hidden;
+}
+
+.sb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.16), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(168, 85, 247, 0.12), transparent 24%);
+  pointer-events: none;
 }
 
 .sbTop {
   position: relative;
+  padding: 18px 16px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  margin-bottom: 18px;
   overflow: hidden;
-  padding: 12px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 52%, #60a5fa 100%);
-  color: #fff;
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.18);
-  flex-shrink: 0;
 }
 
 .sbTopGlow {
   position: absolute;
   width: 120px;
   height: 120px;
-  right: -35px;
-  top: -55px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.11);
-  filter: blur(10px);
+  background: rgba(59, 130, 246, 0.18);
+  border-radius: 999px;
+  top: -40px;
+  left: -30px;
+  filter: blur(24px);
 }
 
 .sbTopGlow2 {
   position: absolute;
-  width: 80px;
-  height: 80px;
-  left: -18px;
-  bottom: -22px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
-  filter: blur(8px);
+  width: 120px;
+  height: 120px;
+  background: rgba(168, 85, 247, 0.18);
+  border-radius: 999px;
+  bottom: -45px;
+  right: -35px;
+  filter: blur(28px);
 }
 
 .sbBrandRow {
   position: relative;
-  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 14px;
+  z-index: 1;
 }
 
 .sbLogoWrap {
-  padding: 3px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(8px);
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  border-radius: 16px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.18),
+    inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+  flex-shrink: 0;
+  padding: 6px;
 }
 
-.sbLogo {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #ffffff 0%, #dbeafe 100%);
-  color: #1d4ed8;
-  display: grid;
-  place-items: center;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+.sbLogoImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+  background: #ffffff;
 }
 
 .sbBrandText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   min-width: 0;
 }
 
 .sbTitle {
-  font-size: 17px;
-  font-weight: 900;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
   color: #ffffff;
-  line-height: 1.05;
+  line-height: 1.2;
 }
 
 .sbSub {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 500;
+  color: #cbd5e1;
   margin-top: 3px;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .sbMiniPill {
   position: relative;
-  z-index: 2;
-  margin-top: 10px;
+  z-index: 1;
+  margin-top: 14px;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 9px;
+  gap: 6px;
+  padding: 7px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 800;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-weight: 700;
   width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .sbContent {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 8px;
-  padding: 10px 0 8px;
   overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 0;
-  margin-top: 8px;
-  margin-bottom: 8px;
+  padding-right: 2px;
+  margin-top: 2px;
 }
 
-/* nice thin scrollbar */
 .sbContent::-webkit-scrollbar {
   width: 6px;
 }
 
 .sbContent::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.45);
-  border-radius: 999px;
-}
-
-.sbContent::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
 }
 
 .sbGroup {
-  margin: 0;
+  margin-bottom: 18px;
 }
 
 .sbGroupTitle {
-  padding: 2px 8px 5px;
-  font-size: 9px;
-  font-weight: 900;
-  color: #94a3b8;
+  padding: 0 12px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 800;
   letter-spacing: 1px;
   text-transform: uppercase;
+  color: #94a3b8;
 }
 
 .sbGroupItems {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 
 .sbItem {
-  position: relative;
   width: 100%;
   border: none;
-  background: rgba(255, 255, 255, 0.72);
+  outline: none;
+  background: transparent;
+  color: #dbe4f0;
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 8px 9px;
-  border-radius: 13px;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
   cursor: pointer;
-  color: #334155;
-  font-size: 12px;
-  text-align: left;
   transition: all 0.25s ease;
-  border: 1px solid transparent;
+  position: relative;
+  text-align: left;
 }
 
 .sbItem:hover {
-  background: #ffffff;
-  transform: translateX(2px);
-  box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05);
-  border-color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  transform: translateX(3px);
 }
 
 .sbItem.active {
-  background: linear-gradient(135deg, #eef4ff 0%, #dbeafe 100%);
-  color: #1d4ed8;
-  font-weight: 800;
-  border-color: #cfe0ff;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.22), rgba(124, 58, 237, 0.16));
+  color: #ffffff;
+  box-shadow:
+    inset 0 0 0 1px rgba(96, 165, 250, 0.18),
+    0 10px 22px rgba(0, 0, 0, 0.18);
 }
 
 .sbIconWrap {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  border-radius: 9px;
-  display: grid;
-  place-items: center;
-  background: #f1f5f9;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
   transition: all 0.25s ease;
 }
 
-.sbItem:hover .sbIconWrap {
-  background: #e8f0ff;
-}
-
+.sbItem:hover .sbIconWrap,
 .sbItem.active .sbIconWrap {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: #fff;
-  box-shadow: 0 6px 14px rgba(37, 99, 235, 0.2);
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .sbIcon {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: inherit;
 }
 
 .sbLabel {
   flex: 1;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .sbBadge {
-  background: #2563eb;
-  color: #fff;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
 }
 
 .sbActiveDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #2563eb;
-  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #60a5fa;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
 }
 
 .sbBottomWrap {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex-shrink: 0;
-  margin-top: 6px;
+  margin-top: 16px;
 }
 
 .sbProfileCard {
-  border: 1px solid #e6edf6;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-  border-radius: 15px;
-  padding: 9px;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+  padding: 14px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .sbBottom {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .sbAvatar {
-  width: 34px;
-  height: 34px;
-  min-width: 34px;
-  border-radius: 11px;
-  background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 11px;
-  font-weight: 900;
-  box-shadow: 0 6px 14px rgba(249, 115, 22, 0.24);
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
 }
 
 .sbUser {
@@ -288,53 +290,56 @@
 }
 
 .sbUserName {
-  font-size: 12px;
-  font-weight: 800;
-  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .sbUserSub {
-  font-size: 10px;
+  margin-top: 3px;
+  font-size: 12px;
   color: #94a3b8;
-  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sbTag {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  color: #92400e;
-  font-size: 8px;
-  font-weight: 900;
-  padding: 4px 7px;
+  padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid #fcd34d;
-  white-space: nowrap;
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  font-size: 10px;
+  font-weight: 800;
+  border: 1px solid rgba(74, 222, 128, 0.2);
 }
 
 .sbLogoutBtn {
+  margin-top: 12px;
   width: 100%;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #334155;
+  border: none;
+  outline: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 9px 10px;
-  border-radius: 12px;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: 16px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 800;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
   transition: all 0.25s ease;
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.22);
 }
 
 .sbLogoutBtn:hover {
-  background: linear-gradient(180deg, #fff5f5 0%, #fff1f2 100%);
-  border-color: #fda4af;
-  color: #dc2626;
-  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.08);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 24px rgba(220, 38, 38, 0.28);
 }
 
 .sbLogoutIcon {
@@ -343,49 +348,23 @@
   justify-content: center;
 }
 
-/* desktop layout important */
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
   .sb {
-    width: 100%;
-    min-width: 100%;
-    height: auto;
-    position: relative;
-    top: unset;
-    border-right: none;
-    border-bottom: 1px solid #e9edf5;
-    box-shadow: none;
-  }
-
-  .sbContent {
-    overflow: visible;
-    min-height: auto;
-  }
-}
-
-@media (max-width: 576px) {
-  .sb {
-    padding: 8px;
-  }
-
-  .sbTop {
-    padding: 10px;
-    border-radius: 16px;
+    width: 260px;
+    min-width: 260px;
   }
 
   .sbTitle {
-    font-size: 16px;
+    font-size: 17px;
   }
 
-  .sbLogo {
-    width: 36px;
-    height: 36px;
+  .sbSub {
+    font-size: 11px;
   }
 
-  .sbItem {
-    padding: 8px;
-  }
-
-  .sbBottom {
-    align-items: flex-start;
+  .sbLogoWrap {
+    width: 54px;
+    height: 54px;
+    min-width: 54px;
   }
 }

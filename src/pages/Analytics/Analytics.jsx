@@ -31,7 +31,7 @@ import Sidebar from "../../components/Sidebar/Sidebar";
 import { getAnalytics } from "../../services/analyticsService";
 import "./Analytics.css";
 
-const PIE_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444"];
+const PIE_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444", "#06b6d4"];
 
 const DEFAULT_ANALYTICS = {
   totals: {
@@ -62,10 +62,10 @@ export default function Analytics() {
 
       return {
         totals: {
-          totalLeads: Number(payload?.totals || payload?.totals?.totalLeads || 0),
-          totalClosed: Number(payload?.totalClosed || payload?.totals?.totalClosed || 0),
-          totalRevenue: Number(payload?.totalRevenue || payload?.totals?.totalRevenue || 0),
-          avgConversion: Number(payload?.avgConversion || payload?.totals?.avgConversion || 0),
+          totalLeads: Number(payload?.totals?.totalLeads || 0),
+          totalClosed: Number(payload?.totals?.totalClosed || 0),
+          totalRevenue: Number(payload?.totals?.totalRevenue || 0),
+          avgConversion: Number(payload?.totals?.avgConversion || 0),
         },
         monthlyEnquiriesVsClosed: Array.isArray(payload?.monthlyEnquiriesVsClosed)
           ? payload.monthlyEnquiriesVsClosed
@@ -108,7 +108,11 @@ export default function Analytics() {
   };
 
   useEffect(() => {
-    fetchAnalytics();
+    try {
+      fetchAnalytics();
+    } catch (error) {
+      console.error("useEffect fetchAnalytics error:", error);
+    }
   }, []);
 
   const currencyFormatter = useMemo(() => {
@@ -141,6 +145,52 @@ export default function Analytics() {
       return analytics.topReps;
     }
   }, [analytics.topReps, searchText]);
+
+  const trendKeys = useMemo(() => {
+    try {
+      if (!analytics.conversionRateTrend.length) return [];
+      return Object.keys(analytics.conversionRateTrend[0]).filter((key) => key !== "month");
+    } catch (error) {
+      console.error("trendKeys error:", error);
+      return [];
+    }
+  }, [analytics.conversionRateTrend]);
+
+  const validRevenueByBranch = useMemo(() => {
+    try {
+      return (analytics.revenueByBranch || []).filter(
+        (item) => Number(item?.value || 0) > 0
+      );
+    } catch (error) {
+      console.error("validRevenueByBranch error:", error);
+      return [];
+    }
+  }, [analytics.revenueByBranch]);
+
+  const sourceChartData = useMemo(() => {
+    try {
+      return (analytics.leadSourceConversion || []).map((item, index) => ({
+        ...item,
+        fill: PIE_COLORS[index % PIE_COLORS.length],
+      }));
+    } catch (error) {
+      console.error("sourceChartData error:", error);
+      return [];
+    }
+  }, [analytics.leadSourceConversion]);
+
+  const hasTrendData = useMemo(() => {
+    try {
+      if (!analytics.conversionRateTrend.length || !trendKeys.length) return false;
+
+      return analytics.conversionRateTrend.some((row) =>
+        trendKeys.some((key) => Number(row?.[key] || 0) > 0)
+      );
+    } catch (error) {
+      console.error("hasTrendData error:", error);
+      return false;
+    }
+  }, [analytics.conversionRateTrend, trendKeys]);
 
   const hasAnyChartData = useMemo(() => {
     try {
@@ -302,38 +352,52 @@ export default function Analytics() {
                     </div>
 
                     <div className="anChartWrap">
-                      <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={analytics.revenueByBranch}
-                            dataKey="value"
-                            nameKey="name"
-                            innerRadius={58}
-                            outerRadius={95}
-                            paddingAngle={3}
-                          >
-                            {analytics.revenueByBranch.map((entry, index) => (
-                              <Cell
-                                key={`cell-${entry?.name || "branch"}-${index}`}
-                                fill={PIE_COLORS[index % PIE_COLORS.length]}
-                              />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => currencyFormatter.format(value)} />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      {validRevenueByBranch.length > 0 ? (
+                        <>
+                          <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                              <Pie
+                                data={validRevenueByBranch}
+                                dataKey="value"
+                                nameKey="name"
+                                innerRadius={58}
+                                outerRadius={95}
+                                paddingAngle={3}
+                              >
+                                {validRevenueByBranch.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${entry?.name || "branch"}-${index}`}
+                                    fill={PIE_COLORS[index % PIE_COLORS.length]}
+                                  />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value) => currencyFormatter.format(value)} />
+                            </PieChart>
+                          </ResponsiveContainer>
 
-                      <div className="anLegendRow">
-                        {analytics.revenueByBranch.map((item, index) => (
-                          <div key={`${item?.name || "branch"}-${index}`} className="anLegendItem">
-                            <span
-                              className="anLegendDot"
-                              style={{ background: PIE_COLORS[index % PIE_COLORS.length] }}
-                            />
-                            <span>{item?.name || "Unknown"}</span>
+                          <div className="anLegendRow">
+                            {validRevenueByBranch.map((item, index) => (
+                              <div key={`${item?.name || "branch"}-${index}`} className="anLegendItem">
+                                <span
+                                  className="anLegendDot"
+                                  style={{ background: PIE_COLORS[index % PIE_COLORS.length] }}
+                                />
+                                <span>
+                                  {item?.name || "Unknown"} — {currencyFormatter.format(item?.value || 0)}
+                                </span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </>
+                      ) : (
+                        <div className="anChartEmpty">
+                          <div className="anChartEmptyIcon">📊</div>
+                          <div className="anChartEmptyTitle">No branch revenue yet</div>
+                          <div className="anChartEmptyText">
+                            Revenue chart will appear when lead values are available branch-wise.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -342,24 +406,52 @@ export default function Analytics() {
                   <div className="anCardHead">
                     <h3>Conversion Rate Trend</h3>
                     <div className="anLegendRight">
-                      <span className="anMiniBadge blue">Bangalore</span>
-                      <span className="anMiniBadge orange">Mumbai</span>
-                      <span className="anMiniBadge green">Mysore</span>
+                      {trendKeys.map((key, index) => (
+                        <span
+                          key={key}
+                          className={`anMiniBadge ${
+                            index % 3 === 0 ? "blue" : index % 3 === 1 ? "orange" : "green"
+                          }`}
+                        >
+                          {key}
+                        </span>
+                      ))}
                     </div>
                   </div>
 
                   <div className="anChartWrap">
-                    <ResponsiveContainer width="100%" height={270}>
-                      <LineChart data={analytics.conversionRateTrend}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="Bangalore" stroke="#3b82f6" strokeWidth={3} dot={{ r: 3 }} />
-                        <Line type="monotone" dataKey="Mumbai" stroke="#f59e0b" strokeWidth={3} dot={{ r: 3 }} />
-                        <Line type="monotone" dataKey="Mysore" stroke="#10b981" strokeWidth={3} dot={{ r: 3 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    {hasTrendData ? (
+                      <ResponsiveContainer width="100%" height={290}>
+                        <LineChart
+                          data={analytics.conversionRateTrend}
+                          margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="month" />
+                          <YAxis domain={[0, 100]} tickFormatter={(value) => `${value}%`} />
+                          <Tooltip formatter={(value) => `${value}%`} />
+                          {trendKeys.map((key, index) => (
+                            <Line
+                              key={key}
+                              type="monotone"
+                              dataKey={key}
+                              stroke={PIE_COLORS[index % PIE_COLORS.length]}
+                              strokeWidth={3}
+                              dot={{ r: 4 }}
+                              activeDot={{ r: 6 }}
+                            />
+                          ))}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="anChartEmpty">
+                        <div className="anChartEmptyIcon">📈</div>
+                        <div className="anChartEmptyTitle">No conversion trend yet</div>
+                        <div className="anChartEmptyText">
+                          This chart will appear once branch-wise lead conversions are available.
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -369,20 +461,43 @@ export default function Analytics() {
                       <h3>Lead Source Conversion</h3>
                     </div>
 
-                    <div className="anChartWrap">
-                      <ResponsiveContainer width="100%" height={280}>
-                        <BarChart
-                          data={analytics.leadSourceConversion}
-                          layout="vertical"
-                          margin={{ left: 20, right: 20 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                          <XAxis type="number" />
-                          <YAxis type="category" dataKey="source" width={90} />
-                          <Tooltip />
-                          <Bar dataKey="rate" fill="#2563eb" radius={[0, 8, 8, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                    <div className="anSourceList">
+                      {sourceChartData.length > 0 ? (
+                        sourceChartData.map((item, index) => (
+                          <div className="anSourceRow" key={`${item?.source || "source"}-${index}`}>
+                            <div className="anSourceTop">
+                              <div className="anSourceName">{item?.source || "Unknown"}</div>
+                              <div className="anSourceMeta">
+                                <span>{item?.rate || 0}%</span>
+                                <small>{item?.total || 0} leads</small>
+                              </div>
+                            </div>
+
+                            <div className="anSourceBarTrack">
+                              <div
+                                className="anSourceBarFill"
+                                style={{
+                                  width: `${Math.min(Number(item?.rate || 0), 100)}%`,
+                                  background: item.fill,
+                                }}
+                              />
+                            </div>
+
+                            <div className="anSourceBottom">
+                              <span>Converted: {item?.converted || 0}</span>
+                              <span>Revenue: {currencyFormatter.format(item?.revenue || 0)}</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="anChartEmpty">
+                          <div className="anChartEmptyIcon">🎯</div>
+                          <div className="anChartEmptyTitle">No source conversion yet</div>
+                          <div className="anChartEmptyText">
+                            Add more leads and update their stages to see source performance.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 

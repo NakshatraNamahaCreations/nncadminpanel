@@ -10,6 +10,9 @@ import CalendarPage from "./pages/CalendarPage";
 import Analytics from "./pages/Analytics/Analytics";
 import Leaderboard from "./pages/Leaderboard/Leaderboard";
 import BranchReports from "./pages/BranchReports/BranchReports";
+import PaymentTracker from "./pages/PaymentTracker/PaymentTracker";
+import Settings from "./pages/Setting/Settings";
+
 
 function isAuthed() {
   try {
@@ -106,8 +109,18 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-
+           <Route
+        path="/payment-tracker"
+        element={
+          <ProtectedRoute>
+            <PaymentTracker />
+          </ProtectedRoute>
+        }
+      />
+      
+<Route path="/settings" element={<Settings />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
+
