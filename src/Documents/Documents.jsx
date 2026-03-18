@@ -19,7 +19,7 @@ export default function Documents() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchDocuments = async (typeValue = activeType, searchValue = search) => {
+  const fetchDocuments = async (typeValue = "all", searchValue = "") => {
     try {
       setLoading(true);
 
@@ -33,10 +33,11 @@ export default function Documents() {
         params.append("search", searchValue.trim());
       }
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/documents?${params.toString()}`
-      );
+      const url = `${API_BASE_URL}/api/documents${
+        params.toString() ? `?${params.toString()}` : ""
+      }`;
 
+      const response = await fetch(url);
       const result = await response.json();
 
       if (!response.ok || !result.success) {
@@ -90,7 +91,9 @@ export default function Documents() {
 
       await fetchDocuments(activeType, search);
       await fetchStats();
+
       alert("Document uploaded successfully");
+      return result.data;
     } catch (error) {
       console.error("handleUploadDocument error:", error);
       alert(error?.message || "Failed to upload document");
@@ -115,6 +118,7 @@ export default function Documents() {
 
       await fetchDocuments(activeType, search);
       await fetchStats();
+
       alert("Document deleted successfully");
     } catch (error) {
       console.error("handleDelete error:", error);
@@ -123,12 +127,16 @@ export default function Documents() {
   };
 
   useEffect(() => {
-    try {
-      fetchDocuments("all", "");
-      fetchStats();
-    } catch (error) {
-      console.error("Documents useEffect error:", error);
-    }
+    const init = async () => {
+      try {
+        await fetchDocuments("all", "");
+        await fetchStats();
+      } catch (error) {
+        console.error("Documents init error:", error);
+      }
+    };
+
+    init();
   }, []);
 
   const handleFilterClick = async (typeValue) => {
@@ -189,24 +197,28 @@ export default function Documents() {
           >
             All ({stats.totalDocuments || 0})
           </button>
+
           <button
             className={`docsTab ${activeType === "invoice" ? "active" : ""}`}
             onClick={() => handleFilterClick("invoice")}
           >
             Invoices ({stats.invoices || 0})
           </button>
+
           <button
             className={`docsTab ${activeType === "quotation" ? "active" : ""}`}
             onClick={() => handleFilterClick("quotation")}
           >
             Quotations ({stats.quotations || 0})
           </button>
+
           <button
             className={`docsTab ${activeType === "mom" ? "active" : ""}`}
             onClick={() => handleFilterClick("mom")}
           >
             MoM ({stats.moms || 0})
           </button>
+
           <button
             className={`docsTab ${activeType === "client_input" ? "active" : ""}`}
             onClick={() => handleFilterClick("client_input")}

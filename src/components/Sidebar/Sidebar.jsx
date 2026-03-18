@@ -12,8 +12,10 @@ import {
   LogOut,
   Sparkles,
   CreditCard,
+  Settings,
+  ShieldCheck,
 } from "lucide-react";
-import nncLogo from "../../assets/nnclogo.png"; // adjust path if needed
+import nncLogo from "../../assets/nnclogo.png";
 import "./Sidebar.css";
 
 export default function Sidebar() {
@@ -118,10 +120,15 @@ export default function Sidebar() {
           path: "/payment-tracker",
           icon: <CreditCard size={18} />,
         },
-         {
+        {
           label: "Setting",
           path: "/settings",
-          icon: <CreditCard size={18} />,
+          icon: <Settings size={18} />,
+        },
+        {
+          label: "Master Admin",
+          path: "/master-admin",
+          icon: <ShieldCheck size={18} />,
         },
       ],
     },
@@ -175,6 +182,7 @@ export default function Sidebar() {
           <div className="sbBrandText">
             <div className="sbTitle">NNC CRM</div>
             <div className="sbSub">Website Services Dashboard</div>
+            <div className="sbAdminText">{userRoleLabel}</div>
           </div>
         </div>
 

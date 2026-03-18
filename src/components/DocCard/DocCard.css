@@ -1,93 +1,225 @@
 .docCard {
-  background: #ffffff;
-  border: 1px solid #e7edf5;
-  border-radius: 18px;
-  padding: 16px;
-  min-height: 150px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border: 1px solid #e3eaf5;
+  border-radius: 22px;
+  padding: 18px;
+  min-height: 255px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 14px;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.docCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, #2f66f6 0%, #7c3aed 100%);
+  opacity: 0.95;
 }
 
 .docCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  transform: translateY(-5px);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.12);
+  border-color: #cfdcf2;
 }
 
-.docCardIcon {
-  color: #111827;
+.docCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.docCardBody {
-  flex: 1;
-}
-
-.docCardTitle {
-  margin: 0 0 8px;
-  font-size: 17px;
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1.3;
-}
-
-.docCardMeta {
-  margin: 0 0 10px;
-  font-size: 13px;
-  color: #64748b;
-}
-
-.docCardBadge {
+.docType {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 28px;
-  padding: 0 10px;
+  min-height: 30px;
+  padding: 0 12px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.docCardBadge.green {
-  background: #ecfdf5;
+.docType.invoice {
+  background: #eafaf1;
   color: #15803d;
 }
 
-.docCardBadge.blue {
-  background: #eff6ff;
+.docType.quotation {
+  background: #eef4ff;
   color: #1d4ed8;
 }
 
-.docCardBadge.yellow {
-  background: #fffbeb;
-  color: #b45309;
+.docType.mom {
+  background: #fff4e8;
+  color: #c2410c;
 }
 
-.docCardBadge.purple {
-  background: #f5f3ff;
+.docType.client_input {
+  background: #f3edff;
   color: #7c3aed;
 }
 
-.docCardActions {
-  display: flex;
-  gap: 8px;
+.docDate {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
 }
 
-.docIconBtn {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  border: 1px solid #dbe4ef;
-  background: #fff;
+.docCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 110px;
+}
+
+.docTitle {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #0f172a;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.docLead {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.docFileName {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #475569;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.docNotes {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #64748b;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.docNotesMuted {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.docMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f8fbff;
+  border: 1px solid #edf2f8;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.docMime {
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 52%;
+}
+
+.docActions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.docBtn {
+  height: 40px;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #0f172a;
-  cursor: pointer;
-  text-decoration: none;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.docIconBtn.danger {
+.docBtn:hover {
+  transform: translateY(-1px);
+}
+
+.docBtn.view {
+  background: #eef4ff;
+  color: #1d4ed8;
+}
+
+.docBtn.view:hover {
+  background: #dbeafe;
+}
+
+.docBtn.download {
+  background: #eafaf1;
+  color: #15803d;
+}
+
+.docBtn.download:hover {
+  background: #d1fae5;
+}
+
+.docBtn.delete {
+  background: #fff1f2;
   color: #dc2626;
+}
+
+.docBtn.delete:hover {
+  background: #ffe4e6;
+}
+
+@media (max-width: 768px) {
+  .docCard {
+    min-height: unset;
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .docActions {
+    grid-template-columns: 1fr;
+  }
+
+  .docMime {
+    max-width: 48%;
+  }
 }

@@ -1,97 +1,89 @@
-import React from "react";
-import { FileText, Trash2, Download } from "lucide-react";
-import { API_BASE_URL } from "../../services/api";
+import React, { useMemo } from "react";
 import "./DocCard.css";
 
-function getTypeLabel(type) {
-  try {
-    if (type === "invoice") return "Invoice";
-    if (type === "quotation") return "Quotation";
-    if (type === "mom") return "MoM";
-    if (type === "client_input") return "Client Input";
-    return type || "Document";
-  } catch (error) {
-    console.error("getTypeLabel error:", error);
-    return "Document";
-  }
-}
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-function getTypeClass(type) {
-  try {
-    if (type === "invoice") return "green";
-    if (type === "quotation") return "blue";
-    if (type === "mom") return "yellow";
-    if (type === "client_input") return "purple";
-    return "blue";
-  } catch (error) {
-    console.error("getTypeClass error:", error);
-    return "blue";
-  }
-}
+const formatTypeLabel = (type) => {
+  if (type === "invoice") return "Invoice";
+  if (type === "quotation") return "Quotation";
+  if (type === "mom") return "MoM";
+  if (type === "client_input") return "Client Input";
+  return "Document";
+};
 
-function formatDate(dateValue) {
-  try {
-    if (!dateValue) return "";
-    const d = new Date(dateValue);
-    return d.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  } catch (error) {
-    console.error("formatDate error:", error);
-    return "";
-  }
-}
-
-function formatFileSize(bytes) {
-  try {
-    if (!bytes) return "0 KB";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-  } catch (error) {
-    console.error("formatFileSize error:", error);
-    return "0 KB";
-  }
-}
+const formatFileSize = (size) => {
+  const fileSize = Number(size || 0);
+  if (fileSize < 1024) return `${fileSize} B`;
+  if (fileSize < 1024 * 1024) return `${(fileSize / 1024).toFixed(1)} KB`;
+  return `${(fileSize / 1024 / 1024).toFixed(2)} MB`;
+};
 
 export default function DocCard({ doc, onDelete }) {
+  const fileUrl = useMemo(() => {
+    try {
+      if (!doc?.fileUrl) return "#";
+      if (doc.fileUrl.startsWith("http")) return doc.fileUrl;
+      return `${API_BASE}${doc.fileUrl}`;
+    } catch (error) {
+      console.error("fileUrl error:", error);
+      return "#";
+    }
+  }, [doc]);
+
+  const formattedDate = useMemo(() => {
+    try {
+      if (!doc?.date) return "-";
+      return new Date(doc.date).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch (error) {
+      console.error("formattedDate error:", error);
+      return "-";
+    }
+  }, [doc]);
+
   return (
     <div className="docCard">
-      <div className="docCardIcon">
-        <FileText size={34} />
+      <div className="docCardTop">
+        <span className={`docType ${doc?.type || ""}`}>
+          {formatTypeLabel(doc?.type)}
+        </span>
+        <span className="docDate">{formattedDate}</span>
       </div>
 
       <div className="docCardBody">
-        <h4 className="docCardTitle">{doc.name}</h4>
-        <p className="docCardMeta">
-          {doc.linkedLead} • {formatFileSize(doc.fileSize)} • {formatDate(doc.date)}
-        </p>
-
-        <span className={`docCardBadge ${getTypeClass(doc.type)}`}>
-          {getTypeLabel(doc.type)}
-        </span>
+        <h4 className="docTitle">{doc?.name || "Untitled Document"}</h4>
+        <p className="docLead">{doc?.linkedLead || "No linked lead"}</p>
+        <p className="docFileName">{doc?.originalFileName || "No file attached"}</p>
+        <p className="docNotes">{doc?.notes || "No notes added"}</p>
       </div>
 
-      <div className="docCardActions">
+      <div className="docMeta">
+        <span>{formatFileSize(doc?.fileSize)}</span>
+        <span>{doc?.mimeType || "Unknown type"}</span>
+      </div>
+
+      <div className="docActions">
+        <a href={fileUrl} target="_blank" rel="noreferrer" className="docBtn view">
+          View
+        </a>
+
         <a
-          href={`${API_BASE_URL}${doc.fileUrl}`}
-          target="_blank"
-          rel="noreferrer"
-          className="docIconBtn"
-          title="View / Download"
+          href={fileUrl}
+          download={doc?.originalFileName || true}
+          className="docBtn download"
         >
-          <Download size={16} />
+          Download
         </a>
 
         <button
           type="button"
-          className="docIconBtn danger"
-          title="Delete"
+          className="docBtn delete"
           onClick={() => onDelete(doc._id)}
         >
-          <Trash2 size={16} />
+          Delete
         </button>
       </div>
     </div>

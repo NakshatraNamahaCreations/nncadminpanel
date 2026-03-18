@@ -44,6 +44,24 @@ const getInitials = (name = "") => {
   }
 };
 
+const EMPTY_EDIT_FORM = {
+  _id: "",
+  name: "",
+  phone: "",
+  email: "",
+  business: "",
+  industry: "",
+  location: "",
+  requirements: "",
+  branch: "Bangalore",
+  source: "WhatsApp",
+  stage: "Lead Capture",
+  priority: "Hot",
+  value: 0,
+  days: "0d",
+  rep: "",
+};
+
 const EmptyState = ({ title, sub }) => {
   return (
     <div className="ldEmpty">
@@ -54,7 +72,7 @@ const EmptyState = ({ title, sub }) => {
   );
 };
 
-export default function LeadDrawer({ open, leadId, apiBase, onClose }) {
+export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdated }) {
   const [activeTab, setActiveTab] = useState("Profile");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
@@ -81,6 +99,10 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose }) {
     dueDate: "",
     done: false,
   });
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
 
   const headerSubtitle = useMemo(() => {
     try {
@@ -165,6 +187,8 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose }) {
       setLogSummary("");
       setNoteText("");
       setFollowupOpen(false);
+      setEditOpen(false);
+      setEditForm(EMPTY_EDIT_FORM);
       setFollowupForm({
         dayIndex: "",
         title: "",
@@ -338,125 +362,410 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose }) {
     }
   };
 
+  const openEditModal = () => {
+    try {
+      if (!lead) return;
+
+      setEditForm({
+        _id: lead._id || "",
+        name: lead.name || "",
+        phone: lead.phone || "",
+        email: lead.email || "",
+        business: lead.business || "",
+        industry: lead.industry || "",
+        location: lead.location || "",
+        requirements: lead.requirements || "",
+        branch: lead.branch || "Bangalore",
+        source: lead.source || "WhatsApp",
+        stage: lead.stage || "Lead Capture",
+        priority: lead.priority || "Hot",
+        value: Number(lead.value || 0),
+        days: lead.days || "0d",
+        rep: lead.rep || "",
+      });
+
+      setEditOpen(true);
+    } catch (error) {
+      console.error("openEditModal error:", error);
+    }
+  };
+
+  const closeEditModal = () => {
+    try {
+      setEditOpen(false);
+      setEditForm(EMPTY_EDIT_FORM);
+    } catch (error) {
+      console.error("closeEditModal error:", error);
+    }
+  };
+
+  const handleEditChange = (e) => {
+    try {
+      const { name, value } = e.target;
+      setEditForm((prev) => ({
+        ...prev,
+        [name]: name === "value" ? Number(value || 0) : value,
+      }));
+    } catch (error) {
+      console.error("handleEditChange error:", error);
+    }
+  };
+
+  const handleEditSubmit = async (e) => {
+    try {
+      e.preventDefault();
+
+      if (!String(editForm.name || "").trim()) {
+        alert("Name is required");
+        return;
+      }
+
+      if (!String(editForm.phone || "").trim()) {
+        alert("Phone is required");
+        return;
+      }
+
+      setEditSaving(true);
+
+      const token = localStorage.getItem("nnc_token");
+
+      const payload = {
+        name: editForm.name,
+        phone: editForm.phone,
+        email: editForm.email,
+        business: editForm.business,
+        industry: editForm.industry,
+        location: editForm.location,
+        requirements: editForm.requirements,
+        branch: editForm.branch,
+        source: editForm.source,
+        stage: editForm.stage,
+        priority: editForm.priority,
+        value: Number(editForm.value || 0),
+        days: editForm.days,
+        rep: editForm.rep,
+      };
+
+      const res = await fetch(`${apiBase}/api/leads/${editForm._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.message || "Failed to update lead");
+      }
+
+      setLead(json.data);
+      setEditOpen(false);
+      setEditForm(EMPTY_EDIT_FORM);
+
+      if (typeof onLeadUpdated === "function") {
+        onLeadUpdated(json.data);
+      }
+
+      alert("Lead updated successfully");
+    } catch (error) {
+      console.error("handleEditSubmit error:", error);
+      alert(error?.message || "Failed to update lead");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   if (!open) return null;
 
   return (
-    <div className="ldOverlay" onClick={close}>
-      <div className="ldPanel" onClick={(e) => e.stopPropagation()}>
-        <div className="ldHeader">
-          <div className="ldHeaderTop">
-            <div className="ldAvatar">{getInitials(lead?.name)}</div>
+    <>
+      <div className="ldOverlay" onClick={close}>
+        <div className="ldPanel" onClick={(e) => e.stopPropagation()}>
+          <div className="ldHeader">
+            <div className="ldHeaderTop">
+              <div className="ldAvatar">{getInitials(lead?.name)}</div>
 
-            <div className="ldHeaderInfo">
-              <div className="ldTitleRow">
-                <div className="ldTitle">{lead?.name || "Lead"}</div>
-                <span className={`ldBadge ${chipCls(lead?.priority || "Hot")}`}>
-                  {lead?.priority || "Hot"}
-                </span>
+              <div className="ldHeaderInfo">
+                <div className="ldTitleRow">
+                  <div className="ldTitle">{lead?.name || "Lead"}</div>
+                  <span className={`ldBadge ${chipCls(lead?.priority || "Hot")}`}>
+                    {lead?.priority || "Hot"}
+                  </span>
+                </div>
+
+                <div className="ldSub">
+                  {headerSubtitle || "Lead details and activity overview"}
+                </div>
+
+                <div className="ldChips">
+                  <span className={`ldChip stage ${chipCls(lead?.stage)}`}>
+                    {lead?.stage || "Lead Capture"}
+                  </span>
+                  <span className="ldChip light">{lead?.source || "Direct"}</span>
+                  <span className="ldValue">{money(lead?.value || 0)}</span>
+                </div>
               </div>
+            </div>
 
-              <div className="ldSub">{headerSubtitle || "Lead details and activity overview"}</div>
-
-              <div className="ldChips">
-                <span className={`ldChip stage ${chipCls(lead?.stage)}`}>
-                  {lead?.stage || "Lead Capture"}
-                </span>
-                <span className="ldChip light">{lead?.source || "Direct"}</span>
-                <span className="ldValue">{money(lead?.value || 0)}</span>
-              </div>
+            <div className="ldHeaderActions">
+              <button className="ldBtn edit" type="button" onClick={openEditModal}>
+                Edit Lead
+              </button>
+              <button className="ldClose" type="button" onClick={close}>
+                ×
+              </button>
             </div>
           </div>
 
-          <button className="ldClose" type="button" onClick={close}>
-            ×
-          </button>
-        </div>
+          <div className="ldStats">
+            {statCards.map((item, idx) => (
+              <div className="ldStatCard" key={idx}>
+                <div className="ldStatLabel">{item.label}</div>
+                <div className="ldStatValue">{item.value}</div>
+              </div>
+            ))}
+          </div>
 
-        <div className="ldStats">
-          {statCards.map((item, idx) => (
-            <div className="ldStatCard" key={idx}>
-              <div className="ldStatLabel">{item.label}</div>
-              <div className="ldStatValue">{item.value}</div>
-            </div>
-          ))}
-        </div>
+          <div className="ldTabs">
+            {["Profile", "BANT", "Follow-up", "Calls/WA", "History", "Docs", "Notes"].map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={`ldTab ${activeTab === t ? "active" : ""}`}
+                onClick={() => setActiveTab(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
 
-        <div className="ldTabs">
-          {["Profile", "BANT", "Follow-up", "Calls/WA", "History", "Docs", "Notes"].map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`ldTab ${activeTab === t ? "active" : ""}`}
-              onClick={() => setActiveTab(t)}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
+          <div className="ldBody">
+            {loading ? (
+              <div className="ldLoadingWrap">
+                <div className="ldLoader" />
+                <div className="ldLoading">Loading lead details...</div>
+              </div>
+            ) : null}
 
-        <div className="ldBody">
-          {loading ? (
-            <div className="ldLoadingWrap">
-              <div className="ldLoader" />
-              <div className="ldLoading">Loading lead details...</div>
-            </div>
-          ) : null}
+            {err ? <div className="ldError">{err}</div> : null}
 
-          {err ? <div className="ldError">{err}</div> : null}
-
-          {!loading && !err && lead ? (
-            <>
-              {activeTab === "Profile" && <ProfileTab lead={lead} />}
-              {activeTab === "BANT" && <BantTab lead={lead} />}
-              {activeTab === "Follow-up" && (
-                <FollowupTab
-                  lead={lead}
-                  followupOpen={followupOpen}
-                  setFollowupOpen={setFollowupOpen}
-                  followupForm={followupForm}
-                  setFollowupForm={setFollowupForm}
-                  followupSaving={followupSaving}
-                  addFollowup={addFollowup}
-                />
-              )}
-              {activeTab === "Calls/WA" && (
-                <CallsTab
-                  lead={lead}
-                  logOpen={logOpen}
-                  setLogOpen={setLogOpen}
-                  logType={logType}
-                  setLogType={setLogType}
-                  logSummary={logSummary}
-                  setLogSummary={setLogSummary}
-                  logSaving={logSaving}
-                  addLog={addLog}
-                />
-              )}
-              {activeTab === "History" && <HistoryTab lead={lead} />}
-              {activeTab === "Docs" && (
-                <DocsTab
-                  lead={lead}
-                  uploading={uploading}
-                  docTag={docTag}
-                  setDocTag={setDocTag}
-                  uploadDoc={uploadDoc}
-                  apiBase={apiBase}
-                />
-              )}
-              {activeTab === "Notes" && (
-                <NotesTab
-                  lead={lead}
-                  noteText={noteText}
-                  setNoteText={setNoteText}
-                  savingNote={savingNote}
-                  saveNote={saveNote}
-                />
-              )}
-            </>
-          ) : null}
+            {!loading && !err && lead ? (
+              <>
+                {activeTab === "Profile" && <ProfileTab lead={lead} />}
+                {activeTab === "BANT" && <BantTab lead={lead} />}
+                {activeTab === "Follow-up" && (
+                  <FollowupTab
+                    lead={lead}
+                    followupOpen={followupOpen}
+                    setFollowupOpen={setFollowupOpen}
+                    followupForm={followupForm}
+                    setFollowupForm={setFollowupForm}
+                    followupSaving={followupSaving}
+                    addFollowup={addFollowup}
+                  />
+                )}
+                {activeTab === "Calls/WA" && (
+                  <CallsTab
+                    lead={lead}
+                    logOpen={logOpen}
+                    setLogOpen={setLogOpen}
+                    logType={logType}
+                    setLogType={setLogType}
+                    logSummary={logSummary}
+                    setLogSummary={setLogSummary}
+                    logSaving={logSaving}
+                    addLog={addLog}
+                  />
+                )}
+                {activeTab === "History" && <HistoryTab lead={lead} />}
+                {activeTab === "Docs" && (
+                  <DocsTab
+                    lead={lead}
+                    uploading={uploading}
+                    docTag={docTag}
+                    setDocTag={setDocTag}
+                    uploadDoc={uploadDoc}
+                    apiBase={apiBase}
+                  />
+                )}
+                {activeTab === "Notes" && (
+                  <NotesTab
+                    lead={lead}
+                    noteText={noteText}
+                    setNoteText={setNoteText}
+                    savingNote={savingNote}
+                    saveNote={saveNote}
+                  />
+                )}
+              </>
+            ) : null}
+          </div>
         </div>
       </div>
-    </div>
+
+      {editOpen ? (
+        <div className="ldEditOverlay" onClick={closeEditModal}>
+          <div className="ldEditCard" onClick={(e) => e.stopPropagation()}>
+            <div className="ldEditHeader">
+              <h3>Edit Lead</h3>
+              <button type="button" className="ldEditClose" onClick={closeEditModal}>
+                ×
+              </button>
+            </div>
+
+            <form className="ldEditForm" onSubmit={handleEditSubmit}>
+              <div className="ldEditGrid">
+                <div className="ldFormGroup">
+                  <label>Name *</label>
+                  <input
+                    name="name"
+                    value={editForm.name}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Phone *</label>
+                  <input
+                    name="phone"
+                    value={editForm.phone}
+                    onChange={handleEditChange}
+                    required
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Email</label>
+                  <input
+                    name="email"
+                    value={editForm.email}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Business</label>
+                  <input
+                    name="business"
+                    value={editForm.business}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Industry</label>
+                  <input
+                    name="industry"
+                    value={editForm.industry}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Location</label>
+                  <input
+                    name="location"
+                    value={editForm.location}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Branch</label>
+                  <select name="branch" value={editForm.branch} onChange={handleEditChange}>
+                    <option value="Bangalore">Bangalore</option>
+                    <option value="Mysore">Mysore</option>
+                    <option value="Mumbai">Mumbai</option>
+                  </select>
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Source</label>
+                  <select name="source" value={editForm.source} onChange={handleEditChange}>
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Website">Website</option>
+                    <option value="Call">Call</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Referral">Referral</option>
+                  </select>
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Stage</label>
+                  <select name="stage" value={editForm.stage} onChange={handleEditChange}>
+                    <option value="Lead Capture">Lead Capture</option>
+                    <option value="Reachable">Reachable</option>
+                    <option value="Qualified">Qualified</option>
+                    <option value="Proposal">Proposal</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Priority</label>
+                  <select name="priority" value={editForm.priority} onChange={handleEditChange}>
+                    <option value="Hot">Hot</option>
+                    <option value="Warm">Warm</option>
+                    <option value="Cold">Cold</option>
+                  </select>
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Value</label>
+                  <input
+                    type="number"
+                    name="value"
+                    value={editForm.value}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Days</label>
+                  <input
+                    name="days"
+                    value={editForm.days}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup ldFullWidth">
+                  <label>Rep</label>
+                  <input
+                    name="rep"
+                    value={editForm.rep}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup ldFullWidth">
+                  <label>Requirements</label>
+                  <textarea
+                    name="requirements"
+                    rows={4}
+                    value={editForm.requirements}
+                    onChange={handleEditChange}
+                  />
+                </div>
+              </div>
+
+              <div className="ldEditFooter">
+                <button type="button" className="ldBtn cancel" onClick={closeEditModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="ldBtn primary" disabled={editSaving}>
+                  {editSaving ? "Saving..." : "Update Lead"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 

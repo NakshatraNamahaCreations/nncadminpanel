@@ -46,6 +46,7 @@ export default function UploadDocumentModal({ open, onClose, onSave }) {
       setSubmitting(true);
       await onSave(form);
       setForm(initialState);
+      onClose();
     } catch (error) {
       console.error("handleSubmit error:", error);
       alert(error?.message || "Failed to upload document");
@@ -59,7 +60,12 @@ export default function UploadDocumentModal({ open, onClose, onSave }) {
       <div className="udmModal">
         <div className="udmHeader">
           <h3>Upload Document</h3>
-          <button type="button" className="udmClose" onClick={onClose}>
+          <button
+            type="button"
+            className="udmClose"
+            onClick={onClose}
+            disabled={submitting}
+          >
             ×
           </button>
         </div>
@@ -89,7 +95,12 @@ export default function UploadDocumentModal({ open, onClose, onSave }) {
 
             <div className="udmField">
               <label>Date</label>
-              <input type="date" name="date" value={form.date} onChange={handleChange} />
+              <input
+                type="date"
+                name="date"
+                value={form.date}
+                onChange={handleChange}
+              />
             </div>
 
             <div className="udmField">
@@ -117,13 +128,19 @@ export default function UploadDocumentModal({ open, onClose, onSave }) {
 
           <div className="udmField">
             <label>Choose File</label>
-            <input type="file" onChange={handleFileChange} />
+            <input type="file" name="file" onChange={handleFileChange} />
           </div>
 
           <div className="udmActions">
-            <button type="button" className="udmBtnGhost" onClick={onClose}>
+            <button
+              type="button"
+              className="udmBtnGhost"
+              onClick={onClose}
+              disabled={submitting}
+            >
               Cancel
             </button>
+
             <button type="submit" className="udmBtnPrimary" disabled={submitting}>
               {submitting ? "Uploading..." : "Upload Document"}
             </button>

@@ -12,6 +12,7 @@ import Leaderboard from "./pages/Leaderboard/Leaderboard";
 import BranchReports from "./pages/BranchReports/BranchReports";
 import PaymentTracker from "./pages/PaymentTracker/PaymentTracker";
 import Settings from "./pages/Setting/Settings";
+import MasterAdmin from "./pages/MasterAdmin/MasterAdmin";
 
 
 function isAuthed() {
@@ -119,6 +120,7 @@ export default function App() {
       />
       
 <Route path="/settings" element={<Settings />} />
+<Route path="/master-admin" element={<MasterAdmin />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
