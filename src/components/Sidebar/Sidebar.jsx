@@ -27,9 +27,9 @@ import "./Sidebar.css";
 
 /* Bottom nav items shown on mobile (most-used pages) */
 const BOTTOM_NAV = [
-  { label: "Home",   path: "/dashboard",   key: "dashboard",   icon: LayoutDashboard },
-  { label: "Leads",  path: "/leads",       key: "all-leads",   icon: Users           },
   { label: "Today",  path: "/todays-plan", key: "todays-plan", icon: ClipboardList   },
+  { label: "Leads",  path: "/leads",       key: "all-leads",   icon: Users           },
+  { label: "Home",   path: "/dashboard",   key: "dashboard",   icon: LayoutDashboard },
   { label: "Reports",path: "/analytics",   key: "analytics",   icon: BarChart3       },
 ];
 
@@ -79,8 +79,8 @@ export default function Sidebar() {
     {
       title: "Overview",
       items: [
-        { label: "Dashboard",    path: "/dashboard",   moduleKey: "dashboard",   icon: <LayoutDashboard size={15} /> },
         { label: "Today's Plan", path: "/todays-plan", moduleKey: "todays-plan", icon: <ClipboardList size={15} /> },
+        { label: "Dashboard",    path: "/dashboard",   moduleKey: "dashboard",   icon: <LayoutDashboard size={15} /> },
       ],
     },
     {
@@ -145,7 +145,7 @@ export default function Sidebar() {
           <X size={16} />
         </button>
 
-        <div className="sbTop" onClick={() => goTo("/dashboard")} style={{ cursor: "pointer" }}>
+        <div className="sbTop" onClick={() => goTo("/todays-plan")} style={{ cursor: "pointer" }}>
           <div className="sbBrandRow">
             <div className="sbLogoWrap">
               <img src={nncLogo} alt="NNC Logo" className="sbLogoImage" />

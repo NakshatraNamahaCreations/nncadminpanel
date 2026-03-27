@@ -1,15 +1,16 @@
 import axios from "axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
-export const getBranchReports = async () => {
+export const getBranchReports = async (queryString = "") => {
   try {
     const token = localStorage.getItem("nnc_token");
+    const url = queryString
+      ? `${API_BASE}/api/branch-reports?${queryString}`
+      : `${API_BASE}/api/branch-reports`;
 
-    const response = await axios.get(`${API_BASE}/branch-reports`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     return response.data;

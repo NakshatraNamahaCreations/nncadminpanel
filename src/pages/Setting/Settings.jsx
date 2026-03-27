@@ -10,19 +10,30 @@ import "./Settings.css";
 const API   = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const BRANCHES    = ["Mysore","Bangalore","Mumbai"];
-const ALL_MODULES = ["leads","enquiries","attendance","expenses","invoices","payments","analytics","documents","funds","settings"];
+const ALL_MODULES = [
+  "dashboard","todays-plan","pipeline","all-leads","enquiries","calendar",
+  "documents","analytics","leaderboard","branch-reports","payment-tracker",
+  "expense-tracker","pnl","funds","accounting","attendance","settings",
+];
 
 const MODULE_LABELS = {
-  leads:      "All Leads",
-  enquiries:  "Enquiries",
-  attendance: "Attendance & Salary",
-  expenses:   "Expense Tracker",
-  invoices:   "Invoices",
-  payments:   "Payment Tracker",
-  analytics:  "Analytics / BI",
-  documents:  "Documents",
-  funds:      "Reserve Funds",
-  settings:   "Settings",
+  "dashboard":       "Dashboard",
+  "todays-plan":     "Today's Plan",
+  "pipeline":        "Pipeline",
+  "all-leads":       "All Leads",
+  "enquiries":       "Enquiries",
+  "calendar":        "Calendar",
+  "documents":       "Documents",
+  "analytics":       "Analytics / BI",
+  "leaderboard":     "Leaderboard",
+  "branch-reports":  "Branch Reports",
+  "payment-tracker": "Payment Tracker",
+  "expense-tracker": "Expense Tracker",
+  "pnl":             "P&L Report",
+  "funds":           "Reserve Funds",
+  "accounting":      "Accounting",
+  "attendance":      "Attendance & Salary",
+  "settings":        "Settings",
 };
 
 /* Permission helpers — encode as "module:level" strings in modules[] array */

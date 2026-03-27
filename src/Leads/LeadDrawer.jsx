@@ -376,6 +376,22 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
     }
   };
 
+  const saveBant = async (bantData) => {
+    const token = localStorage.getItem("nnc_token");
+    const res = await fetch(`${apiBase}/api/leads/${leadId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ bantDetails: bantData }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to update BANT");
+    setLead(json.data);
+    if (typeof onLeadUpdated === "function") onLeadUpdated(json.data);
+  };
+
   const addToTodayPlan = async () => {
     try {
       if (!lead?._id) {
@@ -674,7 +690,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
             {!loading && !err && lead ? (
               <>
                 {activeTab === "Profile" && <ProfileTab lead={lead} />}
-                {activeTab === "BANT" && <BantTab lead={lead} />}
+                {activeTab === "BANT" && <BantTab lead={lead} onBantSave={saveBant} />}
                 {activeTab === "Follow-up" && (
                   <FollowupTab
                     lead={lead}
@@ -1068,51 +1084,92 @@ function ProfileTab({ lead }) {
   );
 }
 
-function BantTab({ lead }) {
+function BantTab({ lead, onBantSave }) {
   const raw = lead.bantDetails || {};
 
   const readText = (v) => {
     try {
-      if (v == null) return "—";
-      if (typeof v === "object") return v.text || "—";
-      return String(v) || "—";
-    } catch {
-      return "—";
-    }
+      if (v == null) return "";
+      if (typeof v === "object") return v.text || "";
+      return String(v);
+    } catch { return ""; }
   };
 
-  const score =
-    typeof raw.score === "number"
-      ? raw.score
-      : String(raw.score || "").includes("/")
-      ? Number(String(raw.score).split("/")[0]) || 0
-      : Number(raw.score || 0);
+  const [editing, setEditing] = React.useState(false);
+  const [saving,  setSaving]  = React.useState(false);
+  const [form, setForm] = React.useState({
+    budgetMin:     raw.budgetMin     || "",
+    budgetMax:     raw.budgetMax     || "",
+    authorityName: readText(raw.authorityName),
+    authorityRole: readText(raw.authorityRole),
+    need:          readText(raw.need),
+    timeline:      readText(raw.timeline),
+  });
+
+  /* Sync if lead prop changes (e.g. after save) */
+  React.useEffect(() => {
+    const r = lead.bantDetails || {};
+    setForm({
+      budgetMin:     r.budgetMin     || "",
+      budgetMax:     r.budgetMax     || "",
+      authorityName: readText(r.authorityName),
+      authorityRole: readText(r.authorityRole),
+      need:          readText(r.need),
+      timeline:      readText(r.timeline),
+    });
+  }, [lead.bantDetails]);
+
+  const score = [
+    form.budgetMin || form.budgetMax,
+    form.authorityName,
+    form.need,
+    form.timeline,
+  ].filter(Boolean).length;
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await onBantSave({
+        budgetMin:     Number(form.budgetMin) || 0,
+        budgetMax:     Number(form.budgetMax) || 0,
+        authorityName: form.authorityName,
+        authorityRole: form.authorityRole,
+        need:          form.need,
+        timeline:      form.timeline,
+        score,
+      });
+      setEditing(false);
+      toast.success("BANT details saved");
+    } catch (e) {
+      toast.error(e.message || "Failed to save BANT");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const bantItems = [
     {
       title: "B — Budget",
-      value:
-        raw.budgetMin || raw.budgetMax
-          ? `₹${raw.budgetMin || 0} – ₹${raw.budgetMax || 0}`
-          : "—",
+      value: form.budgetMin || form.budgetMax
+        ? `₹${Number(form.budgetMin || 0).toLocaleString("en-IN")} – ₹${Number(form.budgetMax || 0).toLocaleString("en-IN")}`
+        : "",
       footer: "Budget range captured",
     },
     {
       title: "A — Authority",
-      value:
-        readText(raw.authorityName) !== "—"
-          ? `${readText(raw.authorityName)} (${readText(raw.authorityRole)})`
-          : "—",
+      value: form.authorityName
+        ? `${form.authorityName}${form.authorityRole ? ` (${form.authorityRole})` : ""}`
+        : "",
       footer: "Decision authority noted",
     },
     {
       title: "N — Need",
-      value: readText(raw.need),
+      value: form.need,
       footer: "Business need identified",
     },
     {
       title: "T — Timeline",
-      value: readText(raw.timeline),
+      value: form.timeline,
       footer: "Timeline available",
     },
   ];
@@ -1132,15 +1189,78 @@ function BantTab({ lead }) {
         </div>
       </div>
 
-      <div className="bantGrid">
-        {bantItems.map((item, idx) => (
-          <div key={idx} className="bantCard">
-            <div className="bantHead">{item.title}</div>
-            <div className="bantText">{item.value}</div>
-            <div className="bantOk">{item.footer}</div>
+      {editing ? (
+        <div className="ldCard">
+          <div className="ldTopRow">
+            <div className="ldSectionTitle">EDIT BANT DETAILS</div>
+            <button className="ldBtn" type="button" onClick={() => setEditing(false)}>Cancel</button>
           </div>
-        ))}
-      </div>
+          <div className="bantEditGrid">
+            <div className="bantEditField">
+              <label>Budget Min (₹)</label>
+              <input type="number" placeholder="e.g. 50000"
+                value={form.budgetMin}
+                onChange={e => setForm(p => ({ ...p, budgetMin: e.target.value }))} />
+            </div>
+            <div className="bantEditField">
+              <label>Budget Max (₹)</label>
+              <input type="number" placeholder="e.g. 150000"
+                value={form.budgetMax}
+                onChange={e => setForm(p => ({ ...p, budgetMax: e.target.value }))} />
+            </div>
+            <div className="bantEditField">
+              <label>Decision Maker Name</label>
+              <input type="text" placeholder="e.g. Harish Kashyap"
+                value={form.authorityName}
+                onChange={e => setForm(p => ({ ...p, authorityName: e.target.value }))} />
+            </div>
+            <div className="bantEditField">
+              <label>Decision Maker Role</label>
+              <input type="text" placeholder="e.g. CEO, Owner"
+                value={form.authorityRole}
+                onChange={e => setForm(p => ({ ...p, authorityRole: e.target.value }))} />
+            </div>
+            <div className="bantEditField bantEditFull">
+              <label>Business Need</label>
+              <textarea rows={3} placeholder="What does the client need?"
+                value={form.need}
+                onChange={e => setForm(p => ({ ...p, need: e.target.value }))} />
+            </div>
+            <div className="bantEditField bantEditFull">
+              <label>Timeline / Urgency</label>
+              <input type="text" placeholder="e.g. Within 1 month, ASAP, Q2 2025"
+                value={form.timeline}
+                onChange={e => setForm(p => ({ ...p, timeline: e.target.value }))} />
+            </div>
+          </div>
+          <div style={{ marginTop: 14 }}>
+            <button className="ldBtn primary" type="button" disabled={saving} onClick={handleSave}>
+              {saving ? "Saving…" : "Save BANT"}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="ldCard">
+          <div className="ldTopRow">
+            <div className="ldSectionTitle">BANT DETAILS</div>
+            <button className="ldBtn" type="button" onClick={() => setEditing(true)}>
+              {score === 0 ? "+ Fill BANT" : "Edit BANT"}
+            </button>
+          </div>
+          <div className="bantGrid">
+            {bantItems.map((item, idx) => (
+              <div key={idx} className={`bantCard ${item.value ? "bantFilled" : ""}`}>
+                <div className="bantHead">{item.title}</div>
+                <div className="bantText">{item.value || "—"}</div>
+                {item.value
+                  ? <div className="bantOk">{item.footer}</div>
+                  : <div className="bantNotSet">Not captured yet</div>
+                }
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

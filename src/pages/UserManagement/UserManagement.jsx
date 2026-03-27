@@ -4,7 +4,8 @@ import {
   User, CheckCircle2, XCircle, Search, Lock, Briefcase,
   LayoutDashboard, KanbanSquare, CalendarDays, FileText,
   BarChart3, Trophy, Building2, CreditCard, Settings,
-  ClipboardList, Users,
+  ClipboardList, Users, MessageSquare, Wallet, TrendingUp,
+  BookOpen, UserCheck, PiggyBank,
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import { toast } from "../../utils/toast";
@@ -13,17 +14,23 @@ import "./UserManagement.css";
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
 
 const ALL_MODULES = [
-  { key: "dashboard",       label: "Dashboard",       section: "Overview" },
-  { key: "todays-plan",     label: "Today's Plan",    section: "Overview" },
-  { key: "pipeline",        label: "Pipeline",        section: "Sales" },
-  { key: "all-leads",       label: "All Leads",       section: "Sales" },
-  { key: "calendar",        label: "Calendar",        section: "Sales" },
-  { key: "documents",       label: "Documents",       section: "Documents" },
-  { key: "analytics",       label: "Analytics",       section: "Analytics" },
-  { key: "leaderboard",     label: "Leaderboard",     section: "Analytics" },
-  { key: "branch-reports",  label: "Branch Reports",  section: "Analytics" },
-  { key: "payment-tracker", label: "Payment Tracker", section: "Analytics" },
-  { key: "settings",        label: "Settings",        section: "Analytics" },
+  { key: "dashboard",       label: "Dashboard",          section: "Overview" },
+  { key: "todays-plan",     label: "Today's Plan",       section: "Overview" },
+  { key: "pipeline",        label: "Pipeline",           section: "Sales" },
+  { key: "all-leads",       label: "All Leads",          section: "Sales" },
+  { key: "enquiries",       label: "Enquiries",          section: "Sales" },
+  { key: "calendar",        label: "Calendar",           section: "Sales" },
+  { key: "documents",       label: "Documents",          section: "Documents" },
+  { key: "analytics",       label: "Analytics",          section: "Analytics" },
+  { key: "leaderboard",     label: "Leaderboard",        section: "Analytics" },
+  { key: "branch-reports",  label: "Branch Reports",     section: "Analytics" },
+  { key: "payment-tracker", label: "Payment Tracker",    section: "Analytics" },
+  { key: "expense-tracker", label: "Expense Tracker",    section: "Analytics" },
+  { key: "pnl",             label: "P&L Report",         section: "Analytics" },
+  { key: "funds",           label: "Reserve Funds",      section: "Analytics" },
+  { key: "accounting",      label: "Accounting",         section: "Analytics" },
+  { key: "attendance",      label: "Attendance & Salary",section: "HR" },
+  { key: "settings",        label: "Settings",           section: "Settings" },
 ];
 
 const MODULE_ICONS = {
@@ -31,12 +38,18 @@ const MODULE_ICONS = {
   "todays-plan":     ClipboardList,
   "pipeline":        KanbanSquare,
   "all-leads":       Users,
+  "enquiries":       MessageSquare,
   "calendar":        CalendarDays,
   "documents":       FileText,
   "analytics":       BarChart3,
   "leaderboard":     Trophy,
   "branch-reports":  Building2,
   "payment-tracker": CreditCard,
+  "expense-tracker": Wallet,
+  "pnl":             TrendingUp,
+  "funds":           PiggyBank,
+  "accounting":      BookOpen,
+  "attendance":      UserCheck,
   "settings":        Settings,
 };
 

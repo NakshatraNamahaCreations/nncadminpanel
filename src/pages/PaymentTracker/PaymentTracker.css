@@ -169,4 +169,8 @@
 }
 
 @media (max-width:1200px) { .ptSummaryRow { grid-template-columns:repeat(3,1fr); } }
-@media (max-width:768px)  { .ptSummaryRow { grid-template-columns:repeat(2,1fr); } .ptBody { padding:12px; } }
+@media (max-width:768px)  {
+  .ptSummaryRow { grid-template-columns:repeat(2,1fr); }
+  .ptBody       { padding:12px 12px 68px; }
+  .ptMain       { overflow-x: hidden; }
+}

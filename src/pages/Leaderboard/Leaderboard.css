@@ -109,3 +109,10 @@
 .lb-rate-badge.high { background:#f0fdf4; color:#16a34a; }
 .lb-rate-badge.mid  { background:#fffbeb; color:#d97706; }
 .lb-rate-badge.low  { background:#fef2f2; color:#dc2626; }
+
+@media (max-width:768px) {
+  .lb-main        { padding:12px 12px 68px; }
+  .lb-header      { flex-direction:column; align-items:flex-start; }
+  .lb-search-wrap { min-width: unset; width:100%; }
+  .lb-table-wrap  { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}

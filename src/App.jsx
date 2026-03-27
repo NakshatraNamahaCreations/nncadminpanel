@@ -7,7 +7,7 @@ import Documents from "./Documents/Documents";
 import AllLeads from "./Leads/AllLeads";
 import PipelinePage from "./pages/PipelinePage";
 import CalendarPage from "./pages/CalendarPage";
-import Analytics from "./pages/Analytics/Analytics";
+import Analytics from "./pages/Analytics/BiReports";
 import Leaderboard from "./pages/Leaderboard/Leaderboard";
 import BranchReports from "./pages/BranchReports/BranchReports";
 import PaymentTracker from "./pages/PaymentTracker/PaymentTracker";
@@ -42,7 +42,7 @@ function ProtectedRoute({ children }) {
 
 function PublicRoute({ children }) {
   try {
-    return isAuthed() ? <Navigate to="/dashboard" replace /> : children;
+    return isAuthed() ? <Navigate to="/todays-plan" replace /> : children;
   } catch (error) {
     console.error("PublicRoute error:", error);
     return children;
@@ -225,7 +225,7 @@ export default function App() {
 
       <Route
         path="*"
-        element={<Navigate to={isAuthed() ? "/dashboard" : "/"} replace />}
+        element={<Navigate to={isAuthed() ? "/todays-plan" : "/"} replace />}
       />
     </Routes>
   );

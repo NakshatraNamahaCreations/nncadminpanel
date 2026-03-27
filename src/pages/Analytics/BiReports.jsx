@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import { ShimmerKpiGrid, ShimmerTable } from "../../components/ui/Shimmer";
-import "./Analytics.css";
+import "./BiReports.css";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 function auth() { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
@@ -200,9 +200,8 @@ function ConfigModal({ cfg, onClose, onSave }) {
         </div>
         <div className="bi-modal-body">
           <div className="bi-cfg-section">
-            <div className="bi-cfg-section-title">Cost Structure</div>
-            {field("cogsPercent",    "Direct Cost / COGS (% of revenue)", 0, 100, 1, "%")}
-            {field("taxRatePercent", "Income Tax Rate (%)",                0,  60, 1, "%")}
+            <div className="bi-cfg-section-title">Tax Settings</div>
+            {field("taxRatePercent", "Income Tax Rate (%)", 0, 60, 1, "%")}
           </div>
           <div className="bi-cfg-section">
             <div className="bi-cfg-section-title">Reserve Fund Targets</div>
@@ -303,13 +302,12 @@ export default function Analytics() {
     .map(([k, v], i) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v,
       fill: [C.blue, C.purple, C.amber, C.green, C.red, C.teal][i % 6] }));
 
-  // ── Order profit waterfall data ───────────────────────────────────────────
+  // ── Project profit waterfall data ────────────────────────────────────────
   const waterfallData = [
-    { name: "Deal Revenue",   value: OB.avgDealRevenue, fill: C.green },
-    { name: "Direct Costs",   value: -OB.directCost,   fill: C.red },
-    { name: "Overhead Alloc", value: -OB.fixedCostAllocation, fill: C.amber },
-    { name: "Net Profit/Deal",value: OB.netProfitPerDeal, fill: OB.netProfitPerDeal >= 0 ? C.blue : C.red },
-  ];
+    { name: "Project Revenue",  value: OB.avgDealRevenue,       fill: C.green },
+    { name: "Service Costs",    value: -OB.fixedCostAllocation, fill: C.amber },
+    { name: "Net Profit/Project", value: OB.netProfitPerDeal,   fill: OB.netProfitPerDeal >= 0 ? C.blue : C.red },
+  ].filter(d => d.value !== 0);
 
   // ── Reserve allocation from each deal ─────────────────────────────────────
   const dealAllocData = [
@@ -361,9 +359,9 @@ export default function Analytics() {
           </div>
           <div className="bi-exec-sep"/>
           <div className="bi-exec-pill">
-            <span className="bi-exec-label">Gross Profit</span>
-            <span className="bi-exec-val" style={{color: IS.grossProfit >= 0 ? C.green : C.red}}>{fmtINR(IS.grossProfit)}</span>
-            <span className="bi-exec-badge">{IS.grossMarginPct}%</span>
+            <span className="bi-exec-label">Operating Profit</span>
+            <span className="bi-exec-val" style={{color: IS.ebitda >= 0 ? C.green : C.red}}>{fmtINR(IS.ebitda)}</span>
+            <span className="bi-exec-badge">{IS.netMarginPct}%</span>
           </div>
           <div className="bi-exec-sep"/>
           <div className="bi-exec-pill">
@@ -419,18 +417,23 @@ export default function Analytics() {
                     <span>This Month</span>
                     <span>YTD</span>
                   </div>
-                  <ISRow label="Revenue (Advances Collected)" amount={IS.revenue}       ytd={ytd.revenue}       bold />
-                  <ISRow label="Cost of Goods Sold (COGS)"    amount={-IS.cogs}         ytd={-ytd.cogs}         indent={1} red />
-                  <ISRow label="Gross Profit"                  amount={IS.grossProfit}   ytd={ytd.grossProfit}   bold green borderTop />
-                  <div className="bi-is-sub">Gross Margin: <strong>{IS.grossMarginPct}%</strong></div>
+                  <ISRow label="Revenue (Client Advances)"      amount={IS.revenue}       ytd={ytd.revenue}       bold />
                   <div className="bi-is-spacer"/>
-                  <ISRow label="Operating Expenses"            amount={-IS.opex}         ytd={-ytd.opex}         bold />
-                  {Object.entries(IS.expByCat).filter(([,v])=>v>0).map(([k,v]) => (
-                    <ISRow key={k}
-                      label={k.charAt(0).toUpperCase()+k.slice(1)}
-                      amount={-v} ytd={0} indent={1} />
-                  ))}
-                  <ISRow label="EBITDA"                        amount={IS.ebitda}        ytd={ytd.ebitda}        bold borderTop green={IS.ebitda>=0} red={IS.ebitda<0} />
+                  <ISRow label="Service Operating Costs"        amount={-IS.opex}         ytd={-ytd.opex}         bold />
+                  {Object.entries(IS.expByCat).filter(([,v])=>v>0).map(([k,v]) => {
+                    const CAT_LABELS = {
+                      salary:"Employee Salaries", rent:"Office Rent",
+                      electricity:"Electricity", internet:"Internet / Software",
+                      maintenance:"Maintenance", other:"Other Expenses",
+                    };
+                    return (
+                      <ISRow key={k}
+                        label={CAT_LABELS[k] || (k.charAt(0).toUpperCase()+k.slice(1))}
+                        amount={-v} ytd={0} indent={1} />
+                    );
+                  })}
+                  <ISRow label="Operating Profit (EBITDA)"      amount={IS.ebitda}        ytd={ytd.ebitda}        bold borderTop green={IS.ebitda>=0} red={IS.ebitda<0} />
+                  <div className="bi-is-sub">Operating Margin: <strong>{IS.netMarginPct}%</strong></div>
                   <div className="bi-is-spacer"/>
                   <ISRow label={`Tax Provision (${data.config.taxRatePercent}%)`}
                                                                amount={-IS.taxProvision} ytd={-ytd.taxProvision} indent={1} />
@@ -505,16 +508,16 @@ export default function Analytics() {
             <div className="bi-tab-content">
               {/* Top KPIs */}
               <div className="bi-kpi-grid4">
-                <KPI label="Avg Deal Revenue"  value={fmtINR(UE.avgDealRev)}        color="blue"   icon={DollarSign} sub="Per closed deal (YTD avg)"/>
-                <KPI label="Net Profit / Deal" value={fmtINR(OB.netProfitPerDeal)}  color={OB.netProfitPerDeal>=0?"green":"red"} icon={TrendingUp} sub="After direct + fixed costs"/>
-                <KPI label="Contribution Margin" value={`${UE.contributionMargin}%`} color={UE.contributionMargin>=40?"green":UE.contributionMargin>=20?"amber":"red"} icon={Zap} sub="Revenue minus direct cost %"/>
-                <KPI label="Break-Even Deals"  value={UE.breakEvenDeals}           color="amber"  icon={Target} sub={`Need ${UE.breakEvenDeals} deals/month to cover opex`}/>
+                <KPI label="Avg Project Revenue"    value={fmtINR(UE.avgDealRev)}        color="blue"   icon={DollarSign} sub="Per closed project (YTD avg)"/>
+                <KPI label="Net Profit / Project"   value={fmtINR(OB.netProfitPerDeal)}  color={OB.netProfitPerDeal>=0?"green":"red"} icon={TrendingUp} sub="After all service costs"/>
+                <KPI label="Operating Margin"       value={`${IS.netMarginPct}%`}         color={IS.netMarginPct>=20?"green":IS.netMarginPct>=5?"amber":"red"} icon={Zap} sub="Net profit as % of revenue"/>
+                <KPI label="Break-Even Projects"    value={UE.breakEvenDeals}             color="amber"  icon={Target} sub={`Need ${UE.breakEvenDeals} projects/month to cover costs`}/>
               </div>
 
               <div className="bi-row2" style={{marginTop:16}}>
                 {/* Waterfall: profit per deal */}
                 <div className="bi-card">
-                  <div className="bi-card-h"><span>Profit Breakdown per Average Deal</span></div>
+                  <div className="bi-card-h"><span>Profit Breakdown per Average Project</span></div>
                   <ResponsiveContainer width="100%" height={260}>
                     <BarChart data={waterfallData} barCategoryGap="25%">
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
@@ -528,7 +531,7 @@ export default function Analytics() {
                     </BarChart>
                   </ResponsiveContainer>
                   <div className="bi-ue-note">
-                    Based on {UE.closedCountYTD} deals closed YTD · Overhead method: per-deal split of ₹{(UE.avgMonthlyOpex/1000).toFixed(1)}K/month
+                    Based on {UE.closedCountYTD} projects closed YTD · Service cost split: ₹{(UE.avgMonthlyOpex/1000).toFixed(1)}K/month ÷ closed projects
                   </div>
                 </div>
 
@@ -537,23 +540,15 @@ export default function Analytics() {
                   <div className="bi-card-h"><span>Break-Even Analysis</span></div>
                   <div className="bi-be-grid">
                     <div className="bi-be-row">
-                      <span>Fixed Monthly Costs (OpEx)</span>
-                      <strong>{fmtFull(UE.avgMonthlyOpex)}</strong>
+                      <span>Total Monthly Service Costs (Salary + Rent + Other)</span>
+                      <strong style={{color:C.red}}>{fmtFull(UE.avgMonthlyOpex)}</strong>
                     </div>
                     <div className="bi-be-row">
-                      <span>Avg Deal Revenue</span>
+                      <span>Avg Project Revenue</span>
                       <strong>{fmtFull(UE.avgDealRev)}</strong>
                     </div>
-                    <div className="bi-be-row">
-                      <span>Direct Cost per Deal ({data.config.cogsPercent}%)</span>
-                      <strong style={{color:C.red}}>{fmtFull(UE.directCostPerDeal)}</strong>
-                    </div>
-                    <div className="bi-be-row">
-                      <span>Contribution per Deal</span>
-                      <strong style={{color:C.green}}>{fmtFull(UE.avgDealRev - UE.directCostPerDeal)}</strong>
-                    </div>
                     <div className="bi-be-row bi-be-row-bold">
-                      <span>Break-Even Deals / Month</span>
+                      <span>Break-Even Projects / Month</span>
                       <strong style={{color:C.amber}}>{UE.breakEvenDeals}</strong>
                     </div>
                     <div className="bi-be-row bi-be-row-bold">
@@ -562,7 +557,7 @@ export default function Analytics() {
                     </div>
                     <div className="bi-be-divider"/>
                     <div className="bi-be-row">
-                      <span>Deals Closed This Month</span>
+                      <span>Projects Closed This Month</span>
                       <strong style={{color: UE.closedCountMonth >= UE.breakEvenDeals ? C.green : C.red}}>
                         {UE.closedCountMonth} / {UE.breakEvenDeals} needed
                       </strong>
@@ -570,7 +565,7 @@ export default function Analytics() {
                     <div className="bi-be-row">
                       <span>Profitability Status</span>
                       <strong style={{color: UE.closedCountMonth >= UE.breakEvenDeals ? C.green : C.red}}>
-                        {UE.closedCountMonth >= UE.breakEvenDeals ? "Profitable" : `${UE.breakEvenDeals - UE.closedCountMonth} more deals needed`}
+                        {UE.closedCountMonth >= UE.breakEvenDeals ? "Profitable this month" : `${UE.breakEvenDeals - UE.closedCountMonth} more projects needed`}
                       </strong>
                     </div>
                   </div>
@@ -607,7 +602,7 @@ export default function Analytics() {
               {/* Deal size distribution */}
               {dealBuckets.length > 0 && (
                 <div className="bi-card" style={{marginTop:16}}>
-                  <div className="bi-card-h"><span>Deal Size Distribution (last 12 months)</span></div>
+                  <div className="bi-card-h"><span>Project Value Distribution (last 12 months)</span></div>
                   <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={dealBuckets} barCategoryGap="25%">
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>

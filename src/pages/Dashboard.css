@@ -578,7 +578,7 @@
   .db-so-target-row { grid-template-columns:1fr; }
 }
 @media (max-width:768px) {
-  .db-body      { padding:10px; }
+  .db-body      { padding:10px 10px 68px; }
   .db-rev-grid  { grid-template-columns:1fr 1fr; }
   .db-proj-strip{ grid-template-columns:repeat(2,1fr); }
   .db-hero      { padding:14px 16px; }
@@ -587,4 +587,5 @@
   .db-watch-days,.db-watch-status { display:none; }
   .db-so-cards  { grid-template-columns:1fr 1fr; }
   .db-so-header { flex-direction:column; align-items:flex-start; }
+  .db-main      { overflow-x: hidden; }
 }

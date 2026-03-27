@@ -531,6 +531,7 @@
   .umSearch { min-width:unset; flex:1; }
   .umStatsRow { grid-template-columns:1fr 1fr; }
   .umStatCard { padding:10px 12px; }
-  .umContentArea { flex-direction:column; padding:12px; }
+  .umContentArea { flex-direction:column; padding:12px 12px 68px; }
   .umFp { width:100%; min-width:unset; position:static; max-height:none; }
+  .umMain { overflow-x: hidden; }
 }

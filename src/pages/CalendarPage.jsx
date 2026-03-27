@@ -73,6 +73,7 @@ export default function CalendarPage() {
   const [events,        setEvents]        = useState({});   // { day: [event,...] }
   const [loading,       setLoading]       = useState(false);
   const [selectedDay,   setSelectedDay]   = useState(null);
+  const [tabCounts,     setTabCounts]     = useState({});
 
   /* Add-event modal */
   const [addOpen,      setAddOpen]      = useState(false);
@@ -117,6 +118,33 @@ export default function CalendarPage() {
   }, [activeTab, currentYear, currentMonth]);
 
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
+
+  /* ── Fetch counts for all tabs (for badges) ─────────────────── */
+  const fetchAllCounts = useCallback(async () => {
+    try {
+      const results = await Promise.all(
+        TABS.map(tab =>
+          fetch(
+            `${API_BASE}/api/calendar-events?year=${currentYear}&month=${currentMonth + 1}&type=${tab.key}`,
+            { headers: authHeader() }
+          )
+            .then(r => r.json())
+            .then(j => ({
+              key:   tab.key,
+              count: j.success
+                ? Object.values(j.data || {}).reduce((s, arr) => s + arr.length, 0)
+                : 0,
+            }))
+            .catch(() => ({ key: tab.key, count: 0 }))
+        )
+      );
+      const counts = {};
+      results.forEach(r => { counts[r.key] = r.count; });
+      setTabCounts(counts);
+    } catch {}
+  }, [currentYear, currentMonth]);
+
+  useEffect(() => { fetchAllCounts(); }, [fetchAllCounts]);
 
   /* ── Lead search (debounced) ────────────────────────────────── */
   useEffect(() => {
@@ -190,7 +218,7 @@ export default function CalendarPage() {
       setForm(EMPTY_FORM);
       setLeadSearch(""); setLeadResults([]);
       setEnqSearch("");  setEnqResults([]);
-      await fetchEvents();
+      await Promise.all([fetchEvents(), fetchAllCounts()]);
     } catch (e) {
       toast.error(e.message || "Failed to schedule event");
     } finally {
@@ -207,7 +235,7 @@ export default function CalendarPage() {
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message || "Failed to delete");
       toast.success("Event removed");
-      await fetchEvents();
+      await Promise.all([fetchEvents(), fetchAllCounts()]);
     } catch (e) {
       toast.error(e.message || "Failed to delete event");
     }
@@ -269,10 +297,8 @@ export default function CalendarPage() {
         {/* ── Tabs ── */}
         <div className="calTabs">
           {TABS.map(tab => {
-            const Icon = tab.icon;
-            const count = Object.values(
-              activeTab === tab.key ? events : {}
-            ).reduce((s, arr) => s + arr.length, 0);
+            const Icon  = tab.icon;
+            const count = tabCounts[tab.key] ?? (activeTab === tab.key ? totalEvents : 0);
             return (
               <button
                 key={tab.key}
@@ -282,8 +308,8 @@ export default function CalendarPage() {
               >
                 <Icon size={15}/>
                 <span>{tab.label}</span>
-                {activeTab === tab.key && totalEvents > 0 && (
-                  <span className="calTabBadge" style={{ background: tab.color }}>{totalEvents}</span>
+                {count > 0 && (
+                  <span className="calTabBadge" style={{ background: tab.color }}>{count}</span>
                 )}
               </button>
             );

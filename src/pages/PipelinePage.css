@@ -260,6 +260,10 @@
   .plRowRep, .plRowAgo { display: none; }
 }
 
+@media (max-width: 768px) {
+  .plMain { padding-bottom: 68px; overflow-x: hidden; }
+}
+
 @media (max-width: 600px) {
   .plRow {
     grid-template-columns: 36px 1fr 80px;

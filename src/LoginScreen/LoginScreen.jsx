@@ -139,7 +139,7 @@ const [password, setPassword] = useState("");
       localStorage.removeItem("nnc_modules");
     }
 
-    navigate("/documents", { replace: true });
+    navigate("/todays-plan", { replace: true });
   } catch (err) {
     console.error("Login error:", err);
     setErrorMessage(
