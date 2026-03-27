@@ -1,0 +1,199 @@
+/* ═══════════════════════════════════════════
+   SHIMMER / SKELETON LOADER
+═══════════════════════════════════════════ */
+@keyframes shimmerMove {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.shim {
+  background: linear-gradient(
+    90deg,
+    #f1f5f9 0%,
+    #e4ecf7 45%,
+    #f1f5f9 90%
+  );
+  background-size: 600px 100%;
+  animation: shimmerMove 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── KPI / Stat card ──────────────────────── */
+.sh-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 2px 8px rgba(15,23,42,.04);
+}
+
+.sh-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 12px;
+}
+
+.sh-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Generic line ─────────────────────────── */
+.sh-line {
+  height: 12px;
+  border-radius: 6px;
+  width: 100%;
+}
+.sh-line.w30  { width: 30%; }
+.sh-line.w45  { width: 45%; }
+.sh-line.w60  { width: 60%; }
+.sh-line.w75  { width: 75%; }
+.sh-line.h16  { height: 16px; }
+.sh-line.h22  { height: 22px; }
+.sh-line.h28  { height: 28px; }
+
+/* ── KPI grid ─────────────────────────────── */
+.sh-kpi-grid {
+  display: grid;
+  gap: 14px;
+}
+.sh-kpi-grid.cols2 { grid-template-columns: repeat(2, 1fr); }
+.sh-kpi-grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+.sh-kpi-grid.cols4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+  .sh-kpi-grid.cols4,
+  .sh-kpi-grid.cols3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .sh-kpi-grid.cols2,
+  .sh-kpi-grid.cols4,
+  .sh-kpi-grid.cols3 { grid-template-columns: 1fr; }
+}
+
+/* ── Table row ────────────────────────────── */
+.sh-table-wrap {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.sh-table-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f8fafc;
+}
+.sh-table-row:last-child { border-bottom: none; }
+
+.sh-cell {
+  height: 12px;
+  border-radius: 6px;
+  flex: 1;
+}
+.sh-cell.narrow { flex: 0 0 60px; }
+.sh-cell.medium { flex: 0 0 100px; }
+.sh-cell.wide   { flex: 0 0 140px; }
+.sh-cell.avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  flex: none;
+}
+
+/* ── Lead card ────────────────────────────── */
+.sh-lead {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #f1f5f9;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(15,23,42,.04);
+}
+
+.sh-lead-avatar {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 12px;
+}
+
+.sh-lead-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sh-lead-badges {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.sh-badge {
+  width: 56px;
+  height: 22px;
+  border-radius: 999px;
+}
+
+/* ── Page loader overlay ──────────────────── */
+.pg-loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 80px 24px;
+  width: 100%;
+}
+
+.pg-loader-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 4px solid #e2e8f0;
+  border-top-color: #2563eb;
+  animation: pgSpin .8s linear infinite;
+}
+
+@keyframes pgSpin { to { transform: rotate(360deg); } }
+
+.pg-loader-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: .3px;
+}
+
+/* ── Button spinner ───────────────────────── */
+.btn-spinner {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  animation: pgSpin .65s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.btn-spinner.dark {
+  border-color: rgba(15,23,42,.15);
+  border-top-color: #0f172a;
+}
+.btn-spinner.blue {
+  border-color: rgba(37,99,235,.2);
+  border-top-color: #2563eb;
+}

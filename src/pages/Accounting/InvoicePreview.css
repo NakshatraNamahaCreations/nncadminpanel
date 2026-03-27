@@ -1,0 +1,344 @@
+/* ═══════════════════════════════════════════════
+   PAGE WRAPPER (screen only)
+═══════════════════════════════════════════════ */
+.ip-page { background: #e8edf4; min-height: 100vh; padding: 0; }
+
+/* ── Action toolbar ── */
+.ip-actions {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #0f172a, #1e3a5f);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  position: sticky; top: 0; z-index: 10;
+}
+.ip-act-left  { display: flex; align-items: center; gap: 12px; }
+.ip-act-right { display: flex; align-items: center; gap: 10px; }
+
+.ip-back-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 15px; border-radius: 9px;
+  border: 1.5px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08);
+  font-size: 12px; font-weight: 700; color: rgba(255,255,255,.85);
+  cursor: pointer; transition: background .15s;
+}
+.ip-back-btn:hover { background: rgba(255,255,255,.18); }
+
+.ip-toolbar-title { font-size: 13px; font-weight: 700; color: rgba(255,255,255,.6); }
+
+.ip-inv-type-badge {
+  padding: 5px 12px; border-radius: 7px;
+  font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: .8px;
+}
+.ip-inv-type-badge.prf { background: #ede9fe; color: #6d28d9; }
+.ip-inv-type-badge.tax { background: #d1fae5; color: #065f46; }
+
+.ip-dl-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 9px;
+  border: 1.5px solid rgba(255,255,255,.2); background: rgba(255,255,255,.1);
+  font-size: 12px; font-weight: 700; color: rgba(255,255,255,.85);
+  cursor: pointer; transition: background .15s;
+}
+.ip-dl-btn:hover { background: rgba(255,255,255,.2); }
+
+.ip-print-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 9px; border: none;
+  background: linear-gradient(135deg, #065f46, #059669);
+  font-size: 13px; font-weight: 800; color: #fff; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(5,150,105,.4); transition: box-shadow .15s, opacity .15s;
+}
+.ip-print-btn:hover { opacity: .9; box-shadow: 0 6px 18px rgba(5,150,105,.5); }
+
+/* scroll area */
+.ip-paper-scroll { padding: 24px 24px 48px; }
+
+/* ═══════════════════════════════════════════════
+   INVOICE PAPER  — compact A4
+═══════════════════════════════════════════════ */
+.ip-paper {
+  max-width: 840px; margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 8px 48px rgba(0,0,0,.16), 0 2px 8px rgba(0,0,0,.08);
+  border-radius: 4px; overflow: hidden;
+  font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 11px; color: #1a1a2e; line-height: 1.4;
+}
+
+/* ── Top accent bar ── */
+.ip-accent-bar {
+  height: 5px;
+  background: linear-gradient(90deg, #064e3b 0%, #059669 40%, #1d4ed8 100%);
+}
+
+/* ── Header ── */
+.ip-header {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 16px 28px 12px;
+  background: #fff;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+
+.ip-company-col { display: flex; flex-direction: column; }
+.ip-logo        { height: 26px; width: auto; object-fit: contain; margin-bottom: 6px; }
+.ip-company-name {
+  font-size: 13px; font-weight: 900; color: #0f172a; letter-spacing: -.2px; margin-bottom: 2px;
+}
+.ip-company-line { font-size: 10px; color: #475569; line-height: 1.65; }
+.ip-company-line strong { color: #0f172a; }
+
+.ip-meta-col    { text-align: right; flex-shrink: 0; padding-top: 2px; }
+
+.ip-inv-title {
+  display: inline-block;
+  font-size: 20px; font-weight: 900; letter-spacing: .5px;
+  color: #0f172a; margin-bottom: 12px; padding: 4px 0;
+  border-bottom: 3px solid #059669;
+}
+.ip-inv-title.tax-color { border-bottom-color: #1d4ed8; }
+
+.ip-meta-tbl { border-collapse: collapse; margin-left: auto; }
+.ip-meta-tbl tr td { padding: 3px 0 3px 14px; font-size: 11px; vertical-align: middle; }
+.ip-meta-tbl tr td:first-child { color: #64748b; font-weight: 600; padding-left: 0; padding-right: 12px; white-space: nowrap; }
+.ip-meta-tbl tr td:last-child  { color: #0f172a; font-weight: 800; text-align: right; font-family: 'Courier New', monospace; }
+
+/* ── Bill To / Place of Supply ── */
+.ip-parties {
+  display: grid; grid-template-columns: 1fr 180px;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+.ip-bill-to    { padding: 12px 28px; border-right: 1px solid #f1f5f9; }
+.ip-supply-col { padding: 12px 20px; background: #fafbfc; }
+
+.ip-sec-label {
+  font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px;
+  color: #059669; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 5px;
+}
+.ip-sec-label::before {
+  content: ""; display: inline-block; width: 14px; height: 2px; background: #059669; border-radius: 1px;
+}
+
+.ip-client-name { font-size: 13px; font-weight: 900; color: #0f172a; margin-bottom: 2px; letter-spacing: -.2px; }
+.ip-client-biz  { font-size: 11px; font-weight: 700; color: #374151; margin-bottom: 1px; }
+.ip-client-line { font-size: 10px; color: #475569; line-height: 1.6; }
+.ip-client-line strong { color: #0f172a; }
+
+.ip-supply-state { font-size: 13px; font-weight: 800; color: #0f172a; }
+.ip-igst-note    { font-size: 9px; color: #7c3aed; margin-top: 4px; font-weight: 700; font-style: italic; }
+
+/* ── Items table ── */
+.ip-items-tbl  { width: 100%; border-collapse: collapse; }
+.ip-items-tbl thead { background: #0f172a; }
+.ip-items-tbl thead th {
+  padding: 8px 12px;
+  font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px;
+  color: rgba(255,255,255,.7);
+}
+.ip-th-num    { width: 32px; text-align: center; color: rgba(255,255,255,.5) !important; }
+.ip-th-center { text-align: center; }
+.ip-th-right  { text-align: right; }
+
+.ip-items-tbl tbody tr:nth-child(even) { background: #fafbfc; }
+.ip-items-tbl tbody tr:last-child td   { border-bottom: 1.5px solid #e2e8f0; }
+.ip-items-tbl td { padding: 7px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+.ip-td-center { text-align: center; color: #64748b; font-size: 10px; }
+.ip-td-right  { text-align: right; font-weight: 700; color: #1e293b; }
+.ip-td-desc   { font-weight: 600; color: #1e293b; font-size: 11.5px; }
+.ip-td-desc small { display: block; font-size: 9px; color: #94a3b8; font-weight: 500; margin-top: 1px; }
+
+/* ── Totals section ── */
+.ip-totals-wrap {
+  display: flex; justify-content: flex-end;
+  padding: 4px 28px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ip-totals-box { width: 290px; }
+
+.ip-tot-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 10px; font-size: 11px; color: #374151;
+  border-bottom: 1px solid #f8fafc;
+}
+.ip-tot-row span:first-child { color: #64748b; }
+.ip-tot-row:nth-child(odd)   { background: #fafbfc; }
+
+.ip-tot-row.grand {
+  background: linear-gradient(135deg, #0f172a, #1e3a5f) !important;
+  padding: 10px 12px; border-radius: 8px; margin-top: 5px;
+  border-bottom: none;
+}
+.ip-tot-row.grand span:first-child { color: rgba(255,255,255,.65); font-size: 10px; font-weight: 600; }
+.ip-tot-row.grand span:last-child  { color: #6ee7b7; font-size: 16px; font-weight: 900; letter-spacing: -.3px; }
+
+/* ── Amount in words ── */
+.ip-words {
+  margin: 0 28px 10px; padding: 8px 14px;
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border: 1px solid #a7f3d0; border-radius: 8px;
+  font-size: 10.5px; color: #065f46; font-weight: 600; line-height: 1.5;
+}
+.ip-words strong { font-weight: 900; color: #047857; }
+
+/* ── Bank + QR ── */
+.ip-bank-qr {
+  display: flex; align-items: stretch; gap: 0;
+  margin: 0 28px 12px;
+  border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+}
+.ip-bank {
+  flex: 1; padding: 10px 16px;
+  background: #fafbfc; border-right: 1px solid #e2e8f0;
+}
+.ip-bank .ip-sec-label { color: #1d4ed8; }
+.ip-bank .ip-sec-label::before { background: #1d4ed8; }
+.ip-bank-row {
+  display: flex; gap: 0; padding: 3px 0; font-size: 10.5px;
+  border-bottom: 1px solid #f1f5f9; align-items: baseline;
+}
+.ip-bank-row:last-child { border-bottom: none; }
+.ip-bank-row span:first-child {
+  min-width: 100px; color: #64748b; font-weight: 600; flex-shrink: 0;
+}
+.ip-bank-row span:last-child { color: #0f172a; font-weight: 700; }
+
+.ip-qr-col {
+  width: 140px; flex-shrink: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 6px;
+  padding: 12px 10px; background: #fff;
+}
+.ip-qr-img      { width: 100px; height: 100px; border: 1px solid #e2e8f0; border-radius: 6px; }
+.ip-qr-label    {
+  font-size: 9px; font-weight: 900; color: #059669;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.ip-qr-upi      { font-size: 9px; color: #64748b; font-family: 'Courier New', monospace; text-align: center; }
+
+/* ── Terms ── */
+.ip-terms  { margin: 0 28px 10px; }
+.ip-notes  { margin: 0 28px 10px; }
+.ip-terms-text {
+  font-family: inherit; font-size: 10px; color: #64748b;
+  line-height: 1.65; white-space: pre-wrap; margin: 6px 0 0;
+}
+.ip-notes-text { font-size: 10px; color: #64748b; margin-top: 6px; line-height: 1.6; }
+
+/* ── Signature row ── */
+.ip-sig-row {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 12px 28px 10px; border-top: 1.5px solid #f1f5f9;
+}
+.ip-sig-block   { text-align: left; }
+.ip-sig-company { font-size: 11px; font-weight: 800; color: #0f172a; margin-bottom: 30px; }
+.ip-sig-line    { height: 1.5px; width: 160px; background: linear-gradient(90deg, #0f172a, #94a3b8); margin-bottom: 5px; }
+.ip-sig-label   { font-size: 9px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .7px; }
+
+.ip-stamp-block { margin-bottom: 4px; }
+.ip-stamp-circle {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 2px dashed #cbd5e1;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 2px;
+  color: #cbd5e1; font-size: 7px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px;
+}
+
+/* ── Footer ── */
+.ip-footer-note {
+  text-align: center; font-size: 8.5px; color: #94a3b8; letter-spacing: .3px;
+  padding: 8px 28px 12px; background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ═══════════════════════════════════════════════
+   MOBILE RESPONSIVE
+═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Action toolbar — stack into two rows */
+  .ip-actions {
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    gap: 8px;
+  }
+  .ip-act-left  { flex: 1; min-width: 0; gap: 8px; }
+  .ip-act-right { width: 100%; gap: 8px; }
+
+  .ip-toolbar-title { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .ip-dl-btn,
+  .ip-print-btn { flex: 1; justify-content: center; }
+
+  /* Paper scroll padding */
+  .ip-paper-scroll { padding: 12px 0 48px; }
+
+  /* Invoice paper — edge-to-edge on mobile */
+  .ip-paper { border-radius: 0; }
+
+  /* Header — stack company + meta */
+  .ip-header {
+    flex-direction: column;
+    padding: 12px 14px 10px;
+    gap: 10px;
+  }
+  .ip-meta-col { text-align: left; }
+  .ip-meta-tbl { margin-left: 0; }
+
+  /* Parties — stack bill-to and supply */
+  .ip-parties {
+    grid-template-columns: 1fr;
+  }
+  .ip-bill-to    { padding: 10px 14px; border-right: none; border-bottom: 1px solid #f1f5f9; }
+  .ip-supply-col { padding: 10px 14px; }
+
+  /* Items table — make it horizontally scrollable */
+  .ip-paper .ip-items-tbl { font-size: 10px; }
+  .ip-items-tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ip-items-tbl td,
+  .ip-items-tbl th { padding: 6px 8px; }
+
+  /* Totals */
+  .ip-totals-wrap { padding: 4px 14px 10px; }
+  .ip-totals-box  { width: 100%; }
+
+  /* Words */
+  .ip-words { margin: 0 14px 10px; font-size: 10px; }
+
+  /* Bank + QR — stack */
+  .ip-bank-qr {
+    flex-direction: column;
+    margin: 0 14px 12px;
+  }
+  .ip-bank { border-right: none; border-bottom: 1px solid #e2e8f0; }
+  .ip-qr-col { width: 100%; flex-direction: row; justify-content: flex-start; gap: 14px; padding: 10px 14px; }
+  .ip-qr-img { width: 72px; height: 72px; }
+
+  /* Terms / Notes */
+  .ip-terms, .ip-notes { margin: 0 14px 10px; }
+
+  /* Signature row */
+  .ip-sig-row { padding: 12px 14px 10px; }
+  .ip-sig-line { width: 120px; }
+
+  /* Footer */
+  .ip-footer-note { padding: 8px 14px 12px; font-size: 8px; }
+}
+
+@media (max-width: 480px) {
+  .ip-back-btn span { display: none; } /* hide "Back" text, keep icon only */
+  .ip-inv-title     { font-size: 16px; }
+}
+
+/* ═══════════════════════════════════════════════
+   PRINT STYLES
+═══════════════════════════════════════════════ */
+@media print {
+  .no-print    { display: none !important; }
+  .ip-page     { background: #fff; }
+  .ip-paper-scroll { padding: 0; }
+  .ip-paper    { box-shadow: none; border-radius: 0; max-width: 100%; margin: 0; }
+  .ip-bill-to, .ip-supply-col, .ip-bank, .ip-terms, .ip-notes,
+  .ip-totals-wrap, .ip-words, .ip-bank-qr { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ip-items-tbl thead { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ip-tot-row.grand   { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ip-accent-bar      { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { size: A4 portrait; margin: 6mm 8mm; }
+}

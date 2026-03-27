@@ -1,18 +1,35 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { toast } from "../../../utils/toast";
 import "./UploadDocumentModal.css";
 
-const initialState = {
+const getInitialState = () => ({
   type: "invoice",
   linkedLead: "",
   date: "",
   name: "",
   notes: "",
   file: null,
-};
+});
 
-export default function UploadDocumentModal({ open, onClose, onSave }) {
-  const [form, setForm] = useState(initialState);
+export default function UploadDocumentModal({
+  open,
+  onClose,
+  onSave,
+  leadOptions = [],
+  leadsLoading = false,
+}) {
+  const [form, setForm] = useState(getInitialState());
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (open) {
+        setForm(getInitialState());
+      }
+    } catch (error) {
+      console.error("modal reset error:", error);
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -39,17 +56,17 @@ export default function UploadDocumentModal({ open, onClose, onSave }) {
       e.preventDefault();
 
       if (!form.type || !form.linkedLead || !form.date || !form.name || !form.file) {
-        alert("Please fill all required fields");
+        toast.warning("Please fill all required fields");
         return;
       }
 
       setSubmitting(true);
       await onSave(form);
-      setForm(initialState);
+      setForm(getInitialState());
       onClose();
     } catch (error) {
       console.error("handleSubmit error:", error);
-      alert(error?.message || "Failed to upload document");
+      toast.error(error?.message || "Failed to upload document");
     } finally {
       setSubmitting(false);
     }
@@ -84,13 +101,28 @@ export default function UploadDocumentModal({ open, onClose, onSave }) {
 
             <div className="udmField">
               <label>Linked Lead</label>
-              <input
-                type="text"
+              <select
                 name="linkedLead"
                 value={form.linkedLead}
                 onChange={handleChange}
-                placeholder="Enter lead/client name"
-              />
+                disabled={leadsLoading}
+              >
+                <option value="">
+                  {leadsLoading ? "Loading leads..." : "Select lead"}
+                </option>
+
+                {leadOptions.map((lead) => {
+                  const label = `${lead.name}${lead.phone ? ` - ${lead.phone}` : ""}${
+                    lead.business ? ` (${lead.business})` : ""
+                  }`;
+
+                  return (
+                    <option key={lead._id} value={lead.name}>
+                      {label}
+                    </option>
+                  );
+                })}
+              </select>
             </div>
 
             <div className="udmField">
@@ -128,7 +160,12 @@ export default function UploadDocumentModal({ open, onClose, onSave }) {
 
           <div className="udmField">
             <label>Choose File</label>
-            <input type="file" name="file" onChange={handleFileChange} />
+            <input
+              type="file"
+              name="file"
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.zip,.png,.jpg,.jpeg,.webp"
+            />
           </div>
 
           <div className="udmActions">

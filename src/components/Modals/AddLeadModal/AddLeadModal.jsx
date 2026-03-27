@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "../../../utils/toast";
 import "./AddLeadModal.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
@@ -176,7 +177,7 @@ export default function AddLeadModal({ open, onClose, onSave }) {
   const handleAddRep = async () => {
     try {
       if (!String(newRepName || "").trim()) {
-        alert("Rep name is required");
+        toast.warning("Rep name is required");
         return;
       }
 
@@ -204,7 +205,7 @@ export default function AddLeadModal({ open, onClose, onSave }) {
       setShowAddRep(false);
     } catch (err) {
       console.error("handleAddRep error:", err);
-      alert(err?.message || "Unable to add rep");
+      toast.error(err?.message || "Unable to add rep");
     } finally {
       setAddingRep(false);
     }
@@ -272,7 +273,7 @@ export default function AddLeadModal({ open, onClose, onSave }) {
       await onSave?.(payload);
     } catch (err) {
       console.error("handleSubmit error:", err);
-      alert(err?.message || "Unable to save lead");
+      toast.error(err?.message || "Unable to save lead");
     } finally {
       setSaving(false);
     }

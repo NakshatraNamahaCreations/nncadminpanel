@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "../utils/toast";
 import "./LeadDrawer.css";
 
 const money = (n) => {
@@ -57,9 +58,14 @@ const EMPTY_EDIT_FORM = {
   source: "WhatsApp",
   stage: "Lead Capture",
   priority: "Hot",
-  value: 0,
-  days: "0d",
+  value: "",
+  advanceReceived: "",
+  advanceReceivedDate: "",
+  agreedTimeline: "",
+  onboardedDate: "",
   rep: "",
+  projectCompleted: false,
+  projectCompletionDate: "",
 };
 
 const EmptyState = ({ title, sub }) => {
@@ -100,9 +106,16 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
     done: false,
   });
 
+  const [emailResponseId, setEmailResponseId]   = useState(null);  // logId being replied to
+  const [emailResponseText, setEmailResponseText] = useState("");
+  const [emailResponseSaving, setEmailResponseSaving] = useState(false);
+  const [expandedEmailId, setExpandedEmailId]   = useState(null); // logId expanded for full view
+
   const [editOpen, setEditOpen] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
   const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
+
+  const [planning, setPlanning] = useState(false);
 
   const headerSubtitle = useMemo(() => {
     try {
@@ -188,6 +201,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
       setNoteText("");
       setFollowupOpen(false);
       setEditOpen(false);
+      setPlanning(false);
       setEditForm(EMPTY_EDIT_FORM);
       setFollowupForm({
         dayIndex: "",
@@ -229,7 +243,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
       setLead((prev) => ({ ...prev, notes: json.data }));
       setNoteText("");
     } catch (e) {
-      alert(e.message || "Failed to save note");
+      toast.error(e.message || "Failed to save note");
     } finally {
       setSavingNote(false);
     }
@@ -266,7 +280,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
       setLogSummary("");
       setLogOpen(false);
     } catch (e) {
-      alert(e.message || "Failed to add log");
+      toast.error(e.message || "Failed to add log");
     } finally {
       setLogSaving(false);
     }
@@ -275,7 +289,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
   const addFollowup = async () => {
     try {
       if (!followupForm.title.trim()) {
-        alert("Follow-up title is required");
+        toast.warning("Follow-up title is required");
         return;
       }
 
@@ -317,7 +331,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
         done: false,
       });
     } catch (e) {
-      alert(e.message || "Failed to add follow-up");
+      toast.error(e.message || "Failed to add follow-up");
     } finally {
       setFollowupSaving(false);
     }
@@ -356,9 +370,77 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
       }));
       setActiveTab("Docs");
     } catch (e) {
-      alert(e.message || "Failed to upload document");
+      toast.error(e.message || "Failed to upload document");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const addToTodayPlan = async () => {
+    try {
+      if (!lead?._id) {
+        toast.error("Lead not found");
+        return;
+      }
+
+      setPlanning(true);
+
+      const token = localStorage.getItem("nnc_token");
+
+      const res = await fetch(`${apiBase}/api/today-plan/from-lead/${lead._id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          taskType: "new_call",
+          priority: lead?.priority === "Hot" ? "urgent" : "medium",
+          section: "call_immediately",
+          dueLabel: "ASAP",
+          subtitle: lead?.requirements || lead?.business || "Lead follow-up scheduled for today",
+          plannedDate: new Date().toISOString(),
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.message || "Failed to add to today's plan");
+      }
+
+      toast.success(json?.message || "Added to today's plan");
+
+      if (typeof onLeadUpdated === "function") {
+        onLeadUpdated(json?.data || lead);
+      }
+    } catch (error) {
+      console.error("addToTodayPlan error:", error);
+      toast.error(error?.message || "Failed to add to today's plan");
+    } finally {
+      setPlanning(false);
+    }
+  };
+
+  const addEmailResponse = async () => {
+    try {
+      if (!emailResponseText.trim() || !emailResponseId) return;
+      setEmailResponseSaving(true);
+      const res = await fetch(`${apiBase}/leads/${leadId}/email-logs/${emailResponseId}/response`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: emailResponseText.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to save response");
+      setLead((prev) => ({ ...prev, emailLogs: json.data }));
+      setEmailResponseId(null);
+      setEmailResponseText("");
+    } catch (e) {
+      console.error("addEmailResponse error:", e);
+      toast.error(e?.message || "Failed to save response");
+    } finally {
+      setEmailResponseSaving(false);
     }
   };
 
@@ -379,9 +461,20 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
         source: lead.source || "WhatsApp",
         stage: lead.stage || "Lead Capture",
         priority: lead.priority || "Hot",
-        value: Number(lead.value || 0),
-        days: lead.days || "0d",
+        value: lead.value > 0 ? Number(lead.value) : "",
+        advanceReceived: lead.advanceReceived > 0 ? Number(lead.advanceReceived) : "",
+        advanceReceivedDate: lead.advanceReceivedDate
+          ? new Date(lead.advanceReceivedDate).toISOString().slice(0, 10)
+          : "",
+        agreedTimeline: lead.agreedTimeline > 0 ? Number(lead.agreedTimeline) : "",
+        onboardedDate: lead.onboardedDate
+          ? new Date(lead.onboardedDate).toISOString().slice(0, 10)
+          : "",
         rep: lead.rep || "",
+        projectCompleted: Boolean(lead.projectCompleted),
+        projectCompletionDate: lead.projectCompletionDate
+          ? new Date(lead.projectCompletionDate).toISOString().slice(0, 10)
+          : "",
       });
 
       setEditOpen(true);
@@ -401,11 +494,22 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
 
   const handleEditChange = (e) => {
     try {
-      const { name, value } = e.target;
-      setEditForm((prev) => ({
-        ...prev,
-        [name]: name === "value" ? Number(value || 0) : value,
-      }));
+      const { name, value, type, checked } = e.target;
+      const numericFields = ["value", "advanceReceived", "agreedTimeline"];
+      setEditForm((prev) => {
+        const updated = {
+          ...prev,
+          [name]: type === "checkbox"
+            ? checked
+            : numericFields.includes(name)
+            ? value   // keep as string while typing; convert only at submit
+            : value,
+        };
+        if (name === "projectCompleted" && checked && !prev.projectCompletionDate) {
+          updated.projectCompletionDate = new Date().toISOString().slice(0, 10);
+        }
+        return updated;
+      });
     } catch (error) {
       console.error("handleEditChange error:", error);
     }
@@ -416,12 +520,12 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
       e.preventDefault();
 
       if (!String(editForm.name || "").trim()) {
-        alert("Name is required");
+        toast.warning("Name is required");
         return;
       }
 
       if (!String(editForm.phone || "").trim()) {
-        alert("Phone is required");
+        toast.warning("Phone is required");
         return;
       }
 
@@ -442,8 +546,13 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
         stage: editForm.stage,
         priority: editForm.priority,
         value: Number(editForm.value || 0),
-        days: editForm.days,
+        advanceReceived: Number(editForm.advanceReceived || 0),
+        advanceReceivedDate: editForm.advanceReceivedDate || null,
+        agreedTimeline: Number(editForm.agreedTimeline || 0),
+        onboardedDate: editForm.onboardedDate || null,
         rep: editForm.rep,
+        projectCompleted: editForm.projectCompleted,
+        projectCompletionDate: editForm.projectCompletionDate || null,
       };
 
       const res = await fetch(`${apiBase}/api/leads/${editForm._id}`, {
@@ -469,10 +578,10 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
         onLeadUpdated(json.data);
       }
 
-      alert("Lead updated successfully");
+      toast.success("Lead updated successfully");
     } catch (error) {
       console.error("handleEditSubmit error:", error);
-      alert(error?.message || "Failed to update lead");
+      toast.error(error?.message || "Failed to update lead");
     } finally {
       setEditSaving(false);
     }
@@ -511,9 +620,19 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
             </div>
 
             <div className="ldHeaderActions">
+              <button
+                className="ldBtn plan"
+                type="button"
+                onClick={addToTodayPlan}
+                disabled={planning}
+              >
+                {planning ? "Adding..." : "Add to Today Plan"}
+              </button>
+
               <button className="ldBtn edit" type="button" onClick={openEditModal}>
                 Edit Lead
               </button>
+
               <button className="ldClose" type="button" onClick={close}>
                 ×
               </button>
@@ -530,7 +649,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
           </div>
 
           <div className="ldTabs">
-            {["Profile", "BANT", "Follow-up", "Calls/WA", "History", "Docs", "Notes"].map((t) => (
+            {["Profile", "BANT", "Follow-up", "Calls/WA", "History", "Emails", "Docs", "Notes"].map((t) => (
               <button
                 key={t}
                 type="button"
@@ -581,6 +700,19 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
                   />
                 )}
                 {activeTab === "History" && <HistoryTab lead={lead} />}
+                {activeTab === "Emails" && (
+                  <EmailsTab
+                    lead={lead}
+                    emailResponseId={emailResponseId}
+                    setEmailResponseId={setEmailResponseId}
+                    emailResponseText={emailResponseText}
+                    setEmailResponseText={setEmailResponseText}
+                    emailResponseSaving={emailResponseSaving}
+                    addEmailResponse={addEmailResponse}
+                    expandedEmailId={expandedEmailId}
+                    setExpandedEmailId={setExpandedEmailId}
+                  />
+                )}
                 {activeTab === "Docs" && (
                   <DocsTab
                     lead={lead}
@@ -715,7 +847,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
                 </div>
 
                 <div className="ldFormGroup">
-                  <label>Value</label>
+                  <label>Total Amount Agreed (₹)</label>
                   <input
                     type="number"
                     name="value"
@@ -725,19 +857,80 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
                 </div>
 
                 <div className="ldFormGroup">
-                  <label>Days</label>
+                  <label>Advance Received (₹)</label>
                   <input
-                    name="days"
-                    value={editForm.days}
+                    type="number"
+                    name="advanceReceived"
+                    value={editForm.advanceReceived}
+                    onChange={handleEditChange}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Advance Received Date</label>
+                  <input
+                    type="date"
+                    name="advanceReceivedDate"
+                    value={editForm.advanceReceivedDate}
                     onChange={handleEditChange}
                   />
                 </div>
 
-                <div className="ldFormGroup ldFullWidth">
+                <div className="ldFormGroup">
+                  <label>Remaining Balance (₹)</label>
+                  <input
+                    type="number"
+                    readOnly
+                    value={Math.max(0, Number(editForm.value || 0) - Number(editForm.advanceReceived || 0))}
+                    className="ldReadOnly"
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Agreed Timeline (days)</label>
+                  <input
+                    type="number"
+                    name="agreedTimeline"
+                    value={editForm.agreedTimeline}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Final Payment Date</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      editForm.agreedTimeline > 0
+                        ? (() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + Number(editForm.agreedTimeline));
+                            return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                          })()
+                        : "—"
+                    }
+                    className="ldReadOnly"
+                  />
+                </div>
+
+
+                <div className="ldFormGroup">
                   <label>Rep</label>
                   <input
                     name="rep"
                     value={editForm.rep}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="ldFormGroup">
+                  <label>Client Onboarded Date</label>
+                  <input
+                    type="date"
+                    name="onboardedDate"
+                    value={editForm.onboardedDate}
                     onChange={handleEditChange}
                   />
                 </div>
@@ -751,6 +944,35 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
                     onChange={handleEditChange}
                   />
                 </div>
+
+                <div className="ldFormGroup ldFullWidth">
+                  <div className="ldCompletedRow">
+                    <label className="ldCheckLabel">
+                      <input
+                        type="checkbox"
+                        name="projectCompleted"
+                        checked={editForm.projectCompleted}
+                        onChange={handleEditChange}
+                      />
+                      <span>Project Completed</span>
+                    </label>
+                    {editForm.projectCompleted && (
+                      <div className="ldCompletedBadge">✓ Completed</div>
+                    )}
+                  </div>
+                </div>
+
+                {editForm.projectCompleted && (
+                  <div className="ldFormGroup ldFullWidth">
+                    <label>Project Completion Date</label>
+                    <input
+                      type="date"
+                      name="projectCompletionDate"
+                      value={editForm.projectCompletionDate}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="ldEditFooter">
@@ -1202,6 +1424,169 @@ function DocsTab({ lead, uploading, docTag, setDocTag, uploadDoc, apiBase }) {
           </div>
         ) : (
           <EmptyState title="No documents uploaded" sub="Upload invoices, quotations or client files." />
+        )}
+      </div>
+    </div>
+  );
+}
+
+const EMAIL_TYPE_LABELS = {
+  initiation:          "Project Initiation",
+  completion:          "Project Completion",
+  mom:                 "Meeting MOM",
+  followup_1:          "Follow-up 1/3",
+  followup_2:          "Follow-up 2/3",
+  followup_3:          "Follow-up 3/3",
+  custom:              "Custom Email",
+  payment_reminder_1:  "Payment Reminder (Stage 1)",
+  payment_reminder_2:  "Payment Reminder (Stage 2)",
+  payment_reminder_3:  "Payment Reminder (Stage 3)",
+  payment_receipt:     "Payment Receipt",
+  document_request:    "Document Request",
+};
+
+const EMAIL_TYPE_COLORS = {
+  initiation:          "#0b1b3e",
+  completion:          "#10b981",
+  mom:                 "#6366f1",
+  custom:              "#64748b",
+  payment_reminder_1:  "#3b82f6",
+  payment_reminder_2:  "#f59e0b",
+  payment_reminder_3:  "#ef4444",
+  payment_receipt:     "#10b981",
+  document_request:    "#8b5cf6",
+};
+
+function EmailsTab({
+  lead,
+  emailResponseId,
+  setEmailResponseId,
+  expandedEmailId,
+  setExpandedEmailId,
+  emailResponseText,
+  setEmailResponseText,
+  emailResponseSaving,
+  addEmailResponse,
+}) {
+  const logs = [...(lead.emailLogs || [])].reverse(); // newest first
+
+  return (
+    <div className="ldTabStack">
+      <div className="ldCard">
+        <div className="ldSectionTitle">EMAIL HISTORY</div>
+        <p style={{ fontSize: 12, color: "#64748b", marginBottom: 12 }}>
+          All emails sent to this client. Click &quot;Add Response&quot; to record any reply received.
+        </p>
+
+        {logs.length === 0 ? (
+          <EmptyState title="No emails sent yet" sub="Sent emails will appear here with full details." />
+        ) : (
+          <div className="ldList">
+            {logs.map((log, idx) => {
+              const logId    = log._id ? String(log._id) : null;
+              const label    = EMAIL_TYPE_LABELS[log.type] || log.type || "Email";
+              const color    = EMAIL_TYPE_COLORS[log.type] || "#64748b";
+              const isOpen   = emailResponseId === logId;
+              const hasReply = !!log.response;
+
+              const isExpanded = expandedEmailId === logId;
+              const toggleExpand = () => setExpandedEmailId(isExpanded ? null : logId);
+
+              return (
+                <div key={logId || idx} className={`emailLogCard${isExpanded ? " expanded" : ""}`} style={{ borderLeft: `3px solid ${color}` }}>
+                  {/* Clickable header row */}
+                  <button
+                    type="button"
+                    className="emailLogHeader"
+                    onClick={toggleExpand}
+                    aria-expanded={isExpanded}
+                  >
+                    <div className="emailLogHeaderLeft">
+                      <span className="emailLogBadge" style={{ background: color }}>{label}</span>
+                      <div className="emailLogSubject">{log.subject || "—"}</div>
+                      <div className="emailLogMeta">To: <span>{log.sentTo || "—"}</span></div>
+                    </div>
+                    <div className="emailLogHeaderRight">
+                      <div className="emailLogDateTime">
+                        <div>{log.sentAt ? new Date(log.sentAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</div>
+                        <div>{log.sentAt ? new Date(log.sentAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true }) : ""}</div>
+                      </div>
+                      <span className={`emailLogChevron${isExpanded ? " up" : ""}`}>▾</span>
+                    </div>
+                  </button>
+
+                  {/* Expandable body */}
+                  {isExpanded && (
+                    <div className="emailLogExpanded">
+                      {/* Full email body */}
+                      {log.body && (
+                        <div className="emailLogBodyFull">
+                          <div className="emailLogBodyLabel">EMAIL CONTENT</div>
+                          <pre className="emailLogBodyPre">{log.body}</pre>
+                        </div>
+                      )}
+
+                      {/* Client response */}
+                      {hasReply && (
+                        <div className="emailLogResponse">
+                          <span className="emailLogResponseLabel">Client Response</span>
+                          <div className="emailLogResponseText">{log.response}</div>
+                          {log.respondedAt && (
+                            <div className="emailLogResponseAt">Recorded {formatDateTime(log.respondedAt)}</div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Add / edit response */}
+                      {logId && (
+                        <div style={{ marginTop: 8 }}>
+                          {!isOpen ? (
+                            <button
+                              className="ldBtnSm"
+                              type="button"
+                              onClick={() => {
+                                setEmailResponseId(logId);
+                                setEmailResponseText(log.response || "");
+                              }}
+                            >
+                              {hasReply ? "Edit Response" : "Add Response"}
+                            </button>
+                          ) : (
+                            <div className="emailResponseBox">
+                              <textarea
+                                className="noteBox"
+                                style={{ minHeight: 72 }}
+                                placeholder="Type the client's reply or any notes about their response..."
+                                value={emailResponseText}
+                                onChange={(e) => setEmailResponseText(e.target.value)}
+                              />
+                              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                                <button
+                                  className="ldBtn primary"
+                                  type="button"
+                                  onClick={addEmailResponse}
+                                  disabled={emailResponseSaving || !emailResponseText.trim()}
+                                >
+                                  {emailResponseSaving ? "Saving..." : "Save Response"}
+                                </button>
+                                <button
+                                  className="ldBtn"
+                                  type="button"
+                                  onClick={() => { setEmailResponseId(null); setEmailResponseText(""); }}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

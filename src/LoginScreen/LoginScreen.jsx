@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./LoginScreen.css";
 import { useNavigate } from "react-router-dom";
 import { loginAdmin } from "../services/api";
@@ -7,9 +7,17 @@ import {
   Building2,
   UserRound,
   Eye,
+  EyeOff,
   ChevronLeft,
   ChevronRight,
+  Mail,
+  ShieldCheck,
+  KeyRound,
+  ArrowLeft,
+  CheckCircle2,
 } from "lucide-react";
+
+const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const ROLES = [
   { key: "master_admin", title: "Master Admin", subtitle: "Full access", icon: Crown },
@@ -22,11 +30,64 @@ export default function LoginScreen() {
   const navigate = useNavigate();
 
  const [activeRole, setActiveRole] = useState("master_admin");
-const [email, setEmail] = useState("admin@nnc.in");
-const [password, setPassword] = useState("password123");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [slide, setSlide] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // ── Forgot password flow ──────────────────────────────────────────────
+  const [fpOpen,    setFpOpen]    = useState(false);   // modal open
+  const [fpStep,    setFpStep]    = useState(1);        // 1=email 2=otp 3=new-pass 4=done
+  const [fpEmail,   setFpEmail]   = useState("");
+  const [fpOtp,     setFpOtp]     = useState("");
+  const [fpPass,    setFpPass]    = useState("");
+  const [fpPass2,   setFpPass2]   = useState("");
+  const [fpLoading, setFpLoading] = useState(false);
+  const [fpMsg,     setFpMsg]     = useState("");
+  const [fpErr,     setFpErr]     = useState("");
+
+  const openFp = () => { setFpOpen(true); setFpStep(1); setFpEmail(""); setFpOtp(""); setFpPass(""); setFpPass2(""); setFpMsg(""); setFpErr(""); };
+  const closeFp = () => setFpOpen(false);
+
+  const fpSendOtp = async () => {
+    if (!fpEmail.trim()) return setFpErr("Enter your email address");
+    setFpLoading(true); setFpErr("");
+    try {
+      const r = await fetch(`${API}/api/auth/forgot-password`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: fpEmail.trim() }) });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.message);
+      setFpMsg(j.message);
+      setFpStep(2);
+    } catch(e) { setFpErr(e.message || "Failed to send OTP"); }
+    finally { setFpLoading(false); }
+  };
+
+  const fpVerifyOtp = async () => {
+    if (fpOtp.trim().length !== 6) return setFpErr("Enter the 6-digit OTP");
+    setFpLoading(true); setFpErr("");
+    try {
+      const r = await fetch(`${API}/api/auth/verify-otp`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: fpEmail.trim(), otp: fpOtp.trim() }) });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.message);
+      setFpStep(3);
+    } catch(e) { setFpErr(e.message || "Invalid OTP"); }
+    finally { setFpLoading(false); }
+  };
+
+  const fpResetPass = async () => {
+    if (fpPass.trim().length < 6) return setFpErr("Password must be at least 6 characters");
+    if (fpPass !== fpPass2) return setFpErr("Passwords do not match");
+    setFpLoading(true); setFpErr("");
+    try {
+      const r = await fetch(`${API}/api/auth/reset-password`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ email: fpEmail.trim(), otp: fpOtp.trim(), newPassword: fpPass.trim() }) });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.message);
+      setFpStep(4);
+    } catch(e) { setFpErr(e.message || "Failed to reset password"); }
+    finally { setFpLoading(false); }
+  };
 
   const stats = useMemo(
     () => [
@@ -72,6 +133,11 @@ const [password, setPassword] = useState("password123");
     localStorage.setItem("nnc_role", user.role || "");
     localStorage.setItem("nnc_email", user.email || "");
     localStorage.setItem("nnc_user", JSON.stringify(user));
+    if (user.modules != null) {
+      localStorage.setItem("nnc_modules", JSON.stringify(user.modules));
+    } else {
+      localStorage.removeItem("nnc_modules");
+    }
 
     navigate("/documents", { replace: true });
   } catch (err) {
@@ -144,7 +210,7 @@ const [password, setPassword] = useState("password123");
 
               <div className="sliderRow">
                 <button type="button" className="circleBtn" onClick={prevSlide}>
-                  <ChevronLeft size={18} />
+                  <ChevronLeft size={13} />
                 </button>
 
                 <div className="dots">
@@ -154,7 +220,7 @@ const [password, setPassword] = useState("password123");
                 </div>
 
                 <button type="button" className="circleBtn" onClick={nextSlide}>
-                  <ChevronRight size={18} />
+                  <ChevronRight size={13} />
                 </button>
               </div>
             </div>
@@ -194,13 +260,26 @@ const [password, setPassword] = useState("password123");
                 </div>
 
                 <div className="field">
-                  <label>Password</label>
-                  <input
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    type="password"
-                    placeholder="••••••••"
-                  />
+                  <div className="fieldLabelRow">
+                    <label>Password</label>
+                    <button type="button" className="forgotLink" onClick={openFp}>Forgot password?</button>
+                  </div>
+                  <div className="passwordWrap">
+                    <input
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      className="eyeBtn"
+                      onClick={() => setShowPassword((v) => !v)}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
 
                 {errorMessage ? (
@@ -230,6 +309,104 @@ const [password, setPassword] = useState("password123");
           </div>
         </div>
       </div>
+
+      {/* ── Forgot Password Modal ── */}
+      {fpOpen && (
+        <div className="fpOverlay" onClick={closeFp}>
+          <div className="fpModal" onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div className="fpHeader">
+              {fpStep < 4 && fpStep > 1 && (
+                <button className="fpBack" onClick={() => { setFpStep(s => s-1); setFpErr(""); }}>
+                  <ArrowLeft size={16}/>
+                </button>
+              )}
+              <div className="fpHeaderText">
+                <div className="fpTitle">
+                  {fpStep === 1 && "Forgot Password"}
+                  {fpStep === 2 && "Enter OTP"}
+                  {fpStep === 3 && "New Password"}
+                  {fpStep === 4 && "Password Reset!"}
+                </div>
+                <div className="fpSub">
+                  {fpStep === 1 && "We'll send a 6-digit OTP to nn.creations7@gmail.com"}
+                  {fpStep === 2 && `OTP sent to nn.creations7@gmail.com`}
+                  {fpStep === 3 && "Choose a strong new password"}
+                  {fpStep === 4 && "You can now log in with your new password"}
+                </div>
+              </div>
+              <button className="fpClose" onClick={closeFp}>✕</button>
+            </div>
+
+            {/* Steps */}
+            <div className="fpBody">
+
+              {fpStep === 1 && (
+                <>
+                  <div className="fpIconWrap"><Mail size={28} color="#2563eb"/></div>
+                  <div className="fpField">
+                    <label>Your Email Address</label>
+                    <input type="email" placeholder="admin@nnc.in" value={fpEmail} onChange={e => { setFpEmail(e.target.value); setFpErr(""); }}/>
+                  </div>
+                  {fpErr && <div className="fpErr">{fpErr}</div>}
+                  <button className="fpBtn" onClick={fpSendOtp} disabled={fpLoading}>
+                    {fpLoading ? "Sending…" : "Send OTP"}
+                  </button>
+                </>
+              )}
+
+              {fpStep === 2 && (
+                <>
+                  <div className="fpIconWrap"><ShieldCheck size={28} color="#2563eb"/></div>
+                  {fpMsg && <div className="fpSuccess">{fpMsg}</div>}
+                  <div className="fpField">
+                    <label>6-Digit OTP</label>
+                    <input
+                      type="text" maxLength={6} placeholder="● ● ● ● ● ●"
+                      value={fpOtp} onChange={e => { setFpOtp(e.target.value.replace(/\D/g,"")); setFpErr(""); }}
+                      className="fpOtpInput"
+                    />
+                  </div>
+                  {fpErr && <div className="fpErr">{fpErr}</div>}
+                  <button className="fpBtn" onClick={fpVerifyOtp} disabled={fpLoading}>
+                    {fpLoading ? "Verifying…" : "Verify OTP"}
+                  </button>
+                  <button className="fpResend" onClick={() => { setFpStep(1); setFpOtp(""); setFpErr(""); }}>Resend OTP</button>
+                </>
+              )}
+
+              {fpStep === 3 && (
+                <>
+                  <div className="fpIconWrap"><KeyRound size={28} color="#2563eb"/></div>
+                  <div className="fpField">
+                    <label>New Password</label>
+                    <input type="password" placeholder="Min. 6 characters" value={fpPass} onChange={e => { setFpPass(e.target.value); setFpErr(""); }}/>
+                  </div>
+                  <div className="fpField">
+                    <label>Confirm New Password</label>
+                    <input type="password" placeholder="Repeat password" value={fpPass2} onChange={e => { setFpPass2(e.target.value); setFpErr(""); }}/>
+                  </div>
+                  {fpErr && <div className="fpErr">{fpErr}</div>}
+                  <button className="fpBtn" onClick={fpResetPass} disabled={fpLoading}>
+                    {fpLoading ? "Resetting…" : "Reset Password"}
+                  </button>
+                </>
+              )}
+
+              {fpStep === 4 && (
+                <div className="fpDone">
+                  <CheckCircle2 size={52} color="#16a34a"/>
+                  <div className="fpDoneTitle">Password Updated!</div>
+                  <div className="fpDoneSub">Your password has been reset. Use your new password to sign in.</div>
+                  <button className="fpBtn" onClick={closeFp}>Back to Login</button>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

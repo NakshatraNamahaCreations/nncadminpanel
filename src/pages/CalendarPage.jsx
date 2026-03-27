@@ -1,432 +1,703 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ChevronLeft, ChevronRight, Plus, X, Search, Trash2,
+  CreditCard, Phone, Monitor, MessageCircle, CalendarDays,
+  User, Building2, ExternalLink, Clock, MessageSquare,
+} from "lucide-react";
 import Sidebar from "../components/Sidebar/Sidebar";
 import LeadDrawer from "../Leads/LeadDrawer";
+import { toast } from "../utils/toast";
 import "./CalendarPage.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
 
-const WEEK_DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const TABS = [
+  { key: "payment_followup",  label: "Payment Follow-up",   color: "#ef4444", bg: "#fef2f2", icon: CreditCard    },
+  { key: "call_followup",     label: "Call / Meeting",      color: "#3b82f6", bg: "#eff6ff", icon: Phone         },
+  { key: "demo",              label: "Next Demo",           color: "#8b5cf6", bg: "#f5f3ff", icon: Monitor       },
+  { key: "client_response",   label: "Client Response",     color: "#f59e0b", bg: "#fffbeb", icon: MessageCircle },
+  { key: "enquiry_followup",  label: "Enquiry Follow-ups",  color: "#7c3aed", bg: "#ede9fe", icon: MessageSquare },
+];
 
-const monthName = (year, monthIndex) => {
-  try {
-    return new Date(year, monthIndex, 1).toLocaleString("en-US", {
-      month: "long",
-      year: "numeric",
-    });
-  } catch {
-    return "";
-  }
-};
+const ENQ_FOLLOWUP_TYPES = [
+  { key: "call",    label: "📞 Call Client" },
+  { key: "meet",    label: "🤝 Meet Client" },
+  { key: "finalise",label: "✅ Finalise Deal" },
+];
 
-const formatMoney = (n) => {
-  try {
-    return `₹${Number(n || 0).toLocaleString("en-IN")}`;
-  } catch {
-    return "₹0";
-  }
-};
+const WEEK = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-const formatCardDate = (date) => {
-  try {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return "";
-  }
-};
+function authHeader() {
+  const t = localStorage.getItem("nnc_token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 
-const getTagClass = (stage = "") => {
-  try {
-    const v = String(stage).toLowerCase();
-    if (v.includes("closed")) return "done";
-    if (v.includes("proposal")) return "task";
-    if (v.includes("qualified")) return "follow";
-    return "urgent";
-  } catch {
-    return "task";
-  }
+function fmtMonthYear(year, month) {
+  return new Date(year, month, 1).toLocaleString("en-IN", { month: "long", year: "numeric" });
+}
+function fmtDate(d) {
+  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+function toInputDate(d) {
+  const dt = new Date(d);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
+
+const EMPTY_FORM = {
+  leadId: "", leadName: "", leadPhone: "",
+  enquiryId: "", enquiryName: "", enquiryPhone: "", enquiryCompany: "",
+  followupType: "call",
+  date: "", title: "", notes: "",
 };
 
 export default function CalendarPage() {
-  const navigate = useNavigate();
-
   const today = new Date();
-  const todayDate = today.getDate();
+  const todayDay   = today.getDate();
   const todayMonth = today.getMonth();
-  const todayYear = today.getFullYear();
+  const todayYear  = today.getFullYear();
 
-  const [currentYear, setCurrentYear] = useState(todayYear);
-  const [currentMonth, setCurrentMonth] = useState(todayMonth);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const [calendarData, setCalendarData] = useState({});
-  const [upcoming, setUpcoming] = useState([]);
-  const [overdue, setOverdue] = useState([]);
-  const [searchText, setSearchText] = useState("");
+  const [activeTab,     setActiveTab]     = useState("payment_followup");
+  const [currentYear,   setCurrentYear]   = useState(todayYear);
+  const [currentMonth,  setCurrentMonth]  = useState(todayMonth);
+  const [events,        setEvents]        = useState({});   // { day: [event,...] }
+  const [loading,       setLoading]       = useState(false);
+  const [selectedDay,   setSelectedDay]   = useState(null);
 
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedLeadId, setSelectedLeadId] = useState(null);
+  /* Add-event modal */
+  const [addOpen,      setAddOpen]      = useState(false);
+  const [form,         setForm]         = useState(EMPTY_FORM);
+  const [saving,       setSaving]       = useState(false);
+  const [leadSearch,   setLeadSearch]   = useState("");
+  const [leadResults,  setLeadResults]  = useState([]);
+  const [searching,    setSearching]    = useState(false);
+  const searchTimer = useRef(null);
 
-  const fetchCalendarData = async (year, monthIndex) => {
+  /* Enquiry search */
+  const [enqSearch,    setEnqSearch]    = useState("");
+  const [enqResults,   setEnqResults]   = useState([]);
+  const [searchingEnq, setSearchingEnq] = useState(false);
+  const enqSearchTimer = useRef(null);
+
+  /* Lead drawer */
+  const [drawerOpen,     setDrawerOpen]     = useState(false);
+  const [drawerLeadId,   setDrawerLeadId]   = useState(null);
+
+  const isEnqTab = activeTab === "enquiry_followup";
+
+  const activeTabData = TABS.find(t => t.key === activeTab) || TABS[0];
+
+  /* ── Fetch events ───────────────────────────────────────────── */
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
-      setErr("");
-
-      const month = monthIndex + 1;
-      const token = localStorage.getItem("nnc_token");
-
-      const res = await fetch(
-        `${API_BASE}/api/leads/calendar/month?year=${year}&month=${month}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        }
+      const res  = await fetch(
+        `${API_BASE}/api/calendar-events?year=${currentYear}&month=${currentMonth + 1}&type=${activeTab}`,
+        { headers: authHeader() }
       );
-
       const json = await res.json();
-
-      if (!res.ok || !json?.success) {
-        throw new Error(json?.message || "Failed to fetch calendar data");
-      }
-
-      setCalendarData(json?.data?.calendar || {});
-      setUpcoming(Array.isArray(json?.data?.upcoming) ? json.data.upcoming : []);
-      setOverdue(Array.isArray(json?.data?.overdue) ? json.data.overdue : []);
-    } catch (error) {
-      console.error("fetchCalendarData error:", error);
-      setErr(error.message || "Failed to fetch calendar data");
-      setCalendarData({});
-      setUpcoming([]);
-      setOverdue([]);
+      if (!res.ok || !json.success) throw new Error(json.message || "Failed to load events");
+      setEvents(json.data || {});
+    } catch (e) {
+      toast.error(e.message || "Failed to load calendar");
+      setEvents({});
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab, currentYear, currentMonth]);
 
+  useEffect(() => { fetchEvents(); }, [fetchEvents]);
+
+  /* ── Lead search (debounced) ────────────────────────────────── */
   useEffect(() => {
-    fetchCalendarData(currentYear, currentMonth);
-  }, [currentYear, currentMonth]);
+    if (!leadSearch.trim()) { setLeadResults([]); return; }
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        setSearching(true);
+        const res  = await fetch(
+          `${API_BASE}/api/leads?search=${encodeURIComponent(leadSearch.trim())}&limit=8`,
+          { headers: authHeader() }
+        );
+        const json = await res.json();
+        const arr  = Array.isArray(json.data) ? json.data
+                   : Array.isArray(json.leads) ? json.leads : [];
+        setLeadResults(arr);
+      } catch { setLeadResults([]); }
+      finally  { setSearching(false); }
+    }, 300);
+  }, [leadSearch]);
 
-  const openLeadDrawer = (leadId) => {
+  /* ── Enquiry search (debounced) ─────────────────────────────── */
+  useEffect(() => {
+    if (!enqSearch.trim()) { setEnqResults([]); return; }
+    clearTimeout(enqSearchTimer.current);
+    enqSearchTimer.current = setTimeout(async () => {
+      try {
+        setSearchingEnq(true);
+        const res  = await fetch(
+          `${API_BASE}/api/enquiries?q=${encodeURIComponent(enqSearch.trim())}&limit=8`,
+          { headers: authHeader() }
+        );
+        const json = await res.json();
+        setEnqResults(Array.isArray(json.data) ? json.data : []);
+      } catch { setEnqResults([]); }
+      finally  { setSearchingEnq(false); }
+    }, 300);
+  }, [enqSearch]);
+
+  /* ── Create event ───────────────────────────────────────────── */
+  const handleCreate = async () => {
+    if (isEnqTab && !form.enquiryId) { toast.warning("Select an enquiry"); return; }
+    if (!isEnqTab && !form.leadId)   { toast.warning("Select a client");   return; }
+    if (!form.date) { toast.warning("Pick a date"); return; }
     try {
-      if (!leadId) return;
-      setSelectedLeadId(leadId);
-      setDrawerOpen(true);
-    } catch (error) {
-      console.error("openLeadDrawer error:", error);
+      setSaving(true);
+      const payload = isEnqTab
+        ? {
+            enquiryId: form.enquiryId,
+            type:  activeTab,
+            date:  form.date,
+            title: ENQ_FOLLOWUP_TYPES.find(t => t.key === form.followupType)?.label || form.followupType,
+            notes: form.notes,
+          }
+        : {
+            leadId: form.leadId,
+            type:   activeTab,
+            date:   form.date,
+            title:  form.title,
+            notes:  form.notes,
+          };
+      const res  = await fetch(`${API_BASE}/api/calendar-events`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body:    JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || "Failed to save");
+      toast.success("Event scheduled");
+      setAddOpen(false);
+      setForm(EMPTY_FORM);
+      setLeadSearch(""); setLeadResults([]);
+      setEnqSearch("");  setEnqResults([]);
+      await fetchEvents();
+    } catch (e) {
+      toast.error(e.message || "Failed to schedule event");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const closeLeadDrawer = () => {
+  /* ── Delete event ───────────────────────────────────────────── */
+  const handleDelete = async (id) => {
     try {
-      setDrawerOpen(false);
-      setSelectedLeadId(null);
-    } catch (error) {
-      console.error("closeLeadDrawer error:", error);
+      const res  = await fetch(`${API_BASE}/api/calendar-events/${id}`, {
+        method: "DELETE", headers: authHeader(),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || "Failed to delete");
+      toast.success("Event removed");
+      await fetchEvents();
+    } catch (e) {
+      toast.error(e.message || "Failed to delete event");
     }
   };
 
+  /* ── Calendar grid ──────────────────────────────────────────── */
   const calendarGrid = useMemo(() => {
-    try {
-      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-      const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDay  = new Date(currentYear, currentMonth, 1).getDay();
+    const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < firstDay; i++) cells.push({ blank: true, key: `b${i}` });
+    for (let d = 1; d <= totalDays; d++) cells.push({
+      blank: false, key: `d${d}`, day: d,
+      evs: events[d] || [],
+      isToday: d === todayDay && currentMonth === todayMonth && currentYear === todayYear,
+    });
+    while (cells.length % 7 !== 0) cells.push({ blank: true, key: `t${cells.length}` });
+    return cells;
+  }, [currentYear, currentMonth, events, todayDay, todayMonth, todayYear]);
 
-      const cells = [];
-
-      for (let i = 0; i < firstDay; i += 1) {
-        cells.push({ type: "blank", key: `blank-${i}` });
-      }
-
-      for (let day = 1; day <= totalDays; day += 1) {
-        cells.push({
-          type: "day",
-          key: `day-${day}`,
-          day,
-          info: calendarData?.[day] || null,
-          isToday:
-            day === todayDate &&
-            currentMonth === todayMonth &&
-            currentYear === todayYear,
-        });
-      }
-
-      while (cells.length % 7 !== 0) {
-        cells.push({ type: "blank", key: `tail-${cells.length}` });
-      }
-
-      return cells;
-    } catch (error) {
-      console.error("calendarGrid error:", error);
-      return [];
-    }
-  }, [currentYear, currentMonth, calendarData, todayDate, todayMonth, todayYear]);
-
-  const filteredUpcoming = useMemo(() => {
-    try {
-      if (!searchText.trim()) return upcoming;
-
-      const q = searchText.trim().toLowerCase();
-      return upcoming.filter((item) => {
-        return (
-          String(item?.name || "").toLowerCase().includes(q) ||
-          String(item?.stage || "").toLowerCase().includes(q) ||
-          String(item?.rep || "").toLowerCase().includes(q) ||
-          String(item?.business || "").toLowerCase().includes(q)
-        );
-      });
-    } catch (error) {
-      console.error("filteredUpcoming error:", error);
-      return upcoming;
-    }
-  }, [searchText, upcoming]);
-
-  const filteredOverdue = useMemo(() => {
-    try {
-      if (!searchText.trim()) return overdue;
-
-      const q = searchText.trim().toLowerCase();
-      return overdue.filter((item) => {
-        return (
-          String(item?.name || "").toLowerCase().includes(q) ||
-          String(item?.stage || "").toLowerCase().includes(q) ||
-          String(item?.rep || "").toLowerCase().includes(q) ||
-          String(item?.business || "").toLowerCase().includes(q)
-        );
-      });
-    } catch (error) {
-      console.error("filteredOverdue error:", error);
-      return overdue;
-    }
-  }, [searchText, overdue]);
-
-  const totalOverdue = filteredOverdue.length;
-
-  const goPrevMonth = () => {
-    try {
-      if (currentMonth === 0) {
-        setCurrentMonth(11);
-        setCurrentYear((prev) => prev - 1);
-      } else {
-        setCurrentMonth((prev) => prev - 1);
-      }
-    } catch (error) {
-      console.error("goPrevMonth error:", error);
-    }
+  const goPrev = () => {
+    if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear(y => y - 1); }
+    else setCurrentMonth(m => m - 1);
+  };
+  const goNext = () => {
+    if (currentMonth === 11) { setCurrentMonth(0); setCurrentYear(y => y + 1); }
+    else setCurrentMonth(m => m + 1);
   };
 
-  const goNextMonth = () => {
-    try {
-      if (currentMonth === 11) {
-        setCurrentMonth(0);
-        setCurrentYear((prev) => prev + 1);
-      } else {
-        setCurrentMonth((prev) => prev + 1);
-      }
-    } catch (error) {
-      console.error("goNextMonth error:", error);
-    }
+  const openAdd = (day = null) => {
+    setForm({ ...EMPTY_FORM, date: day ? toInputDate(new Date(currentYear, currentMonth, day)) : "" });
+    setLeadSearch(""); setLeadResults([]);
+    setEnqSearch("");  setEnqResults([]);
+    setAddOpen(true);
   };
 
-  const goToToday = () => {
-    try {
-      setCurrentYear(todayYear);
-      setCurrentMonth(todayMonth);
-    } catch (error) {
-      console.error("goToToday error:", error);
-    }
-  };
+  const selectedDayEvents = selectedDay ? (events[selectedDay] || []) : [];
+  const totalEvents = Object.values(events).reduce((s, arr) => s + arr.length, 0);
 
   return (
-    <>
-      <div className="calLayout">
-        <Sidebar />
+    <div className="calLayout">
+      <Sidebar />
 
-        <div className="calMain">
-          <div className="calTopBar">
-            <div className="calTitleRow">
-              <h1 className="calPageTitle">Calendar</h1>
-              <span className="calAdminBadge">👑 Master Admin</span>
+      <div className="calMain">
+        {/* ── Topbar ── */}
+        <div className="calTopbar">
+          <div className="calTopLeft">
+            <CalendarDays size={20} className="calTopIcon"/>
+            <h1 className="calTitle">Calendar</h1>
+            <span className="calMonthPill">{fmtMonthYear(currentYear, currentMonth)}</span>
+          </div>
+          <div className="calTopRight">
+            <button className="calAddBtn" onClick={() => openAdd()}>
+              <Plus size={15}/> Schedule
+            </button>
+          </div>
+        </div>
+
+        {/* ── Tabs ── */}
+        <div className="calTabs">
+          {TABS.map(tab => {
+            const Icon = tab.icon;
+            const count = Object.values(
+              activeTab === tab.key ? events : {}
+            ).reduce((s, arr) => s + arr.length, 0);
+            return (
+              <button
+                key={tab.key}
+                className={`calTab ${activeTab === tab.key ? "active" : ""}`}
+                style={activeTab === tab.key ? { borderColor: tab.color, color: tab.color, background: tab.bg } : {}}
+                onClick={() => { setActiveTab(tab.key); setSelectedDay(null); }}
+              >
+                <Icon size={15}/>
+                <span>{tab.label}</span>
+                {activeTab === tab.key && totalEvents > 0 && (
+                  <span className="calTabBadge" style={{ background: tab.color }}>{totalEvents}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Body ── */}
+        <div className="calBody">
+
+          {/* Calendar grid */}
+          <div className="calBoardWrap">
+            <div className="calMonthNav">
+              <button className="calNavBtn" onClick={goPrev}><ChevronLeft size={16}/></button>
+              <span className="calMonthLabel">{fmtMonthYear(currentYear, currentMonth)}</span>
+              <button className="calNavBtn" onClick={goNext}><ChevronRight size={16}/></button>
+              <button className="calTodayBtn" onClick={() => { setCurrentYear(todayYear); setCurrentMonth(todayMonth); }}>
+                Today
+              </button>
             </div>
 
-            <div className="calTopActions">
-              <div className="calSearchWrap">
-                <span className="calSearchIcon">⌕</span>
-                <input
-                  placeholder="Search leads, stage, rep..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                />
-              </div>
+            {loading && <div className="calLoading">Loading…</div>}
 
-              <button
-                className="calBtn ghost"
-                type="button"
-                onClick={() => {
-                  try {
-                    navigate("/documents");
-                  } catch (error) {
-                    console.error("Navigate documents error:", error);
-                  }
-                }}
-              >
-                📎 Upload
-              </button>
+            <div className="calWeekRow">
+              {WEEK.map(w => <div key={w} className="calWeekCell">{w}</div>)}
+            </div>
 
-              <button
-                className="calBtn primary"
-                type="button"
-                onClick={() => {
-                  try {
-                    navigate("/leads");
-                  } catch (error) {
-                    console.error("Navigate leads error:", error);
-                  }
-                }}
-              >
-                + Add Lead
-              </button>
+            <div className="calGrid">
+              {calendarGrid.map(cell => {
+                if (cell.blank) return <div key={cell.key} className="calCell blank"/>;
+                const isSelected = selectedDay === cell.day;
+                return (
+                  <div
+                    key={cell.key}
+                    className={`calCell ${cell.isToday ? "today" : ""} ${isSelected ? "selected" : ""} ${cell.evs.length ? "hasEvents" : ""}`}
+                    onClick={() => setSelectedDay(isSelected ? null : cell.day)}
+                  >
+                    <div className="calCellDate">{cell.day}</div>
+                    {cell.evs.length > 0 && (
+                      <div className="calCellEvents">
+                        {cell.evs.slice(0, 3).map(ev => (
+                          <div
+                            key={ev._id}
+                            className="calEventChip"
+                            style={{ background: activeTabData.bg, color: activeTabData.color, borderColor: activeTabData.color + "44" }}
+                            title={ev.leadName}
+                          >
+                            {ev.title ? `${ev.title.split(" ")[0]} · ` : ""}{ev.leadName}
+                          </div>
+                        ))}
+                        {cell.evs.length > 3 && (
+                          <div className="calEventMore" style={{ color: activeTabData.color }}>
+                            +{cell.evs.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {cell.evs.length === 0 && (
+                      <button
+                        className="calCellAdd"
+                        title="Schedule event"
+                        onClick={e => { e.stopPropagation(); openAdd(cell.day); }}
+                      >
+                        <Plus size={10}/>
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          <div className="calContent">
-            <div className="calBoard">
-              <div className="calBoardTop">
-                <div className="calMonthNav">
-                  <button className="monthArrow" type="button" onClick={goPrevMonth}>
-                    ‹
-                  </button>
-                  <h2>{monthName(currentYear, currentMonth)}</h2>
-                  <button className="monthArrow" type="button" onClick={goNextMonth}>
-                    ›
-                  </button>
-                  <button className="calBtn ghost small" type="button" onClick={goToToday}>
-                    Today
-                  </button>
-                </div>
-
-                <div className="calLegend">
-                  <span className="legendItem urgent">● Urgent</span>
-                  <span className="legendItem task">● Task</span>
-                  <span className="legendItem done">● Done</span>
-                  <span className="legendItem follow">● Follow-up</span>
-                </div>
-              </div>
-
-              {loading ? <div className="calState">Loading calendar...</div> : null}
-              {err ? <div className="calError">{err}</div> : null}
-
-              <div className="calWeekHeader">
-                {WEEK_DAYS.map((day) => (
-                  <div key={day} className="calWeekCell">
-                    {day}
+          {/* Right panel */}
+          <div className={`calDayPanel ${selectedDay ? "open" : ""}`}>
+            {selectedDay ? (
+              <>
+                <div className="calDayPanelHead">
+                  <div>
+                    <div className="calDayPanelDate">
+                      {fmtDate(new Date(currentYear, currentMonth, selectedDay))}
+                    </div>
+                    <div className="calDayPanelSub" style={{ color: activeTabData.color }}>
+                      {activeTabData.label} · {selectedDayEvents.length} event{selectedDayEvents.length !== 1 ? "s" : ""}
+                    </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="calGrid">
-                {calendarGrid.map((cell) => {
-                  if (cell.type === "blank") {
-                    return <div key={cell.key} className="calCell blank" />;
-                  }
-
-                  const info = cell.info;
-                  const leads = info?.leads || [];
-
-                  return (
-                    <div
-                      key={cell.key}
-                      className={`calCell ${cell.isToday ? "today" : ""}`}
+                  <div className="calDayPanelActions">
+                    <button
+                      className="calDayAddBtn"
+                      style={{ background: activeTabData.color }}
+                      onClick={() => openAdd(selectedDay)}
                     >
-                      <div className="calDate">{cell.day}</div>
+                      <Plus size={13}/> Add
+                    </button>
+                    <button className="calDayClose" onClick={() => setSelectedDay(null)}>
+                      <X size={15}/>
+                    </button>
+                  </div>
+                </div>
 
-                      {info ? (
-                        <div className="calDayMeta">
-                          <div className="calDayCount">
-                            {info.count} lead{info.count > 1 ? "s" : ""}
+                <div className="calDayEvents">
+                  {selectedDayEvents.length === 0 ? (
+                    <div className="calDayEmpty">
+                      <CalendarDays size={32} style={{ color: "#cbd5e1", marginBottom: 10 }}/>
+                      <div>No events on this day</div>
+                      <button
+                        className="calDayEmptyBtn"
+                        style={{ background: activeTabData.color }}
+                        onClick={() => openAdd(selectedDay)}
+                      >
+                        <Plus size={13}/> Schedule one
+                      </button>
+                    </div>
+                  ) : (
+                    selectedDayEvents.map(ev => (
+                      <div
+                        key={ev._id}
+                        className="calEventCard"
+                        style={{ borderLeftColor: activeTabData.color }}
+                      >
+                        <div className="calEventCardHead">
+                          <div className="calEventClientName">{ev.leadName || "—"}</div>
+                          <button
+                            className="calEventDelete"
+                            onClick={() => handleDelete(ev._id)}
+                            title="Remove event"
+                          >
+                            <Trash2 size={12}/>
+                          </button>
+                        </div>
+
+                        <div className="calEventMeta">
+                          {ev.leadPhone && (
+                            <span className="calEventMetaItem">
+                              <Phone size={11}/> {ev.leadPhone}
+                            </span>
+                          )}
+                          {ev.leadBusiness && (
+                            <span className="calEventMetaItem">
+                              <Building2 size={11}/> {ev.leadBusiness}
+                            </span>
+                          )}
+                          {ev.leadStage && !isEnqTab && (
+                            <span
+                              className="calEventStagePill"
+                              style={{ background: activeTabData.bg, color: activeTabData.color }}
+                            >
+                              {ev.leadStage}
+                            </span>
+                          )}
+                        </div>
+
+                        {ev.title && (
+                          <div
+                            className="calEventTitle"
+                            style={isEnqTab ? { background: activeTabData.bg, color: activeTabData.color, borderRadius: 6, padding: "3px 8px", display: "inline-block", fontWeight: 700, fontSize: 12 } : {}}
+                          >
+                            {ev.title}
                           </div>
-                          <div className="calDayValue">
-                            {formatMoney(info.totalValue)}
+                        )}
+                        {ev.notes && (
+                          <div className="calEventNotes">{ev.notes}</div>
+                        )}
+
+                        <div className="calEventCardFoot">
+                          <span className="calEventTime">
+                            <Clock size={11}/> {fmtDate(ev.date)}
+                          </span>
+                          {!isEnqTab && ev.leadId && (
+                            <button
+                              className="calEventViewBtn"
+                              style={{ color: activeTabData.color }}
+                              onClick={() => { setDrawerLeadId(ev.leadId); setDrawerOpen(true); }}
+                            >
+                              <ExternalLink size={12}/> Full Details
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="calPanelDefault">
+                <div
+                  className="calPanelDefaultIcon"
+                  style={{ background: activeTabData.bg, color: activeTabData.color }}
+                >
+                  {(() => { const Icon = activeTabData.icon; return <Icon size={28}/>; })()}
+                </div>
+                <div className="calPanelDefaultTitle">{activeTabData.label}</div>
+                <div className="calPanelDefaultSub">
+                  Click on any date to view or add events
+                </div>
+                <div className="calPanelSummary">
+                  <div className="calPanelSummaryVal" style={{ color: activeTabData.color }}>{totalEvents}</div>
+                  <div className="calPanelSummarySub">events this month</div>
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>{/* end calBody */}
+      </div>
+
+      {/* ── Add Event Modal ── */}
+      {addOpen && (
+        <div className="calModalOverlay" onClick={() => setAddOpen(false)}>
+          <div className="calModalCard" onClick={e => e.stopPropagation()}>
+            <div className="calModalHead" style={{ borderBottomColor: activeTabData.color + "33" }}>
+              <div className="calModalHeadLeft">
+                <div className="calModalTypeIcon" style={{ background: activeTabData.bg, color: activeTabData.color }}>
+                  {(() => { const Icon = activeTabData.icon; return <Icon size={16}/>; })()}
+                </div>
+                <div>
+                  <div className="calModalTitle">Schedule Event</div>
+                  <div className="calModalSub" style={{ color: activeTabData.color }}>{activeTabData.label}</div>
+                </div>
+              </div>
+              <button className="calModalClose" onClick={() => setAddOpen(false)}><X size={16}/></button>
+            </div>
+
+            <div className="calModalBody">
+              {isEnqTab ? (
+                <>
+                  {/* Enquiry Follow-up Type */}
+                  <div className="calModalField">
+                    <label>Follow-up Action <span style={{ color: "#ef4444" }}>*</span></label>
+                    <div className="calFollowupTypes">
+                      {ENQ_FOLLOWUP_TYPES.map(ft => (
+                        <button
+                          key={ft.key}
+                          type="button"
+                          className={`calFollowupTypeBtn${form.followupType === ft.key ? " active" : ""}`}
+                          style={form.followupType === ft.key ? { borderColor: activeTabData.color, background: activeTabData.bg, color: activeTabData.color } : {}}
+                          onClick={() => setForm(p => ({ ...p, followupType: ft.key }))}
+                        >
+                          {ft.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Enquiry search */}
+                  <div className="calModalField">
+                    <label>Enquiry / Client <span style={{ color: "#ef4444" }}>*</span></label>
+                    {form.enquiryId ? (
+                      <div className="calSelectedLead" style={{ borderColor: activeTabData.color }}>
+                        <div className="calSelectedLeadInfo">
+                          <User size={14} style={{ color: activeTabData.color }}/>
+                          <div>
+                            <div className="calSelectedLeadName">{form.enquiryName}</div>
+                            <div className="calSelectedLeadSub">{form.enquiryPhone}{form.enquiryCompany ? ` · ${form.enquiryCompany}` : ""}</div>
                           </div>
                         </div>
-                      ) : null}
-
-                      <div className="calMiniList">
-                        {leads.slice(0, 3).map((lead) => (
+                        <button
+                          className="calSelectedLeadClear"
+                          onClick={() => { setForm(p => ({ ...p, enquiryId: "", enquiryName: "", enquiryPhone: "", enquiryCompany: "" })); setEnqSearch(""); }}
+                        >
+                          <X size={13}/>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="calLeadSearchWrap">
+                        <Search size={14} className="calLeadSearchIcon"/>
+                        <input
+                          className="calLeadSearchInput"
+                          placeholder="Search enquiry by name, phone, company…"
+                          value={enqSearch}
+                          onChange={e => setEnqSearch(e.target.value)}
+                          autoFocus
+                        />
+                        {searchingEnq && <span className="calLeadSearchSpin">…</span>}
+                      </div>
+                    )}
+                    {enqResults.length > 0 && !form.enquiryId && (
+                      <div className="calLeadDropdown">
+                        {enqResults.map(enq => (
                           <button
-                            key={lead.id}
-                            type="button"
-                            className={`calMiniTag ${getTagClass(lead.stage)} clickable`}
-                            title={`${lead.name} • ${lead.stage} • ${formatMoney(lead.value)}`}
-                            onClick={() => openLeadDrawer(lead.id)}
+                            key={enq._id}
+                            className="calLeadOption"
+                            onClick={() => {
+                              setForm(p => ({
+                                ...p,
+                                enquiryId:      enq._id,
+                                enquiryName:    enq.name    || "",
+                                enquiryPhone:   enq.phone   || "",
+                                enquiryCompany: enq.company || "",
+                              }));
+                              setEnqResults([]);
+                              setEnqSearch("");
+                            }}
                           >
-                            {lead.name}
+                            <div className="calLeadOptionName">{enq.name}</div>
+                            <div className="calLeadOptionMeta">
+                              {enq.phone || ""}{enq.company ? ` · ${enq.company}` : ""}
+                              {enq.status ? <span className="calLeadOptionStage">{enq.status}</span> : null}
+                            </div>
                           </button>
                         ))}
                       </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* Lead search (existing tabs) */
+                <div className="calModalField">
+                  <label>Client <span style={{ color: "#ef4444" }}>*</span></label>
+                  {form.leadId ? (
+                    <div className="calSelectedLead" style={{ borderColor: activeTabData.color }}>
+                      <div className="calSelectedLeadInfo">
+                        <User size={14} style={{ color: activeTabData.color }}/>
+                        <div>
+                          <div className="calSelectedLeadName">{form.leadName}</div>
+                          <div className="calSelectedLeadSub">{form.leadPhone}</div>
+                        </div>
+                      </div>
+                      <button
+                        className="calSelectedLeadClear"
+                        onClick={() => { setForm(p => ({ ...p, leadId: "", leadName: "", leadPhone: "" })); setLeadSearch(""); }}
+                      >
+                        <X size={13}/>
+                      </button>
                     </div>
-                  );
-                })}
+                  ) : (
+                    <div className="calLeadSearchWrap">
+                      <Search size={14} className="calLeadSearchIcon"/>
+                      <input
+                        className="calLeadSearchInput"
+                        placeholder="Search by name, phone, company…"
+                        value={leadSearch}
+                        onChange={e => setLeadSearch(e.target.value)}
+                        autoFocus
+                      />
+                      {searching && <span className="calLeadSearchSpin">…</span>}
+                    </div>
+                  )}
+                  {leadResults.length > 0 && !form.leadId && (
+                    <div className="calLeadDropdown">
+                      {leadResults.map(lead => (
+                        <button
+                          key={lead._id}
+                          className="calLeadOption"
+                          onClick={() => {
+                            setForm(p => ({
+                              ...p,
+                              leadId:    lead._id,
+                              leadName:  lead.name || "",
+                              leadPhone: lead.phone || lead.mobile || "",
+                            }));
+                            setLeadResults([]);
+                            setLeadSearch("");
+                          }}
+                        >
+                          <div className="calLeadOptionName">{lead.name}</div>
+                          <div className="calLeadOptionMeta">
+                            {lead.phone || lead.mobile || ""}{lead.business ? ` · ${lead.business}` : ""}
+                            {lead.stage ? <span className="calLeadOptionStage">{lead.stage}</span> : null}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Date */}
+              <div className="calModalField">
+                <label>Date <span style={{ color: "#ef4444" }}>*</span></label>
+                <input
+                  type="date"
+                  className="calModalInput"
+                  value={form.date}
+                  onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+                />
+              </div>
+
+              {/* Title (only for non-enquiry tabs) */}
+              {!isEnqTab && (
+                <div className="calModalField">
+                  <label>Title <span className="calModalOptional">(optional)</span></label>
+                  <input
+                    type="text"
+                    className="calModalInput"
+                    placeholder="e.g. Remind about 2nd installment"
+                    value={form.title}
+                    onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+                  />
+                </div>
+              )}
+
+              {/* Notes */}
+              <div className="calModalField">
+                <label>Notes <span className="calModalOptional">(optional)</span></label>
+                <textarea
+                  className="calModalTextarea"
+                  placeholder="Add any notes or context…"
+                  rows={3}
+                  value={form.notes}
+                  onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                />
               </div>
             </div>
 
-            <div className="calSidePanel">
-              <div className="calSideHead">
-                <h3>Upcoming</h3>
-                <span className="overdueBadge">{totalOverdue} overdue</span>
-              </div>
-
-              <div className="sideCardsWrap">
-                {filteredOverdue.slice(0, 3).map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="sideInfoCard overdue clickableCard"
-                    onClick={() => openLeadDrawer(item.id)}
-                  >
-                    <div className="sideInfoTop">Today — Overdue</div>
-                    <div className="sideInfoTitle">{item.name}</div>
-                    <div className="sideInfoMeta">
-                      {item.stage} · {item.rep || "-"}
-                    </div>
-                  </button>
-                ))}
-
-                {filteredUpcoming.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`sideInfoCard ${getTagClass(item.stage)} clickableCard`}
-                    onClick={() => openLeadDrawer(item.id)}
-                  >
-                    <div className="sideInfoDate">{formatCardDate(item.createdAt)}</div>
-                    <div className="sideInfoTitle">{item.name}</div>
-                    <div className="sideInfoMeta">
-                      {item.stage} · {item.rep || "-"}
-                    </div>
-                  </button>
-                ))}
-
-                {!loading && filteredOverdue.length === 0 && filteredUpcoming.length === 0 ? (
-                  <div className="sideEmpty">No calendar items found.</div>
-                ) : null}
-              </div>
+            <div className="calModalFoot">
+              <button className="calModalCancelBtn" onClick={() => setAddOpen(false)}>Cancel</button>
+              <button
+                className="calModalSaveBtn"
+                style={{ background: activeTabData.color }}
+                disabled={saving || (!isEnqTab && !form.leadId) || (isEnqTab && !form.enquiryId) || !form.date}
+                onClick={handleCreate}
+              >
+                {saving ? "Saving…" : "Schedule Event"}
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
+      {/* Lead Drawer */}
       <LeadDrawer
         open={drawerOpen}
-        leadId={selectedLeadId}
+        leadId={drawerLeadId}
         apiBase={API_BASE}
-        onClose={closeLeadDrawer}
+        onClose={() => { setDrawerOpen(false); setDrawerLeadId(null); }}
       />
-    </>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -10,253 +10,226 @@ import {
   Trophy,
   Building2,
   LogOut,
-  Sparkles,
   CreditCard,
   Settings,
-  ShieldCheck,
+  ClipboardList,
+  Wallet,
+  TrendingUp,
+  BookOpen,
+  MessageSquare,
+  UserCheck,
+  PiggyBank,
+  X,
+  Grid3X3,
 } from "lucide-react";
 import nncLogo from "../../assets/nnclogo.png";
 import "./Sidebar.css";
 
+/* Bottom nav items shown on mobile (most-used pages) */
+const BOTTOM_NAV = [
+  { label: "Home",   path: "/dashboard",   key: "dashboard",   icon: LayoutDashboard },
+  { label: "Leads",  path: "/leads",       key: "all-leads",   icon: Users           },
+  { label: "Today",  path: "/todays-plan", key: "todays-plan", icon: ClipboardList   },
+  { label: "Reports",path: "/analytics",   key: "analytics",   icon: BarChart3       },
+];
+
 export default function Sidebar() {
   const nav = useNavigate();
   const location = useLocation();
+  const [open, setOpen] = useState(false);
 
-  const storedUser = useMemo(() => {
+  /* Close drawer on route change */
+  useEffect(() => { setOpen(false); }, [location.pathname]);
+
+  /* Lock body scroll while drawer is open on mobile */
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  const { storedUser, isSuperAdmin, allowedModules } = useMemo(() => {
     try {
       const user = localStorage.getItem("nnc_user");
-      return user ? JSON.parse(user) : null;
-    } catch (error) {
-      console.error("Parse user error:", error);
-      return null;
+      const parsed = user ? JSON.parse(user) : null;
+      const isSuper = !parsed || parsed?.role === "master_admin" || parsed?.modules == null;
+      const mods = isSuper ? null : (Array.isArray(parsed?.modules) ? parsed.modules : []);
+      return { storedUser: parsed, isSuperAdmin: isSuper, allowedModules: mods };
+    } catch {
+      return { storedUser: null, isSuperAdmin: true, allowedModules: null };
     }
   }, []);
 
-  const userName = storedUser?.name || "Master Admin";
-  const userRole = storedUser?.role || "master_admin";
+  const userName      = storedUser?.name || "Master Admin";
+  const userRole      = storedUser?.role || "master_admin";
+  const userRoleLabel = userRole === "master_admin" ? "Super Admin" : (userRole || "User");
 
   const initials = useMemo(() => {
-    try {
-      if (!userName) return "MA";
-      const parts = userName.trim().split(" ").filter(Boolean);
-      if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-      return `${parts[0]?.[0] || ""}${parts[1]?.[0] || ""}`.toUpperCase();
-    } catch (error) {
-      console.error("Initials error:", error);
-      return "MA";
-    }
+    const parts = String(userName).trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0]?.[0] || ""}${parts[1]?.[0] || ""}`.toUpperCase();
   }, [userName]);
 
-  const roleLabelMap = {
-    master_admin: "Master Admin",
-    branch_manager: "Branch Manager",
-    sales_rep: "Sales Rep",
-    viewer: "Viewer",
+  const canSee = (moduleKey, adminOnly = false) => {
+    if (adminOnly) return isSuperAdmin;
+    if (allowedModules === null) return true;
+    return allowedModules.some(m => m === moduleKey || m === `${moduleKey}:view` || m === `${moduleKey}:edit`);
   };
 
-  const userRoleLabel = roleLabelMap[userRole] || "Admin";
-
-  const menuSections = [
+  const rawSections = [
     {
       title: "Overview",
       items: [
-        {
-          label: "Dashboard",
-          path: "/dashboard",
-          icon: <LayoutDashboard size={18} />,
-        },
+        { label: "Dashboard",    path: "/dashboard",   moduleKey: "dashboard",   icon: <LayoutDashboard size={15} /> },
+        { label: "Today's Plan", path: "/todays-plan", moduleKey: "todays-plan", icon: <ClipboardList size={15} /> },
       ],
     },
     {
       title: "Sales",
       items: [
-        {
-          label: "Pipeline",
-          path: "/pipeline",
-          icon: <KanbanSquare size={18} />,
-        },
-        {
-          label: "All Leads",
-          path: "/leads",
-          icon: <Users size={18} />,
-        },
-        {
-          label: "Calendar",
-          path: "/calendar",
-          icon: <CalendarDays size={18} />,
-        },
+        { label: "Pipeline",  path: "/pipeline",  moduleKey: "pipeline",  icon: <KanbanSquare size={15} /> },
+        { label: "All Leads", path: "/leads",     moduleKey: "all-leads", icon: <Users size={15} /> },
+        { label: "Enquiries", path: "/enquiries", moduleKey: "enquiries", icon: <MessageSquare size={15} /> },
+        { label: "Calendar",  path: "/calendar",  moduleKey: "calendar",  icon: <CalendarDays size={15} /> },
       ],
     },
     {
       title: "Documents",
       items: [
-        {
-          label: "Documents",
-          path: "/documents",
-          icon: <FileText size={18} />,
-        },
+        { label: "Documents", path: "/documents", moduleKey: "documents", icon: <FileText size={15} /> },
       ],
     },
     {
       title: "Analytics",
       items: [
-        {
-          label: "Analytics",
-          path: "/analytics",
-          icon: <BarChart3 size={18} />,
-        },
-        {
-          label: "Leaderboard",
-          path: "/leaderboard",
-          icon: <Trophy size={18} />,
-        },
-        {
-          label: "Branch Reports",
-          path: "/branch-reports",
-          icon: <Building2 size={18} />,
-        },
-        {
-          label: "Payment Tracker",
-          path: "/payment-tracker",
-          icon: <CreditCard size={18} />,
-        },
-        {
-          label: "Setting",
-          path: "/settings",
-          icon: <Settings size={18} />,
-        },
-        {
-          label: "Master Admin",
-          path: "/master-admin",
-          icon: <ShieldCheck size={18} />,
-        },
+        { label: "Analytics",       path: "/analytics",      moduleKey: "analytics",      icon: <BarChart3 size={15} /> },
+        { label: "Leaderboard",     path: "/leaderboard",    moduleKey: "leaderboard",    icon: <Trophy size={15} /> },
+        { label: "Branch Reports",  path: "/branch-reports", moduleKey: "branch-reports", icon: <Building2 size={15} /> },
+        { label: "Payment Tracker", path: "/payment-tracker",moduleKey: "payment-tracker",icon: <CreditCard size={15} /> },
+        { label: "Expense Tracker", path: "/expense-tracker",moduleKey: "expense-tracker",icon: <Wallet size={15} /> },
+        { label: "P&L Report",      path: "/pnl",            moduleKey: "pnl",            icon: <TrendingUp size={15} /> },
+        { label: "Reserve Funds",   path: "/funds",          moduleKey: "funds",          icon: <PiggyBank size={15} /> },
+        { label: "Accounting",      path: "/accounting",     moduleKey: "accounting",     icon: <BookOpen size={15} /> },
+        { label: "Settings",        path: "/settings",       moduleKey: "settings",       icon: <Settings size={15} /> },
+      ],
+    },
+    {
+      title: "HR",
+      items: [
+        { label: "Attendance & Salary", path: "/attendance", moduleKey: "attendance", icon: <UserCheck size={15} /> },
       ],
     },
   ];
 
-  const isActive = (path) => {
-    try {
-      return location.pathname === path;
-    } catch (error) {
-      console.error("isActive error:", error);
-      return false;
-    }
-  };
+  const menuSections = rawSections
+    .map(s => ({ ...s, items: s.items.filter(i => canSee(i.moduleKey, i.adminOnly)) }))
+    .filter(s => s.items.length > 0);
 
-  const goTo = (path) => {
-    try {
-      nav(path);
-    } catch (error) {
-      console.error(`Navigation error for ${path}:`, error);
-    }
-  };
+  const isActive = (path) => location.pathname === path;
+  const goTo     = (path) => nav(path);
 
   const handleLogout = () => {
-    try {
-      localStorage.removeItem("nnc_auth");
-      localStorage.removeItem("nnc_token");
-      localStorage.removeItem("nnc_role");
-      localStorage.removeItem("nnc_email");
-      localStorage.removeItem("nnc_user");
-      nav("/", { replace: true });
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    ["nnc_auth","nnc_token","nnc_role","nnc_email","nnc_user","nnc_modules"].forEach(k => localStorage.removeItem(k));
+    nav("/", { replace: true });
   };
 
   return (
-    <aside className="sb">
-      <div
-        className="sbTop"
-        onClick={() => goTo("/dashboard")}
-        style={{ cursor: "pointer" }}
-      >
-        <div className="sbTopGlow" />
-        <div className="sbTopGlow2" />
+    <>
+      {/* ── Backdrop (mobile drawer open) ───────────────────── */}
+      {open && <div className="sbBackdrop" onClick={() => setOpen(false)} />}
 
-        <div className="sbBrandRow">
-          <div className="sbLogoWrap">
-            <img src={nncLogo} alt="NNC Logo" className="sbLogoImage" />
-          </div>
+      {/* ── Sidebar / Drawer ─────────────────────────────────── */}
+      <aside className={`sb${open ? " sb-open" : ""}`}>
 
-          <div className="sbBrandText">
-            <div className="sbTitle">NNC CRM</div>
-            <div className="sbSub">Website Services Dashboard</div>
-            <div className="sbAdminText">{userRoleLabel}</div>
-          </div>
-        </div>
-
-        <div className="sbMiniPill">
-          <Sparkles size={11} />
-          <span>Premium Panel</span>
-        </div>
-      </div>
-
-      <div className="sbContent">
-        {menuSections.map((section) => (
-          <div className="sbGroup" key={section.title}>
-            <div className="sbGroupTitle">{section.title}</div>
-
-            <div className="sbGroupItems">
-              {section.items.map((item) => (
-                <Item
-                  key={item.path}
-                  icon={item.icon}
-                  label={item.label}
-                  active={isActive(item.path)}
-                  onClick={() => goTo(item.path)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="sbBottomWrap">
-        <div className="sbProfileCard">
-          <div className="sbBottom">
-            <div className="sbAvatar">{initials}</div>
-
-            <div className="sbUser">
-              <div className="sbUserName">{userName}</div>
-              <div className="sbUserSub">{userRoleLabel}</div>
-            </div>
-
-            <div className="sbTag">LIVE</div>
-          </div>
-        </div>
-
-        <button type="button" className="sbLogoutBtn" onClick={handleLogout}>
-          <span className="sbLogoutIcon">
-            <LogOut size={15} />
-          </span>
-          <span>Logout</span>
+        {/* Close button — only shown inside drawer on mobile */}
+        <button className="sbMobileClose" onClick={() => setOpen(false)} aria-label="Close menu">
+          <X size={16} />
         </button>
-      </div>
-    </aside>
+
+        <div className="sbTop" onClick={() => goTo("/dashboard")} style={{ cursor: "pointer" }}>
+          <div className="sbBrandRow">
+            <div className="sbLogoWrap">
+              <img src={nncLogo} alt="NNC Logo" className="sbLogoImage" />
+            </div>
+            <div className="sbBrandText">
+              <div className="sbTitle">NNC CRM</div>
+              <div className="sbSub">Website Services Dashboard</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="sbContent">
+          {menuSections.map(section => (
+            <div className="sbGroup" key={section.title}>
+              <div className="sbGroupTitle">{section.title}</div>
+              <div className="sbGroupItems">
+                {section.items.map(item => (
+                  <Item
+                    key={item.path}
+                    icon={item.icon}
+                    label={item.label}
+                    active={isActive(item.path)}
+                    onClick={() => goTo(item.path)}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="sbBottomWrap">
+          <div className="sbUserCard">
+            <div className="sbUserAvatar">{initials}</div>
+            <div className="sbUserInfo">
+              <div className="sbUserName">{userName}</div>
+              <div className="sbUserRole">{userRoleLabel}</div>
+            </div>
+          </div>
+          <button type="button" className="sbLogoutBtn" onClick={handleLogout}>
+            <span className="sbLogoutIcon"><LogOut size={15} /></span>
+            <span>Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Mobile bottom navigation bar ─────────────────────── */}
+      <nav className="sbMobileNav">
+        {BOTTOM_NAV.filter(item => canSee(item.key)).map(item => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
+          return (
+            <button
+              key={item.path}
+              className={`sbMobileNavItem${active ? " active" : ""}`}
+              onClick={() => goTo(item.path)}
+            >
+              <span className="sbMobileNavIcon"><Icon size={21} /></span>
+              <span className="sbMobileNavLabel">{item.label}</span>
+            </button>
+          );
+        })}
+        {/* "More" opens the full drawer */}
+        <button
+          className={`sbMobileNavItem${open ? " active" : ""}`}
+          onClick={() => setOpen(v => !v)}
+        >
+          <span className="sbMobileNavIcon">
+            {open ? <X size={21} /> : <Grid3X3 size={21} />}
+          </span>
+          <span className="sbMobileNavLabel">More</span>
+        </button>
+      </nav>
+    </>
   );
 }
 
 function Item({ label, badge, active, onClick, icon }) {
-  try {
-    return (
-      <button
-        type="button"
-        className={`sbItem ${active ? "active" : ""}`}
-        onClick={onClick}
-      >
-        <span className="sbIconWrap">
-          <span className="sbIcon">{icon}</span>
-        </span>
-
-        <span className="sbLabel">{label}</span>
-
-        {badge ? <span className="sbBadge">{badge}</span> : null}
-        {active ? <span className="sbActiveDot" /> : null}
-      </button>
-    );
-  } catch (error) {
-    console.error("Sidebar item render error:", error);
-    return null;
-  }
+  return (
+    <button type="button" className={`sbItem ${active ? "active" : ""}`} onClick={onClick}>
+      <span className="sbIconWrap">
+        <span className="sbIcon">{icon}</span>
+      </span>
+      <span className="sbLabel">{label}</span>
+      {badge ? <span className="sbBadge">{badge}</span> : null}
+    </button>
+  );
 }

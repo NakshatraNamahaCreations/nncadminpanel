@@ -1,144 +1,121 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "../utils/toast";
 import Sidebar from "../components/Sidebar/Sidebar";
-import Topbar from "../components/Topbar/Topbar";
 import LeadDrawer from "../Leads/LeadDrawer";
-import { Trash2, Download, Eye, Pencil, X, Search } from "lucide-react";
+import { Trash2, Download, Eye, Pencil, X, Search, CalendarPlus, Plus } from "lucide-react";
+import { ShimmerLeadList, BtnSpinner } from "../components/ui/Shimmer";
 import "./AllLeads.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
 
 const money = (n) => {
   try {
-    if (n == null) return "-";
+    if (n == null || n === 0) return "—";
     return `₹${Number(n).toLocaleString("en-IN")}`;
-  } catch (error) {
-    console.error("money error:", error);
-    return "-";
-  }
+  } catch { return "—"; }
 };
 
 const cls = (s = "") => String(s).toLowerCase().replace(/\s+/g, "-");
 
-const EMPTY_EDIT_FORM = {
-  _id: "",
-  name: "",
-  phone: "",
-  email: "",
-  business: "",
-  industry: "",
-  location: "",
-  requirements: "",
-  branch: "Bangalore",
-  source: "WhatsApp",
-  stage: "Lead Capture",
-  priority: "Hot",
-  value: 0,
-  days: "0d",
-  rep: "",
+const getAgo = (dateValue) => {
+  try {
+    if (!dateValue) return "—";
+    const days = Math.floor((Date.now() - new Date(dateValue).getTime()) / 86400000);
+    if (days === 0) return "Today";
+    if (days === 1) return "1d ago";
+    return `${days}d ago`;
+  } catch { return "—"; }
 };
 
+const initials = (name = "") => {
+  try {
+    return String(name).trim().split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() || "").join("") || "?";
+  } catch { return "?"; }
+};
+
+const STAGE_COLOR = {
+  "Lead Capture": { bg: "#eaf1ff", color: "#2457e6" },
+  Reachable:      { bg: "#e8faef", color: "#0a9b52" },
+  Qualified:      { bg: "#fff4df", color: "#de8a00" },
+  Proposal:       { bg: "#f2eaff", color: "#7c3aed" },
+  Closed:         { bg: "#e7f7ef", color: "#0c9f61" },
+};
+
+const PRIO_COLOR = { Hot: "#ef4444", Warm: "#f59e0b", Cold: "#64748b" };
+
+const EMPTY_EDIT_FORM = {
+  _id: "", name: "", phone: "", email: "", business: "",
+  industry: "", location: "", requirements: "",
+  branch: "Bangalore", source: "WhatsApp",
+  stage: "Lead Capture", priority: "Hot", value: "", days: "0d", rep: "",
+};
+
+const BRANCHES     = ["All", "Mysore", "Bangalore", "Mumbai"];
+const STAGES       = ["All", "Lead Capture", "Reachable", "Qualified", "Proposal", "Closed"];
+const PRIORITIES   = ["All", "Hot", "Warm", "Cold"];
+const SOURCES      = ["All", "Referral", "WhatsApp", "Website", "Call", "Instagram", "Social", "Form", "Phone"];
+const EDIT_BRANCHES  = ["Mysore", "Bangalore", "Mumbai"];
+const EDIT_STAGES    = ["Lead Capture", "Reachable", "Qualified", "Proposal", "Closed"];
+const EDIT_PRIORITIES = ["Hot", "Warm", "Cold"];
+const EDIT_SOURCES   = ["WhatsApp", "Website", "Call", "Instagram", "Referral"];
+
 export default function AllLeads() {
-  const [filters, setFilters] = useState({
-    branch: "All",
-    stage: "All",
-    priority: "All",
-    source: "All",
-    bant: "All",
-    rep: "All",
-    q: "",
-  });
-
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const [selectedId, setSelectedId] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [exporting, setExporting] = useState(false);
-
-  const [editOpen, setEditOpen] = useState(false);
+  const [filters, setFilters] = useState({ branch: "All", stage: "All", priority: "All", source: "All", bant: "All", rep: "All", q: "" });
+  const [rows, setRows]               = useState([]);
+  const [loading, setLoading]         = useState(false);
+  const [err, setErr]                 = useState("");
+  const [selectedId, setSelectedId]   = useState(null);
+  const [drawerOpen, setDrawerOpen]   = useState(false);
+  const [deletingId, setDeletingId]   = useState(null);
+  const [exporting, setExporting]     = useState(false);
+  const [planningId, setPlanningId]   = useState(null);
+  const [editOpen, setEditOpen]       = useState(false);
   const [editLoading, setEditLoading] = useState(false);
-  const [editSaving, setEditSaving] = useState(false);
-  const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM);
-
-  const [repOptions, setRepOptions] = useState(["All"]);
+  const [editSaving, setEditSaving]   = useState(false);
+  const [editForm, setEditForm]       = useState(EMPTY_EDIT_FORM);
+  const [addOpen, setAddOpen]         = useState(false);
+  const [addSaving, setAddSaving]     = useState(false);
+  const [advancePeriod, setAdvancePeriod] = useState("month");
+  const [repOptions, setRepOptions]   = useState(["All"]);
   const [repsLoading, setRepsLoading] = useState(false);
 
-  const BRANCHES = ["All", "Mysore", "Bangalore", "Mumbai"];
-  const STAGES = ["All", "Lead Capture", "Reachable", "Qualified", "Proposal", "Closed"];
-  const PRIORITIES = ["All", "Hot", "Warm", "Cold"];
-  const SOURCES = ["All", "Referral", "WhatsApp", "Website", "Call", "Instagram", "Social", "Form", "Phone"];
-  const BANTS = ["All", "0/4", "1/4", "2/4", "3/4", "4/4"];
+  const nowLocal = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  };
 
-  const EDIT_BRANCHES = ["Mysore", "Bangalore", "Mumbai"];
-  const EDIT_STAGES = ["Lead Capture", "Reachable", "Qualified", "Proposal", "Closed"];
-  const EDIT_PRIORITIES = ["Hot", "Warm", "Cold"];
-  const EDIT_SOURCES = ["WhatsApp", "Website", "Call", "Instagram", "Referral"];
+  const [addForm, setAddForm] = useState({
+    name: "", phone: "", email: "", business: "", industry: "", location: "", requirements: "",
+    branch: "Bangalore", source: "WhatsApp", stage: "Lead Capture", priority: "Hot", value: "", rep: "",
+    leadDateTime: nowLocal(),
+  });
 
   const queryParams = useMemo(() => {
-    try {
-      const p = new URLSearchParams();
-      p.set("branch", filters.branch || "All");
-      p.set("stage", filters.stage || "All");
-      p.set("priority", filters.priority || "All");
-      p.set("source", filters.source || "All");
-      p.set("bant", filters.bant || "All");
-      p.set("rep", filters.rep || "All");
-
-      if (filters.q && String(filters.q).trim()) {
-        p.set("q", String(filters.q).trim());
-      }
-
-      return p.toString();
-    } catch (error) {
-      console.error("queryParams error:", error);
-      return "";
-    }
+    const p = new URLSearchParams();
+    p.set("branch",   filters.branch);
+    p.set("stage",    filters.stage);
+    p.set("priority", filters.priority);
+    p.set("source",   filters.source);
+    p.set("bant",     filters.bant);
+    p.set("rep",      filters.rep);
+    if (filters.q?.trim()) p.set("q", filters.q.trim());
+    return p.toString();
   }, [filters]);
 
   const fetchReps = async () => {
     try {
       setRepsLoading(true);
-
-      const res = await fetch(`${API_BASE}/api/reps`);
+      const res  = await fetch(`${API_BASE}/api/reps`);
       const json = await res.json();
-
-      if (!res.ok || !json?.success) {
-        throw new Error(json?.message || "Failed to fetch reps");
-      }
-
-      const rawData = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
-
-      const names = rawData
-        .map((item) => {
-          try {
-            if (typeof item === "string") return item.trim();
-            return (
-              item?.name ||
-              item?.fullName ||
-              item?.repName ||
-              item?.employeeName ||
-              ""
-            ).trim();
-          } catch (error) {
-            console.error("rep map error:", error);
-            return "";
-          }
-        })
-        .filter(Boolean);
-
-      const uniqueNames = ["All", ...Array.from(new Set(names))];
-
-      setRepOptions(uniqueNames);
-
-      setFilters((prev) => {
-        if (prev.rep !== "All" && !uniqueNames.includes(prev.rep)) {
-          return { ...prev, rep: "All" };
-        }
-        return prev;
-      });
-    } catch (error) {
-      console.error("fetchReps error:", error);
+      if (!res.ok || !json?.success) return;
+      const rawData = Array.isArray(json?.data) ? json.data : [];
+      const names   = rawData.map(item => (typeof item === "string" ? item : item?.name || item?.repName || "").trim()).filter(Boolean);
+      const unique  = ["All", ...Array.from(new Set(names))];
+      setRepOptions(unique);
+      setFilters(p => p.rep !== "All" && !unique.includes(p.rep) ? { ...p, rep: "All" } : p);
+    } catch (e) {
+      console.error("fetchReps error:", e);
       setRepOptions(["All"]);
     } finally {
       setRepsLoading(false);
@@ -149,32 +126,27 @@ export default function AllLeads() {
     try {
       setLoading(true);
       setErr("");
-
-      const url = `${API_BASE}/api/leads?${queryParams}`;
-      const res = await fetch(url);
+      const res  = await fetch(`${API_BASE}/api/leads?${queryParams}`);
       const json = await res.json();
-
-      if (!res.ok || !json?.success) {
-        throw new Error(json?.message || "Failed to fetch leads");
-      }
-
-      const mapped = (json.data || []).map((x) => ({
-        id: x._id,
-        name: x.name || "-",
-        phone: x.phone || "-",
-        business: x.business || "-",
-        branch: x.branch || "-",
-        source: x.source || "-",
-        stage: x.stage || "-",
-        bant: x.bant || "-",
-        priority: x.priority || "-",
-        value: Number(x.value || 0),
-        days: x.days || "0d",
-        docs: Number(x.docs || 0),
-        rep: x.rep || "-",
-      }));
-
-      setRows(mapped);
+      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to fetch leads");
+      setRows((json.data || []).map(x => ({
+        id:              x._id,
+        name:            x.name            || "—",
+        phone:           x.phone           || "—",
+        business:        x.business        || "—",
+        branch:          x.branch          || "—",
+        source:          x.source          || "—",
+        stage:           x.stage           || "—",
+        bant:            x.bant            || "—",
+        priority:        x.priority        || "—",
+        value:           Number(x.value    || 0),
+        advanceReceived: x.advanceReceived != null ? Number(x.advanceReceived) : null,
+        advanceReceivedDate: x.advanceReceivedDate || null,
+        createdAt:       x.createdAt       || null,
+        days:            x.days            || "0d",
+        docs:            Number(x.docs     || 0),
+        rep:             x.rep             || "—",
+      })));
     } catch (e) {
       console.error("fetchLeads error:", e);
       setErr(e.message || "Failed to fetch");
@@ -184,708 +156,368 @@ export default function AllLeads() {
     }
   };
 
-  useEffect(() => {
-    try {
-      fetchReps();
-    } catch (error) {
-      console.error("fetchReps useEffect error:", error);
-    }
-  }, []);
+  useEffect(() => { fetchReps(); }, []);
+  useEffect(() => { fetchLeads(); }, [queryParams]);
 
-  useEffect(() => {
-    try {
-      fetchLeads();
-    } catch (error) {
-      console.error("fetchLeads useEffect error:", error);
-    }
-  }, [queryParams]);
+  const total = useMemo(() => rows.reduce((a, b) => a + (b.value || 0), 0), [rows]);
 
-  const total = useMemo(() => {
-    try {
-      return rows.reduce((a, b) => a + (b.value || 0), 0);
-    } catch (error) {
-      console.error("total error:", error);
-      return 0;
-    }
-  }, [rows]);
+  const advanceTotal = useMemo(() => {
+    const now          = new Date();
+    const startOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfWeek  = new Date(startOfDay); startOfWeek.setDate(startOfDay.getDate() - startOfDay.getDay());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    return rows
+      .filter(r => {
+        if (!(r.advanceReceived > 0)) return false;
+        const dateValue = r.advanceReceivedDate;
+        if (!dateValue) return false;
+        const d = new Date(dateValue);
+        if (advancePeriod === "today") return d >= startOfDay;
+        if (advancePeriod === "week")  return d >= startOfWeek;
+        if (advancePeriod === "month") return d >= startOfMonth;
+        return true;
+      })
+      .reduce((a, b) => a + (b.advanceReceived || 0), 0);
+  }, [rows, advancePeriod]);
 
-  const onCreateLead = async (payload) => {
+  const addLeadToTodayPlan = async (e, row) => {
     try {
-      const res = await fetch(`${API_BASE}/api/leads`, {
+      e.stopPropagation();
+      setPlanningId(row.id);
+      const res  = await fetch(`${API_BASE}/api/today-plan/from-lead/${row.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ taskType: "new_call", priority: row.priority === "Hot" ? "urgent" : "medium", section: "call_immediately", dueLabel: "ASAP", subtitle: row.business, plannedDate: new Date().toISOString() }),
       });
-
       const json = await res.json();
-
-      if (!res.ok || !json?.success) {
-        throw new Error(json?.message || "Failed to create lead");
-      }
-
-      await fetchLeads();
-      await fetchReps();
-    } catch (e) {
-      console.error("onCreateLead error:", e);
-      alert(e.message || "Failed to create lead");
-    }
+      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed");
+      toast.success(json?.message || "Added to today's plan");
+    } catch (e) { toast.error(e?.message || "Failed"); }
+    finally { setPlanningId(null); }
   };
 
   const handleDeleteLead = async (e, id) => {
     try {
       e.stopPropagation();
-
-      const ok = window.confirm("Are you sure you want to delete this lead?");
-      if (!ok) return;
-
+      if (!window.confirm("Delete this lead?")) return;
       setDeletingId(id);
-
-      const res = await fetch(`${API_BASE}/api/leads/${id}`, {
-        method: "DELETE",
-      });
-
+      const res  = await fetch(`${API_BASE}/api/leads/${id}`, { method: "DELETE" });
       const json = await res.json();
-
-      if (!res.ok || !json?.success) {
-        throw new Error(json?.message || "Failed to delete lead");
-      }
-
-      if (selectedId === id) {
-        setDrawerOpen(false);
-        setSelectedId(null);
-      }
-
+      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to delete");
+      if (selectedId === id) { setDrawerOpen(false); setSelectedId(null); }
       await fetchLeads();
-      await fetchReps();
-    } catch (error) {
-      console.error("handleDeleteLead error:", error);
-      alert(error?.message || "Failed to delete lead");
-    } finally {
-      setDeletingId(null);
-    }
+    } catch (e) { toast.error(e?.message || "Failed to delete"); }
+    finally { setDeletingId(null); }
   };
 
   const handleExport = async () => {
     try {
       setExporting(true);
-
-      const url = `${API_BASE}/api/leads/export/csv?${queryParams}`;
-      const res = await fetch(url);
-
-      if (!res.ok) {
-        let message = "Failed to export leads";
-
-        try {
-          const json = await res.json();
-          message = json?.message || message;
-        } catch (error) {
-          console.error("handleExport parse error:", error);
-        }
-
-        throw new Error(message);
-      }
-
+      const res = await fetch(`${API_BASE}/api/leads/export/csv?${queryParams}`);
+      if (!res.ok) throw new Error("Failed to export");
       const blob = await res.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-
-      const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (error) {
-      console.error("handleExport error:", error);
-      alert(error?.message || "Failed to export leads");
-    } finally {
-      setExporting(false);
-    }
+      const url  = window.URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url; a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) { toast.error(e?.message || "Failed to export"); }
+    finally { setExporting(false); }
   };
 
-  const clearSearch = () => {
-    try {
-      setFilters((p) => ({ ...p, q: "" }));
-    } catch (error) {
-      console.error("clearSearch error:", error);
-    }
-  };
-
-  const openLead = (id) => {
-    try {
-      setSelectedId(id);
-      setDrawerOpen(true);
-    } catch (error) {
-      console.error("openLead error:", error);
-    }
-  };
-
-  const closeEditModal = () => {
-    try {
-      setEditOpen(false);
-      setEditForm(EMPTY_EDIT_FORM);
-    } catch (error) {
-      console.error("closeEditModal error:", error);
-    }
-  };
-
-  const handleViewLead = async (e, id) => {
-    try {
-      e.stopPropagation();
-      setSelectedId(id);
-      setDrawerOpen(true);
-    } catch (error) {
-      console.error("handleViewLead error:", error);
-    }
+  const closeEditModal = () => { setEditOpen(false); setEditForm(EMPTY_EDIT_FORM); };
+  const closeAddModal  = () => {
+    setAddOpen(false);
+    setAddForm({ name: "", phone: "", email: "", business: "", industry: "", location: "", requirements: "", branch: "Bangalore", source: "WhatsApp", stage: "Lead Capture", priority: "Hot", value: "", rep: "", leadDateTime: nowLocal() });
   };
 
   const handleEditLead = async (e, id) => {
     try {
       e.stopPropagation();
-      setEditLoading(true);
-      setEditOpen(true);
-
-      const res = await fetch(`${API_BASE}/api/leads/${id}`);
+      setEditLoading(true); setEditOpen(true);
+      const res  = await fetch(`${API_BASE}/api/leads/${id}`);
       const json = await res.json();
-
-      if (!res.ok || !json?.success) {
-        throw new Error(json?.message || "Failed to fetch lead details");
-      }
-
-      const lead = json?.data || {};
-
-      setEditForm({
-        _id: lead._id || "",
-        name: lead.name || "",
-        phone: lead.phone || "",
-        email: lead.email || "",
-        business: lead.business || "",
-        industry: lead.industry || "",
-        location: lead.location || "",
-        requirements: lead.requirements || "",
-        branch: lead.branch || "Bangalore",
-        source: lead.source || "WhatsApp",
-        stage: lead.stage || "Lead Capture",
-        priority: lead.priority || "Hot",
-        value: Number(lead.value || 0),
-        days: lead.days || "0d",
-        rep: lead.rep || "",
-      });
-    } catch (error) {
-      console.error("handleEditLead error:", error);
-      alert(error?.message || "Failed to load lead");
-      setEditOpen(false);
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleEditChange = (e) => {
-    try {
-      const { name, value } = e.target;
-      setEditForm((prev) => ({
-        ...prev,
-        [name]: name === "value" ? Number(value || 0) : value,
-      }));
-    } catch (error) {
-      console.error("handleEditChange error:", error);
-    }
+      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to load");
+      const l = json?.data || {};
+      setEditForm({ _id: l._id || "", name: l.name || "", phone: l.phone || "", email: l.email || "", business: l.business || "", industry: l.industry || "", location: l.location || "", requirements: l.requirements || "", branch: l.branch || "Bangalore", source: l.source || "WhatsApp", stage: l.stage || "Lead Capture", priority: l.priority || "Hot", value: l.value > 0 ? Number(l.value) : "", days: l.days || "0d", rep: l.rep || "" });
+    } catch (e) { toast.error(e?.message || "Failed to load lead"); setEditOpen(false); }
+    finally { setEditLoading(false); }
   };
 
   const handleEditSubmit = async (e) => {
     try {
       e.preventDefault();
-
-      if (!String(editForm.name || "").trim()) {
-        alert("Name is required");
-        return;
-      }
-
-      if (!String(editForm.phone || "").trim()) {
-        alert("Phone is required");
-        return;
-      }
-
+      if (!editForm.name?.trim()) { toast.warning("Name is required"); return; }
+      if (!editForm.phone?.trim()) { toast.warning("Phone is required"); return; }
       setEditSaving(true);
-
-      const payload = {
-        name: editForm.name,
-        phone: editForm.phone,
-        email: editForm.email,
-        business: editForm.business,
-        industry: editForm.industry,
-        location: editForm.location,
-        requirements: editForm.requirements,
-        branch: editForm.branch,
-        source: editForm.source,
-        stage: editForm.stage,
-        priority: editForm.priority,
-        value: Number(editForm.value || 0),
-        days: editForm.days,
-        rep: editForm.rep,
-      };
-
-      const res = await fetch(`${API_BASE}/api/leads/${editForm._id}`, {
+      const res  = await fetch(`${API_BASE}/api/leads/${editForm._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ name: editForm.name, phone: editForm.phone, email: editForm.email, business: editForm.business, industry: editForm.industry, location: editForm.location, requirements: editForm.requirements, branch: editForm.branch, source: editForm.source, stage: editForm.stage, priority: editForm.priority, value: Number(editForm.value || 0), days: editForm.days, rep: editForm.rep }),
       });
-
       const json = await res.json();
-
-      if (!res.ok || !json?.success) {
-        throw new Error(json?.message || "Failed to update lead");
-      }
-
-      closeEditModal();
-      await fetchLeads();
-      await fetchReps();
-
-      alert("Lead updated successfully");
-    } catch (error) {
-      console.error("handleEditSubmit error:", error);
-      alert(error?.message || "Failed to update lead");
-    } finally {
-      setEditSaving(false);
-    }
+      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to update");
+      closeEditModal(); await fetchLeads(); await fetchReps();
+      toast.success("Lead updated successfully");
+    } catch (e) { toast.error(e?.message || "Failed to update"); }
+    finally { setEditSaving(false); }
   };
 
+  const handleAddSubmit = async (e) => {
+    try {
+      e.preventDefault();
+      if (!addForm.name?.trim())  { toast.warning("Name is required");  return; }
+      if (!addForm.phone?.trim()) { toast.warning("Phone is required"); return; }
+      if (!addForm.email?.trim()) { toast.warning("Email is required"); return; }
+      setAddSaving(true);
+      const token = localStorage.getItem("nnc_token");
+      const res   = await fetch(`${API_BASE}/api/leads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ ...addForm, value: addForm.value !== "" ? Number(addForm.value) : 0, createdAt: addForm.leadDateTime ? new Date(addForm.leadDateTime).toISOString() : new Date().toISOString() }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to create");
+      closeAddModal(); await fetchLeads(); await fetchReps();
+    } catch (e) { toast.error(e?.message || "Failed to create lead"); }
+    finally { setAddSaving(false); }
+  };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className={`leadsLayout ${drawerOpen ? "drawer-open" : ""}`}>
+    <div className={`alLayout ${drawerOpen ? "drawer-open" : ""}`}>
       <Sidebar active="All Leads" />
 
-      <div className="leadsMain">
-        <Topbar title="All Leads" roleLabel="Master Admin" onCreateLead={onCreateLead} />
+      <div className="alMain">
 
-        <div className="leadsBody">
-          <div className="filterCard">
-            <div className="filterLeft">
-              <div className="filterLabel">FILTER</div>
-
-              <select
-                value={filters.branch}
-                onChange={(e) => setFilters((p) => ({ ...p, branch: e.target.value }))}
-              >
-                {BRANCHES.map((x) => (
-                  <option key={x} value={x}>
-                    {x === "All" ? "All Branches" : x}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.stage}
-                onChange={(e) => setFilters((p) => ({ ...p, stage: e.target.value }))}
-              >
-                {STAGES.map((x) => (
-                  <option key={x} value={x}>
-                    {x === "All" ? "All Stages" : x}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.priority}
-                onChange={(e) => setFilters((p) => ({ ...p, priority: e.target.value }))}
-              >
-                {PRIORITIES.map((x) => (
-                  <option key={x} value={x}>
-                    {x === "All" ? "All Priority" : x}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.source}
-                onChange={(e) => setFilters((p) => ({ ...p, source: e.target.value }))}
-              >
-                {SOURCES.map((x) => (
-                  <option key={x} value={x}>
-                    {x === "All" ? "All Sources" : x}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.bant}
-                onChange={(e) => setFilters((p) => ({ ...p, bant: e.target.value }))}
-              >
-                {BANTS.map((x) => (
-                  <option key={x} value={x}>
-                    {x === "All" ? "All BANT" : x}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={filters.rep}
-                onChange={(e) => setFilters((p) => ({ ...p, rep: e.target.value }))}
-                disabled={repsLoading}
-              >
-                {repOptions.map((x) => (
-                  <option key={x} value={x}>
-                    {x === "All" ? (repsLoading ? "Loading Reps..." : "All Reps") : x}
-                  </option>
-                ))}
-              </select>
-
-              <div className="searchWrap">
-                <Search size={14} className="searchIconSvg" />
-                <input
-                  className="filterSearch"
-                  placeholder="Search name / phone / business"
-                  value={filters.q}
-                  onChange={(e) => setFilters((p) => ({ ...p, q: e.target.value }))}
-                />
-                {filters.q?.trim() ? (
-                  <button className="searchClear" type="button" onClick={clearSearch}>
-                    ×
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="filterRight">
-              <div className="totalText">{money(total)}</div>
-              <button
-                className="exportBtn"
-                type="button"
-                onClick={handleExport}
-                disabled={exporting}
-              >
-                <Download size={14} />
-                {exporting ? "Exporting..." : "Export"}
-              </button>
-            </div>
+        {/* ── Top bar ── */}
+        <div className="alTopBar">
+          <div className="alTopLeft">
+            <div className="alTitle">All Leads</div>
+            <span className="alCount">{rows.length}</span>
           </div>
 
-          {loading ? <div className="statusBox">Loading leads...</div> : null}
-          {err ? <div className="statusBox errorBox">{err}</div> : null}
-
-          <div className="tableCard">
-            <div className="tableScroll">
-              <table className="leadsTable">
-                <thead>
-                  <tr>
-                    <th>Lead / Contact</th>
-                    <th>Business</th>
-                    <th>Branch</th>
-                    <th>Source</th>
-                    <th>Stage</th>
-                    <th>BANT</th>
-                    <th>Priority</th>
-                    <th>Value</th>
-                    <th>Days</th>
-                    <th>Documents</th>
-                    <th>Rep</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {!loading && rows.length === 0 ? (
-                    <tr>
-                      <td colSpan={12} className="emptyRow">
-                        No leads found.
-                      </td>
-                    </tr>
-                  ) : null}
-
-                  {rows.map((r) => (
-                    <tr key={r.id} className="clickRow rowClickable">
-                      <td onClick={() => openLead(r.id)}>
-                        <div className="leadName">{r.name}</div>
-                        <div className="leadPhone">{r.phone}</div>
-                      </td>
-
-                      <td onClick={() => openLead(r.id)}>{r.business}</td>
-
-                      <td onClick={() => openLead(r.id)}>
-                        <span className={`pill branch ${cls(r.branch)}`}>{r.branch}</span>
-                      </td>
-
-                      <td onClick={() => openLead(r.id)}>
-                        <span className="pill gray">{r.source}</span>
-                      </td>
-
-                      <td onClick={() => openLead(r.id)}>
-                        <span className={`pill stage ${cls(r.stage)}`}>{r.stage}</span>
-                      </td>
-
-                      <td onClick={() => openLead(r.id)}>
-                        <span
-                          className={`bant ${
-                            r.bant === "4/4" ? "ok" : r.bant === "1/4" || r.bant === "0/4" ? "bad" : "mid"
-                          }`}
-                        >
-                          {r.bant}
-                        </span>
-                      </td>
-
-                      <td onClick={() => openLead(r.id)}>
-                        <span className={`prio ${cls(r.priority)}`}>{r.priority}</span>
-                      </td>
-
-                      <td className="value" onClick={() => openLead(r.id)}>
-                        {money(r.value)}
-                      </td>
-
-                      <td onClick={() => openLead(r.id)}>{r.days}</td>
-
-                      <td onClick={() => openLead(r.id)}>
-                        <span className={`docs ${r.docs > 0 ? "has" : ""}`}>{r.docs} docs</span>
-                      </td>
-
-                      <td onClick={() => openLead(r.id)}>{r.rep}</td>
-
-                      <td>
-                        <div className="leadActions">
-                          <button
-                            type="button"
-                            className="actionBtn viewBtn"
-                            onClick={(e) => handleViewLead(e, r.id)}
-                          >
-                            <Eye size={14} />
-                            View
-                          </button>
-
-                          <button
-                            type="button"
-                            className="actionBtn editBtn"
-                            onClick={(e) => handleEditLead(e, r.id)}
-                          >
-                            <Pencil size={14} />
-                            Edit
-                          </button>
-
-                          <button
-                            type="button"
-                            className="actionBtn deleteBtn"
-                            onClick={(e) => handleDeleteLead(e, r.id)}
-                            disabled={deletingId === r.id}
-                          >
-                            <Trash2 size={14} />
-                            {deletingId === r.id ? "..." : "Del"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <div className="alTopRight">
+            {/* Search */}
+            <div className="alSearchWrap">
+              <Search size={13} className="alSearchIcon" />
+              <input
+                className="alSearch"
+                placeholder="Search name, phone, business..."
+                value={filters.q}
+                onChange={e => setFilters(p => ({ ...p, q: e.target.value }))}
+              />
+              {filters.q && <button type="button" className="alSearchClear" onClick={() => setFilters(p => ({ ...p, q: "" }))}><X size={12}/></button>}
             </div>
+
+            {/* Advance pill */}
+            <div className="alAdvancePill">
+              <span className="alAdvanceLabel">Advance</span>
+              <span className="alAdvanceAmt">{money(advanceTotal)}</span>
+              <select className="alAdvancePeriod" value={advancePeriod} onChange={e => setAdvancePeriod(e.target.value)}>
+                <option value="today">Today</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+
+            <button className="alBtn ghost" type="button" onClick={handleExport} disabled={exporting}>
+              {exporting ? <BtnSpinner variant="dark" /> : <Download size={13}/>}
+              {exporting ? "Exporting…" : "Export"}
+            </button>
+            <button className="alBtn primary" type="button" onClick={() => setAddOpen(true)}>
+              <Plus size={13}/> Add Lead
+            </button>
           </div>
         </div>
+
+        {/* ── Stage tabs + compact filters ── */}
+        <div className="alFilterRow">
+          {/* Stage pills */}
+          <div className="alStagePills">
+            {STAGES.map(s => {
+              const active = filters.stage === s;
+              const c = STAGE_COLOR[s];
+              return (
+                <button key={s} type="button"
+                  className={`alStagePill ${active ? "active" : ""}`}
+                  style={active && c ? { background: c.bg, color: c.color, borderColor: c.color + "55" } : {}}
+                  onClick={() => setFilters(p => ({ ...p, stage: s }))}>
+                  {s === "All" ? "All Stages" : s}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Compact dropdowns */}
+          <div className="alDropdowns">
+            <select className="alDrop" value={filters.branch}   onChange={e => setFilters(p => ({ ...p, branch:   e.target.value }))}>
+              {BRANCHES.map(x   => <option key={x} value={x}>{x === "All" ? "All Branches" : x}</option>)}
+            </select>
+            <select className="alDrop" value={filters.priority} onChange={e => setFilters(p => ({ ...p, priority: e.target.value }))}>
+              {PRIORITIES.map(x => <option key={x} value={x}>{x === "All" ? "All Priority" : x}</option>)}
+            </select>
+            <select className="alDrop" value={filters.source}   onChange={e => setFilters(p => ({ ...p, source:   e.target.value }))}>
+              {SOURCES.map(x    => <option key={x} value={x}>{x === "All" ? "All Sources"   : x}</option>)}
+            </select>
+            <select className="alDrop" value={filters.rep}      onChange={e => setFilters(p => ({ ...p, rep:      e.target.value }))} disabled={repsLoading}>
+              {repOptions.map(x => <option key={x} value={x}>{x === "All" ? "All Reps" : x}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* ── States ── */}
+        {loading && <div className="alListWrap"><ShimmerLeadList rows={10} /></div>}
+        {err     && <div className="alState error">{err}</div>}
+
+        {/* ── Lead list ── */}
+        {!loading && !err && (
+          <div className="alListWrap">
+            {/* Summary row */}
+            <div className="alSummaryRow">
+              <span>{rows.length} lead{rows.length !== 1 ? "s" : ""}</span>
+              {total > 0 && <span>· {money(total)} total value</span>}
+            </div>
+
+            {rows.length === 0 ? (
+              <div className="alEmpty">No leads found{filters.q ? ` for "${filters.q}"` : ""}.</div>
+            ) : (
+              <div className="alList">
+                {rows.map(r => {
+                  const sc = STAGE_COLOR[r.stage] || {};
+                  const pc = PRIO_COLOR[r.priority] || "#94a3b8";
+                  return (
+                    <div key={r.id} className="alRow" onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
+
+                      {/* Avatar */}
+                      <div className="alAvatar" style={{ background: sc.bg || "#f1f5f9", color: sc.color || "#475569" }}>
+                        {initials(r.name)}
+                      </div>
+
+                      {/* Name + phone */}
+                      <div className="alRowMain">
+                        <div className="alRowName">{r.name}</div>
+                        <div className="alRowPhone">{r.phone}</div>
+                      </div>
+
+                      {/* Business */}
+                      <div className="alRowBiz">{r.business}</div>
+
+                      {/* Stage pill */}
+                      <span className="alRowStage" style={{ background: sc.bg || "#f1f5f9", color: sc.color || "#64748b" }}>
+                        {r.stage}
+                      </span>
+
+                      {/* Priority dot */}
+                      <span className="alRowPrio" style={{ color: pc }}>● {r.priority}</span>
+
+                      {/* Value */}
+                      <div className="alRowValue">{money(r.value)}</div>
+
+                      {/* Rep + age */}
+                      <div className="alRowMeta">
+                        <div className="alRowRep">{r.rep}</div>
+                        <div className="alRowAgo">{getAgo(r.createdAt)}</div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="alRowActions" onClick={e => e.stopPropagation()}>
+                        <button type="button" className="alAct view" title="View" onClick={e => { e.stopPropagation(); setSelectedId(r.id); setDrawerOpen(true); }}><Eye size={14}/></button>
+                        <button type="button" className="alAct edit" title="Edit" onClick={e => handleEditLead(e, r.id)}><Pencil size={14}/></button>
+                        <button type="button" className="alAct plan" title="Add to Today's Plan" onClick={e => addLeadToTodayPlan(e, r)} disabled={planningId === r.id}><CalendarPlus size={14}/></button>
+                        <button type="button" className="alAct del"  title="Delete" onClick={e => handleDeleteLead(e, r.id)} disabled={deletingId === r.id}><Trash2 size={14}/></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* ── Lead Drawer ── */}
       <LeadDrawer
         open={drawerOpen}
         leadId={selectedId}
         apiBase={API_BASE}
-        onClose={() => setDrawerOpen(false)}
-        onLeadUpdated={async () => {
-          try {
-            await fetchLeads();
-            await fetchReps();
-          } catch (error) {
-            console.error("onLeadUpdated error:", error);
-          }
-        }}
+        onClose={() => { setDrawerOpen(false); setSelectedId(null); }}
+        onLeadUpdated={async () => { await fetchLeads(); await fetchReps(); }}
       />
 
-      {editOpen ? (
-        <div className="editModalOverlay" onClick={closeEditModal}>
-          <div className="editModalCard" onClick={(e) => e.stopPropagation()}>
-            <div className="editModalHeader">
+      {/* ── Edit Modal ── */}
+      {editOpen && (
+        <div className="alModalOverlay" onClick={closeEditModal}>
+          <div className="alModalCard" onClick={e => e.stopPropagation()}>
+            <div className="alModalHeader">
               <h3>Edit Lead</h3>
-              <button type="button" className="editCloseBtn" onClick={closeEditModal}>
-                <X size={18} />
-              </button>
+              <button type="button" className="alModalClose" onClick={closeEditModal}><X size={18}/></button>
             </div>
-
-            {editLoading ? (
-              <div className="editModalLoading">Loading lead details...</div>
-            ) : (
-              <form className="editLeadForm" onSubmit={handleEditSubmit}>
-                <div className="editLeadGrid">
-                  <div className="formGroup">
-                    <label>Name *</label>
-                    <input
-                      name="name"
-                      value={editForm.name}
-                      onChange={handleEditChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Phone *</label>
-                    <input
-                      name="phone"
-                      value={editForm.phone}
-                      onChange={handleEditChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Email</label>
-                    <input
-                      name="email"
-                      value={editForm.email}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Business</label>
-                    <input
-                      name="business"
-                      value={editForm.business}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Industry</label>
-                    <input
-                      name="industry"
-                      value={editForm.industry}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Location</label>
-                    <input
-                      name="location"
-                      value={editForm.location}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Branch</label>
-                    <select
-                      name="branch"
-                      value={editForm.branch}
-                      onChange={handleEditChange}
-                    >
-                      {EDIT_BRANCHES.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Source</label>
-                    <select
-                      name="source"
-                      value={editForm.source}
-                      onChange={handleEditChange}
-                    >
-                      {EDIT_SOURCES.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Stage</label>
-                    <select
-                      name="stage"
-                      value={editForm.stage}
-                      onChange={handleEditChange}
-                    >
-                      {EDIT_STAGES.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Priority</label>
-                    <select
-                      name="priority"
-                      value={editForm.priority}
-                      onChange={handleEditChange}
-                    >
-                      {EDIT_PRIORITIES.map((item) => (
-                        <option key={item} value={item}>
-                          {item}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Value</label>
-                    <input
-                      type="number"
-                      name="value"
-                      value={editForm.value}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="formGroup">
-                    <label>Days</label>
-                    <input
-                      name="days"
-                      value={editForm.days}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="formGroup fullWidth">
-                    <label>Rep</label>
-                    <select
-                      name="rep"
-                      value={editForm.rep}
-                      onChange={handleEditChange}
-                    >
-                      <option value="">Select Rep</option>
-                      {repOptions
-                        .filter((item) => item !== "All")
-                        .map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div className="formGroup fullWidth">
-                    <label>Requirements</label>
-                    <textarea
-                      name="requirements"
-                      value={editForm.requirements}
-                      onChange={handleEditChange}
-                      rows={4}
-                    />
-                  </div>
+            {editLoading ? <div className="alModalLoading">Loading...</div> : (
+              <form className="alModalForm" onSubmit={handleEditSubmit}>
+                <div className="alModalGrid">
+                  <div className="fg"><label>Name *</label><input name="name" value={editForm.name} onChange={e => setEditForm(p => ({ ...p, name: e.target.value }))} required/></div>
+                  <div className="fg"><label>Phone *</label><input name="phone" value={editForm.phone} onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))} required/></div>
+                  <div className="fg"><label>Email</label><input name="email" value={editForm.email} onChange={e => setEditForm(p => ({ ...p, email: e.target.value }))}/></div>
+                  <div className="fg"><label>Business</label><input name="business" value={editForm.business} onChange={e => setEditForm(p => ({ ...p, business: e.target.value }))}/></div>
+                  <div className="fg"><label>Industry</label><input name="industry" value={editForm.industry} onChange={e => setEditForm(p => ({ ...p, industry: e.target.value }))}/></div>
+                  <div className="fg"><label>Location</label><input name="location" value={editForm.location} onChange={e => setEditForm(p => ({ ...p, location: e.target.value }))}/></div>
+                  <div className="fg"><label>Branch</label><select value={editForm.branch} onChange={e => setEditForm(p => ({ ...p, branch: e.target.value }))}>{EDIT_BRANCHES.map(x => <option key={x}>{x}</option>)}</select></div>
+                  <div className="fg"><label>Source</label><select value={editForm.source} onChange={e => setEditForm(p => ({ ...p, source: e.target.value }))}>{EDIT_SOURCES.map(x => <option key={x}>{x}</option>)}</select></div>
+                  <div className="fg"><label>Stage</label><select value={editForm.stage} onChange={e => setEditForm(p => ({ ...p, stage: e.target.value }))}>{EDIT_STAGES.map(x => <option key={x}>{x}</option>)}</select></div>
+                  <div className="fg"><label>Priority</label><select value={editForm.priority} onChange={e => setEditForm(p => ({ ...p, priority: e.target.value }))}>{EDIT_PRIORITIES.map(x => <option key={x}>{x}</option>)}</select></div>
+                  <div className="fg"><label>Value (₹)</label><input type="number" value={editForm.value} onChange={e => setEditForm(p => ({ ...p, value: e.target.value }))}/></div>
+                  <div className="fg"><label>Rep</label><select value={editForm.rep} onChange={e => setEditForm(p => ({ ...p, rep: e.target.value }))}><option value="">Select Rep</option>{repOptions.filter(x => x !== "All").map(x => <option key={x}>{x}</option>)}</select></div>
+                  <div className="fg full"><label>Requirements</label><textarea value={editForm.requirements} onChange={e => setEditForm(p => ({ ...p, requirements: e.target.value }))} rows={3}/></div>
                 </div>
-
-                <div className="editModalFooter">
-                  <button type="button" className="cancelBtn" onClick={closeEditModal}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="saveBtn" disabled={editSaving}>
-                    {editSaving ? "Saving..." : "Update Lead"}
+                <div className="alModalFooter">
+                  <button type="button" className="alBtn ghost" onClick={closeEditModal}>Cancel</button>
+                  <button type="submit" className="alBtn primary" disabled={editSaving}>
+                    {editSaving && <BtnSpinner />} {editSaving ? "Saving…" : "Update Lead"}
                   </button>
                 </div>
               </form>
             )}
           </div>
         </div>
-      ) : null}
+      )}
+
+      {/* ── Add Modal ── */}
+      {addOpen && (
+        <div className="alModalOverlay" onClick={closeAddModal}>
+          <div className="alModalCard" onClick={e => e.stopPropagation()}>
+            <div className="alModalHeader">
+              <h3>Add New Lead</h3>
+              <button type="button" className="alModalClose" onClick={closeAddModal}><X size={18}/></button>
+            </div>
+            <form className="alModalForm" onSubmit={handleAddSubmit}>
+              <div className="alModalGrid">
+                <div className="fg"><label>Name *</label><input name="name" value={addForm.name} onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))} required/></div>
+                <div className="fg"><label>Phone *</label><input name="phone" value={addForm.phone} onChange={e => setAddForm(p => ({ ...p, phone: e.target.value }))} required/></div>
+                <div className="fg"><label>Email *</label><input type="email" name="email" value={addForm.email} onChange={e => setAddForm(p => ({ ...p, email: e.target.value }))} required/></div>
+                <div className="fg"><label>Business</label><input value={addForm.business} onChange={e => setAddForm(p => ({ ...p, business: e.target.value }))}/></div>
+                <div className="fg"><label>Industry</label><input value={addForm.industry} onChange={e => setAddForm(p => ({ ...p, industry: e.target.value }))}/></div>
+                <div className="fg"><label>Location</label><input value={addForm.location} onChange={e => setAddForm(p => ({ ...p, location: e.target.value }))}/></div>
+                <div className="fg"><label>Branch</label><select value={addForm.branch} onChange={e => setAddForm(p => ({ ...p, branch: e.target.value }))}>{EDIT_BRANCHES.map(x => <option key={x}>{x}</option>)}</select></div>
+                <div className="fg"><label>Source</label><select value={addForm.source} onChange={e => setAddForm(p => ({ ...p, source: e.target.value }))}>{EDIT_SOURCES.map(x => <option key={x}>{x}</option>)}</select></div>
+                <div className="fg"><label>Stage</label><select value={addForm.stage} onChange={e => setAddForm(p => ({ ...p, stage: e.target.value }))}>{EDIT_STAGES.map(x => <option key={x}>{x}</option>)}</select></div>
+                <div className="fg"><label>Priority</label><select value={addForm.priority} onChange={e => setAddForm(p => ({ ...p, priority: e.target.value }))}>{EDIT_PRIORITIES.map(x => <option key={x}>{x}</option>)}</select></div>
+                <div className="fg"><label>Value (₹)</label><input type="number" value={addForm.value} onChange={e => setAddForm(p => ({ ...p, value: e.target.value }))}/></div>
+                <div className="fg"><label>Rep</label><select value={addForm.rep} onChange={e => setAddForm(p => ({ ...p, rep: e.target.value }))}><option value="">Select Rep</option>{repOptions.filter(x => x !== "All").map(x => <option key={x}>{x}</option>)}</select></div>
+                <div className="fg full"><label>Requirements</label><textarea value={addForm.requirements} onChange={e => setAddForm(p => ({ ...p, requirements: e.target.value }))} rows={3}/></div>
+                <div className="fg full"><label>Lead Date &amp; Time</label><input type="datetime-local" value={addForm.leadDateTime} onChange={e => setAddForm(p => ({ ...p, leadDateTime: e.target.value }))}/></div>
+              </div>
+              <div className="alModalFooter">
+                <button type="button" className="alBtn ghost" onClick={closeAddModal}>Cancel</button>
+                <button type="submit" className="alBtn primary" disabled={addSaving}>
+                  {addSaving && <BtnSpinner />} {addSaving ? "Creating…" : "Create Lead"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

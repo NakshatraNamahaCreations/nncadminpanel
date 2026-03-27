@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "../utils/toast";
 import "./UploadDocumentModal.css";
 
 const TYPES = [
@@ -50,13 +51,13 @@ export default function UploadDocumentModal({
 
       // 25MB limit client-side too
       if (f.size > 25 * 1024 * 1024) {
-        alert("File too large. Max 25MB");
+        toast.warning("File too large. Max 25MB");
         e.target.value = "";
         return;
       }
       setFile(f);
     } catch (err) {
-      alert(err?.message || "Unable to select file");
+      toast.error(err?.message || "Unable to select file");
     }
   };
 
@@ -84,7 +85,7 @@ export default function UploadDocumentModal({
       onUploaded?.(json.data);
       onClose?.();
     } catch (err) {
-      alert(err?.message || "Upload failed");
+      toast.error(err?.message || "Upload failed");
     } finally {
       setSaving(false);
     }

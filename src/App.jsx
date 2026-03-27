@@ -12,8 +12,14 @@ import Leaderboard from "./pages/Leaderboard/Leaderboard";
 import BranchReports from "./pages/BranchReports/BranchReports";
 import PaymentTracker from "./pages/PaymentTracker/PaymentTracker";
 import Settings from "./pages/Setting/Settings";
-import MasterAdmin from "./pages/MasterAdmin/MasterAdmin";
-
+import TodaysPlanPage from "./pages/MasterAdmin/TodaysPlanPage";
+import UserManagement from "./pages/UserManagement/UserManagement";
+import ExpenseTracker from "./pages/ExpenseTracker/ExpenseTracker";
+import PnLPage        from "./pages/PnL/PnLPage";
+import AccountingPage from "./pages/Accounting/AccountingPage";
+import EnquiriesPage  from "./pages/Enquiries/EnquiriesPage";
+import AttendancePage from "./pages/Attendance/AttendancePage";
+import FundsPage      from "./pages/Funds/FundsPage";
 
 function isAuthed() {
   try {
@@ -34,10 +40,26 @@ function ProtectedRoute({ children }) {
   }
 }
 
+function PublicRoute({ children }) {
+  try {
+    return isAuthed() ? <Navigate to="/dashboard" replace /> : children;
+  } catch (error) {
+    console.error("PublicRoute error:", error);
+    return children;
+  }
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<LoginScreen />} />
+      <Route
+        path="/"
+        element={
+          <PublicRoute>
+            <LoginScreen />
+          </PublicRoute>
+        }
+      />
 
       <Route
         path="/dashboard"
@@ -62,6 +84,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AllLeads />
+          </ProtectedRoute>
+        }
+      />
+
+        <Route
+        path="/todays-plan"
+        element={
+          <ProtectedRoute>
+            <TodaysPlanPage/>
           </ProtectedRoute>
         }
       />
@@ -110,7 +141,8 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-           <Route
+
+      <Route
         path="/payment-tracker"
         element={
           <ProtectedRoute>
@@ -118,11 +150,83 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      
-<Route path="/settings" element={<Settings />} />
-<Route path="/master-admin" element={<MasterAdmin />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/user-management"
+        element={
+          <ProtectedRoute>
+            <UserManagement />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/expense-tracker"
+        element={
+          <ProtectedRoute>
+            <ExpenseTracker />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/pnl"
+        element={
+          <ProtectedRoute>
+            <PnLPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/accounting"
+        element={
+          <ProtectedRoute>
+            <AccountingPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/enquiries"
+        element={
+          <ProtectedRoute>
+            <EnquiriesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute>
+            <AttendancePage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/funds"
+        element={
+          <ProtectedRoute>
+            <FundsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="*"
+        element={<Navigate to={isAuthed() ? "/dashboard" : "/"} replace />}
+      />
     </Routes>
   );
 }
-

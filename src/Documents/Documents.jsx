@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "../utils/toast";
 import Sidebar from "../components/Sidebar/Sidebar";
-import Topbar from "../components/Topbar/Topbar";
 import DocCard from "../components/DocCard/DocCard";
 import { API_BASE_URL } from "../services/api";
 import "./Documents.css";
@@ -16,7 +16,6 @@ export default function Documents() {
     totalDocuments: 0,
   });
   const [activeType, setActiveType] = useState("all");
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
 
   const fetchDocuments = async (typeValue = "all", searchValue = "") => {
@@ -47,7 +46,7 @@ export default function Documents() {
       setDocuments(result.data || []);
     } catch (error) {
       console.error("fetchDocuments error:", error);
-      alert(error?.message || "Failed to fetch documents");
+      toast.error(error?.message || "Failed to fetch documents");
     } finally {
       setLoading(false);
     }
@@ -68,39 +67,6 @@ export default function Documents() {
     }
   };
 
-  const handleUploadDocument = async (payload) => {
-    try {
-      const formData = new FormData();
-      formData.append("type", payload.type);
-      formData.append("linkedLead", payload.linkedLead);
-      formData.append("date", payload.date);
-      formData.append("name", payload.name);
-      formData.append("notes", payload.notes || "");
-      formData.append("file", payload.file);
-
-      const response = await fetch(`${API_BASE_URL}/api/documents/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || "Failed to upload document");
-      }
-
-      await fetchDocuments(activeType, search);
-      await fetchStats();
-
-      alert("Document uploaded successfully");
-      return result.data;
-    } catch (error) {
-      console.error("handleUploadDocument error:", error);
-      alert(error?.message || "Failed to upload document");
-      throw error;
-    }
-  };
-
   const handleDelete = async (id) => {
     try {
       const ok = window.confirm("Are you sure you want to delete this document?");
@@ -116,21 +82,23 @@ export default function Documents() {
         throw new Error(result.message || "Failed to delete document");
       }
 
-      await fetchDocuments(activeType, search);
+      await fetchDocuments(activeType, "");
       await fetchStats();
 
-      alert("Document deleted successfully");
+      toast.success("Document deleted successfully");
     } catch (error) {
       console.error("handleDelete error:", error);
-      alert(error?.message || "Failed to delete document");
+      toast.error(error?.message || "Failed to delete document");
     }
   };
 
   useEffect(() => {
     const init = async () => {
       try {
-        await fetchDocuments("all", "");
-        await fetchStats();
+        await Promise.all([
+          fetchDocuments("all", ""),
+          fetchStats(),
+        ]);
       } catch (error) {
         console.error("Documents init error:", error);
       }
@@ -142,18 +110,9 @@ export default function Documents() {
   const handleFilterClick = async (typeValue) => {
     try {
       setActiveType(typeValue);
-      await fetchDocuments(typeValue, search);
+      await fetchDocuments(typeValue, "");
     } catch (error) {
       console.error("handleFilterClick error:", error);
-    }
-  };
-
-  const handleSearchChange = async (value) => {
-    try {
-      setSearch(value);
-      await fetchDocuments(activeType, value);
-    } catch (error) {
-      console.error("handleSearchChange error:", error);
     }
   };
 
@@ -171,25 +130,6 @@ export default function Documents() {
       <Sidebar active="Documents" />
 
       <div className="docsPage">
-        <Topbar
-          title="Documents"
-          roleLabel="Master Admin"
-          onUploadDocument={handleUploadDocument}
-          showUpload={true}
-          showAddLead={true}
-          showLogout={false}
-          uploadLabel="Upload"
-          addLeadLabel="Add Lead"
-        >
-          <input
-            className="docsSearch"
-            type="text"
-            placeholder="Search leads, docs..."
-            value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
-          />
-        </Topbar>
-
         <div className="docsTabs">
           <button
             className={`docsTab ${activeType === "all" ? "active" : ""}`}
