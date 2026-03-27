@@ -33,14 +33,16 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    console.error(
-      "API response error:",
-      error?.response?.data || error.message || error
-    );
+    if (error?.response?.status === 401) {
+      // Token expired or invalid — clear session and redirect to login
+      localStorage.removeItem("nnc_token");
+      localStorage.removeItem("nnc_auth");
+      localStorage.removeItem("nnc_user");
+      window.location.href = "/";
+    }
+    console.error("API response error:", error?.response?.data || error.message || error);
     return Promise.reject(error);
   }
 );

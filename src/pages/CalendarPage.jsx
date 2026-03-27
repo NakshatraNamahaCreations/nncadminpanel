@@ -32,6 +32,17 @@ function authHeader() {
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
+function handle401(res) {
+  if (res.status === 401) {
+    localStorage.removeItem("nnc_token");
+    localStorage.removeItem("nnc_auth");
+    localStorage.removeItem("nnc_user");
+    window.location.href = "/";
+    throw new Error("Session expired. Please log in again.");
+  }
+  return res;
+}
+
 function fmtMonthYear(year, month) {
   return new Date(year, month, 1).toLocaleString("en-IN", { month: "long", year: "numeric" });
 }
@@ -93,7 +104,7 @@ export default function CalendarPage() {
       const res  = await fetch(
         `${API_BASE}/api/calendar-events?year=${currentYear}&month=${currentMonth + 1}&type=${activeTab}`,
         { headers: authHeader() }
-      );
+      ).then(handle401);
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message || "Failed to load events");
       setEvents(json.data || {});
@@ -171,7 +182,7 @@ export default function CalendarPage() {
         method:  "POST",
         headers: { "Content-Type": "application/json", ...authHeader() },
         body:    JSON.stringify(payload),
-      });
+      }).then(handle401);
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message || "Failed to save");
       toast.success("Event scheduled");
@@ -192,7 +203,7 @@ export default function CalendarPage() {
     try {
       const res  = await fetch(`${API_BASE}/api/calendar-events/${id}`, {
         method: "DELETE", headers: authHeader(),
-      });
+      }).then(handle401);
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message || "Failed to delete");
       toast.success("Event removed");
