@@ -204,6 +204,14 @@
   background: #f1f5f9; color: #64748b;
 }
 
+.enq-landing-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+  background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;
+  margin-top: 3px; transition: background .12s;
+}
+.enq-landing-badge:hover { background: #bae6fd; }
+
 .enq-actions { display: flex; align-items: center; gap: 2px; }
 
 .enq-empty {

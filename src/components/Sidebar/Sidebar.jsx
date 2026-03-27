@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -37,9 +37,17 @@ export default function Sidebar() {
   const nav = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const sbContentRef  = useRef(null);
+  const scrollPosRef  = useRef(0);
 
-  /* Close drawer on route change */
-  useEffect(() => { setOpen(false); }, [location.pathname]);
+  /* Close drawer on route change, but restore sidebar scroll position */
+  useEffect(() => {
+    setOpen(false);
+    /* Restore scroll after render so the active item stays visible */
+    if (sbContentRef.current) {
+      sbContentRef.current.scrollTop = scrollPosRef.current;
+    }
+  }, [location.pathname]);
 
   /* Lock body scroll while drawer is open on mobile */
   useEffect(() => {
@@ -125,7 +133,14 @@ export default function Sidebar() {
     .filter(s => s.items.length > 0);
 
   const isActive = (path) => location.pathname === path;
-  const goTo     = (path) => nav(path);
+
+  const goTo = (path) => {
+    /* Save current scroll position before navigating */
+    if (sbContentRef.current) {
+      scrollPosRef.current = sbContentRef.current.scrollTop;
+    }
+    nav(path);
+  };
 
   const handleLogout = () => {
     ["nnc_auth","nnc_token","nnc_role","nnc_email","nnc_user","nnc_modules"].forEach(k => localStorage.removeItem(k));
@@ -157,7 +172,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        <div className="sbContent">
+        <div className="sbContent" ref={sbContentRef}>
           {menuSections.map(section => (
             <div className="sbGroup" key={section.title}>
               <div className="sbGroupTitle">{section.title}</div>

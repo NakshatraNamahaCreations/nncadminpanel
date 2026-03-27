@@ -436,6 +436,34 @@
 .fg textarea:focus { border-color: #2f66f6; background: #ffffff; }
 .fg textarea { resize: vertical; }
 
+/* read-only computed fields */
+.alReadOnly {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  cursor: default !important;
+  border-color: #e5edf6 !important;
+}
+
+/* final payment date banner */
+.alFinalPayRow { grid-column: 1 / -1; }
+.alFinalPayDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(90deg, #eff6ff, #e0edff);
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 9px 16px;
+  letter-spacing: 0.01em;
+}
+.alFinalPayDate::before {
+  content: "📅";
+  font-size: 16px;
+}
+
 .alModalFooter {
   display: flex;
   justify-content: flex-end;

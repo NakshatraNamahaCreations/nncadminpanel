@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "../utils/toast";
 import Sidebar from "../components/Sidebar/Sidebar";
 import LeadDrawer from "../Leads/LeadDrawer";
@@ -48,6 +49,28 @@ const EMPTY_EDIT_FORM = {
   industry: "", location: "", requirements: "",
   branch: "Bangalore", source: "WhatsApp",
   stage: "Lead Capture", priority: "Hot", value: "", days: "0d", rep: "",
+  advanceReceived: "", advanceReceivedDate: "", agreedTimeline: "",
+};
+
+/* Format a Date/ISO string → "YYYY-MM-DD" for <input type="date"> */
+const toDateInput = (val) => {
+  if (!val) return "";
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split("T")[0];
+  } catch { return ""; }
+};
+
+/* Add N days to a date and return a readable string */
+const addDays = (dateVal, days) => {
+  if (!dateVal || !days) return "";
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return "";
+    d.setDate(d.getDate() + Number(days));
+    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  } catch { return ""; }
 };
 
 const BRANCHES     = ["All", "Mysore", "Bangalore", "Mumbai"];
@@ -60,7 +83,11 @@ const EDIT_PRIORITIES = ["Hot", "Warm", "Cold"];
 const EDIT_SOURCES   = ["WhatsApp", "Website", "Call", "Instagram", "Referral"];
 
 export default function AllLeads() {
-  const [filters, setFilters] = useState({ branch: "All", stage: "All", priority: "All", source: "All", bant: "All", rep: "All", q: "" });
+  const [searchParams] = useSearchParams();
+  const [filters, setFilters] = useState(() => ({
+    branch: "All", priority: "All", source: "All", bant: "All", rep: "All", q: "",
+    stage: searchParams.get("stage") || "All",
+  }));
   const [rows, setRows]               = useState([]);
   const [loading, setLoading]         = useState(false);
   const [err, setErr]                 = useState("");
@@ -239,7 +266,26 @@ export default function AllLeads() {
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to load");
       const l = json?.data || {};
-      setEditForm({ _id: l._id || "", name: l.name || "", phone: l.phone || "", email: l.email || "", business: l.business || "", industry: l.industry || "", location: l.location || "", requirements: l.requirements || "", branch: l.branch || "Bangalore", source: l.source || "WhatsApp", stage: l.stage || "Lead Capture", priority: l.priority || "Hot", value: l.value > 0 ? Number(l.value) : "", days: l.days || "0d", rep: l.rep || "" });
+      setEditForm({
+        _id:                 l._id                || "",
+        name:                l.name               || "",
+        phone:               l.phone              || "",
+        email:               l.email              || "",
+        business:            l.business           || "",
+        industry:            l.industry           || "",
+        location:            l.location           || "",
+        requirements:        l.requirements       || "",
+        branch:              l.branch             || "Bangalore",
+        source:              l.source             || "WhatsApp",
+        stage:               l.stage              || "Lead Capture",
+        priority:            l.priority           || "Hot",
+        value:               l.value > 0          ? Number(l.value) : "",
+        days:                l.days               || "0d",
+        rep:                 l.rep                || "",
+        advanceReceived:     l.advanceReceived > 0 ? Number(l.advanceReceived) : "",
+        advanceReceivedDate: toDateInput(l.advanceReceivedDate),
+        agreedTimeline:      l.agreedTimeline > 0  ? Number(l.agreedTimeline) : "",
+      });
     } catch (e) { toast.error(e?.message || "Failed to load lead"); setEditOpen(false); }
     finally { setEditLoading(false); }
   };
@@ -253,7 +299,25 @@ export default function AllLeads() {
       const res  = await fetch(`${API_BASE}/api/leads/${editForm._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editForm.name, phone: editForm.phone, email: editForm.email, business: editForm.business, industry: editForm.industry, location: editForm.location, requirements: editForm.requirements, branch: editForm.branch, source: editForm.source, stage: editForm.stage, priority: editForm.priority, value: Number(editForm.value || 0), days: editForm.days, rep: editForm.rep }),
+        body: JSON.stringify({
+          name:                editForm.name,
+          phone:               editForm.phone,
+          email:               editForm.email,
+          business:            editForm.business,
+          industry:            editForm.industry,
+          location:            editForm.location,
+          requirements:        editForm.requirements,
+          branch:              editForm.branch,
+          source:              editForm.source,
+          stage:               editForm.stage,
+          priority:            editForm.priority,
+          value:               Number(editForm.value || 0),
+          days:                editForm.days,
+          rep:                 editForm.rep,
+          advanceReceived:     editForm.advanceReceived !== "" ? Number(editForm.advanceReceived) : 0,
+          advanceReceivedDate: editForm.advanceReceivedDate || null,
+          agreedTimeline:      editForm.agreedTimeline !== "" ? Number(editForm.agreedTimeline) : 0,
+        }),
       });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to update");
@@ -467,8 +531,18 @@ export default function AllLeads() {
                   <div className="fg"><label>Source</label><select value={editForm.source} onChange={e => setEditForm(p => ({ ...p, source: e.target.value }))}>{EDIT_SOURCES.map(x => <option key={x}>{x}</option>)}</select></div>
                   <div className="fg"><label>Stage</label><select value={editForm.stage} onChange={e => setEditForm(p => ({ ...p, stage: e.target.value }))}>{EDIT_STAGES.map(x => <option key={x}>{x}</option>)}</select></div>
                   <div className="fg"><label>Priority</label><select value={editForm.priority} onChange={e => setEditForm(p => ({ ...p, priority: e.target.value }))}>{EDIT_PRIORITIES.map(x => <option key={x}>{x}</option>)}</select></div>
-                  <div className="fg"><label>Value (₹)</label><input type="number" value={editForm.value} onChange={e => setEditForm(p => ({ ...p, value: e.target.value }))}/></div>
+                  <div className="fg"><label>Total Amount Agreed (₹)</label><input type="number" value={editForm.value} onChange={e => setEditForm(p => ({ ...p, value: e.target.value }))}/></div>
                   <div className="fg"><label>Rep</label><select value={editForm.rep} onChange={e => setEditForm(p => ({ ...p, rep: e.target.value }))}><option value="">Select Rep</option>{repOptions.filter(x => x !== "All").map(x => <option key={x}>{x}</option>)}</select></div>
+                  <div className="fg"><label>Advance Received (₹)</label><input type="number" value={editForm.advanceReceived} onChange={e => setEditForm(p => ({ ...p, advanceReceived: e.target.value }))}/></div>
+                  <div className="fg"><label>Advance Received Date</label><input type="date" value={editForm.advanceReceivedDate} onChange={e => setEditForm(p => ({ ...p, advanceReceivedDate: e.target.value }))}/></div>
+                  <div className="fg"><label>Remaining Balance (₹)</label><input type="number" readOnly value={editForm.value !== "" && editForm.advanceReceived !== "" ? Math.max(0, Number(editForm.value) - Number(editForm.advanceReceived)) : ""} className="alReadOnly"/></div>
+                  <div className="fg"><label>Agreed Timeline (days)</label><input type="number" min="0" value={editForm.agreedTimeline} onChange={e => setEditForm(p => ({ ...p, agreedTimeline: e.target.value }))}/></div>
+                  {editForm.advanceReceivedDate && editForm.agreedTimeline ? (
+                    <div className="fg alFinalPayRow">
+                      <label>Final Payment Date</label>
+                      <div className="alFinalPayDate">{addDays(editForm.advanceReceivedDate, editForm.agreedTimeline)}</div>
+                    </div>
+                  ) : null}
                   <div className="fg full"><label>Requirements</label><textarea value={editForm.requirements} onChange={e => setEditForm(p => ({ ...p, requirements: e.target.value }))} rows={3}/></div>
                 </div>
                 <div className="alModalFooter">

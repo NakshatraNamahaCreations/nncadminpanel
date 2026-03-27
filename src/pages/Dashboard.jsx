@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "../utils/toast";
 import {
   RefreshCcw, AlertTriangle, Phone, Mail, TrendingUp,
@@ -29,6 +30,7 @@ const today = new Date().toLocaleDateString("en-IN", {
 });
 
 const SALES_PERIODS = [
+  { key: "all",    label: "All Time" },
   { key: "today",  label: "Today" },
   { key: "week",   label: "This Week" },
   { key: "month",  label: "This Month" },
@@ -158,6 +160,8 @@ export default function Dashboard() {
     }
   };
 
+  const navigate = useNavigate();
+
   const openLead = (leadId) => {
     setDrawerLeadId(leadId);
     setDrawerOpen(true);
@@ -273,13 +277,19 @@ export default function Dashboard() {
                 )}
 
                 <div className="db-so-cards">
-                  <div className="db-so-card blue">
+                  <div className="db-so-card teal" onClick={() => navigate("/enquiries")} style={{ cursor:"pointer" }}>
+                    <div className="db-so-card-icon">💬</div>
+                    <div className="db-so-card-val">{salesLoading ? "—" : (salesData?.enquiries ?? "—")}</div>
+                    <div className="db-so-card-label">Enquiries</div>
+                    <div className="db-so-card-sub">{salesData?.period || "—"}</div>
+                  </div>
+                  <div className="db-so-card blue" onClick={() => navigate("/leads")} style={{ cursor:"pointer" }}>
                     <div className="db-so-card-icon">👥</div>
                     <div className="db-so-card-val">{salesLoading ? "—" : (salesData?.newLeads ?? "—")}</div>
                     <div className="db-so-card-label">New Leads</div>
                     <div className="db-so-card-sub">{salesData?.period || "—"}</div>
                   </div>
-                  <div className="db-so-card green">
+                  <div className="db-so-card green" onClick={() => navigate("/leads?stage=Closed")} style={{ cursor:"pointer" }}>
                     <div className="db-so-card-icon">🤝</div>
                     <div className="db-so-card-val">{salesLoading ? "—" : (salesData?.closedDeals ?? "—")}</div>
                     <div className="db-so-card-label">Deals Closed</div>
@@ -289,7 +299,7 @@ export default function Dashboard() {
                         : "No target set"}
                     </div>
                   </div>
-                  <div className="db-so-card violet">
+                  <div className="db-so-card violet" onClick={() => navigate("/analytics")} style={{ cursor:"pointer" }}>
                     <div className="db-so-card-icon">💰</div>
                     <div className="db-so-card-val">{salesLoading ? "—" : fmtShort(salesData?.revenue)}</div>
                     <div className="db-so-card-label">Revenue Generated</div>
@@ -299,16 +309,16 @@ export default function Dashboard() {
                         : "No target set"}
                     </div>
                   </div>
-                  <div className="db-so-card orange">
+                  <div className="db-so-card orange" onClick={() => navigate("/analytics")} style={{ cursor:"pointer" }}>
                     <div className="db-so-card-icon">📊</div>
                     <div className="db-so-card-val">
                       {salesLoading || !salesData ? "—"
-                        : salesData.newLeads > 0
-                          ? `${Math.round((salesData.closedDeals / salesData.newLeads) * 100)}%`
+                        : salesData.enquiries > 0
+                          ? `${Math.round((salesData.closedDeals / salesData.enquiries) * 100)}%`
                           : "0%"}
                     </div>
                     <div className="db-so-card-label">Conversion Rate</div>
-                    <div className="db-so-card-sub">leads → closed</div>
+                    <div className="db-so-card-sub">enquiries → closed</div>
                   </div>
                 </div>
 
@@ -351,25 +361,25 @@ export default function Dashboard() {
 
               {/* ── Revenue health ── */}
               <div className="db-rev-grid">
-                <div className="db-rev-card blue">
+                <div className="db-rev-card blue" onClick={() => navigate("/leads")} style={{ cursor:"pointer" }}>
                   <div className="db-rev-icon">💰</div>
                   <div className="db-rev-label">Total Agreed Value</div>
                   <div className="db-rev-value">{fmtShort(paymentHealth.totalAgreed)}</div>
                   <div className="db-rev-sub">across all active projects</div>
                 </div>
-                <div className="db-rev-card green">
+                <div className="db-rev-card green" onClick={() => navigate("/payment-tracker")} style={{ cursor:"pointer" }}>
                   <div className="db-rev-icon">✅</div>
                   <div className="db-rev-label">Advance Collected</div>
                   <div className="db-rev-value">{fmtShort(paymentHealth.advanceCollected)}</div>
                   <div className="db-rev-sub">{paymentHealth.fullyPaidCount || 0} fully paid clients</div>
                 </div>
-                <div className="db-rev-card red">
+                <div className="db-rev-card red" onClick={() => navigate("/payment-tracker")} style={{ cursor:"pointer" }}>
                   <div className="db-rev-icon">⏳</div>
                   <div className="db-rev-label">Balance Pending</div>
                   <div className="db-rev-value">{fmtShort(paymentHealth.balancePending)}</div>
                   <div className="db-rev-sub">{paymentHealth.partialCount || 0} partial · {paymentHealth.unpaidCount || 0} unpaid</div>
                 </div>
-                <div className="db-rev-card violet">
+                <div className="db-rev-card violet" onClick={() => navigate("/payment-tracker")} style={{ cursor:"pointer" }}>
                   <div className="db-rev-icon">📅</div>
                   <div className="db-rev-label">Collected This Month</div>
                   <div className="db-rev-value">{fmtShort(paymentHealth.thisMonthCollected)}</div>
@@ -379,23 +389,23 @@ export default function Dashboard() {
 
               {/* ── Project pipeline strip ── */}
               <div className="db-proj-strip">
-                <div className="db-proj-mini indev">
+                <div className="db-proj-mini indev" onClick={() => navigate("/leads?stage=Closed")}>
                   <div className="db-proj-mini-num">{projectStats.inDevelopment || 0}</div>
                   <div className="db-proj-mini-lbl">In Development</div>
                 </div>
-                <div className="db-proj-mini pending">
+                <div className="db-proj-mini pending" onClick={() => navigate("/leads?stage=Closed")}>
                   <div className="db-proj-mini-num">{projectStats.pendingApproval || 0}</div>
                   <div className="db-proj-mini-lbl">Pending Approval</div>
                 </div>
-                <div className="db-proj-mini overdue">
+                <div className="db-proj-mini overdue" onClick={() => navigate("/leads?stage=Closed")}>
                   <div className="db-proj-mini-num">{projectStats.overdue || 0}</div>
                   <div className="db-proj-mini-lbl">Overdue Projects</div>
                 </div>
-                <div className="db-proj-mini onhold">
+                <div className="db-proj-mini onhold" onClick={() => navigate("/leads?stage=Closed")}>
                   <div className="db-proj-mini-num">{projectStats.onHold || 0}</div>
                   <div className="db-proj-mini-lbl">On Hold / Restarted</div>
                 </div>
-                <div className="db-proj-mini done">
+                <div className="db-proj-mini done" onClick={() => navigate("/leads?stage=Closed")}>
                   <div className="db-proj-mini-num">{projectStats.completed || 0}</div>
                   <div className="db-proj-mini-lbl">Completed</div>
                 </div>
@@ -553,22 +563,71 @@ export default function Dashboard() {
                     )}
                   </div>
 
-                  {/* Payment alerts */}
+                  {/* Payment alerts — split by committed-not-paid vs partial */}
                   <div className="db-card">
                     <div className="db-card-head">
-                      <h3>Balance Pending</h3>
-                      <span className="db-card-badge orange">{paymentAlerts.length} clients</span>
+                      <h3>Advance Collection Status</h3>
+                      <div style={{ display:"flex", gap:6 }}>
+                        <span className="db-card-badge red">{paymentAlerts.filter(p => p.isNotPaid).length} not paid</span>
+                        <span className="db-card-badge orange">{paymentAlerts.filter(p => !p.isNotPaid).length} partial</span>
+                      </div>
                     </div>
+
                     {paymentAlerts.length === 0 ? (
-                      <div className="db-empty">No pending balances.</div>
+                      <div className="db-empty">All advances collected!</div>
                     ) : (
                       <div className="db-pay-list">
-                        {paymentAlerts.map(item => (
-                          <div key={String(item.leadId)} className="db-pay-row" onClick={() => openLead(item.leadId)} style={{ cursor: "pointer" }}>
-                            <div>
+
+                        {/* ── Committed but ZERO advance ── */}
+                        {paymentAlerts.filter(p => p.isNotPaid).length > 0 && (
+                          <div className="db-pay-section-hd red">
+                            <AlertTriangle size={11}/> Committed — No Advance Paid
+                          </div>
+                        )}
+                        {paymentAlerts.filter(p => p.isNotPaid).map(item => (
+                          <div key={String(item.leadId)} className="db-pay-row not-paid" onClick={() => openLead(item.leadId)}>
+                            <div className="db-pay-info">
                               <div className="db-pay-name">{item.name}</div>
                               <div className="db-pay-biz">{item.business || item.repName || "—"}</div>
-                              <div className="db-pay-bar" style={{ marginTop: 5 }}>
+                              <div className="db-pay-meta-row">
+                                <span className="db-pay-stage">{item.stage}</span>
+                                {item.daysSinceLead != null && (
+                                  <span className={`db-pay-age ${item.daysSinceLead >= 30 ? "old" : item.daysSinceLead >= 14 ? "warn" : ""}`}>
+                                    {item.daysSinceLead}d as lead
+                                  </span>
+                                )}
+                              </div>
+                              <div className="db-pay-bar">
+                                <div className="db-pay-fill" style={{ width: "0%" }}/>
+                              </div>
+                            </div>
+                            <div className="db-pay-right">
+                              <div className="db-pay-rem red">{fmtShort(item.totalValue)}</div>
+                              <div className="db-pay-pct">0% paid</div>
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* ── Partially paid ── */}
+                        {paymentAlerts.filter(p => !p.isNotPaid).length > 0 && (
+                          <div className="db-pay-section-hd orange">
+                            Partial Payments
+                          </div>
+                        )}
+                        {paymentAlerts.filter(p => !p.isNotPaid).map(item => (
+                          <div key={String(item.leadId)} className="db-pay-row" onClick={() => openLead(item.leadId)}>
+                            <div className="db-pay-info">
+                              <div className="db-pay-name">{item.name}</div>
+                              <div className="db-pay-biz">{item.business || item.repName || "—"}</div>
+                              <div className="db-pay-meta-row">
+                                <span className="db-pay-stage">{item.stage}</span>
+                                {item.daysSinceLead != null && (
+                                  <span className={`db-pay-age ${item.daysSinceLead >= 30 ? "old" : item.daysSinceLead >= 14 ? "warn" : ""}`}>
+                                    {item.daysSinceLead}d as lead
+                                  </span>
+                                )}
+                              </div>
+                              <div className="db-pay-bar">
                                 <div className="db-pay-fill" style={{ width: `${item.advancePct}%` }}/>
                               </div>
                             </div>

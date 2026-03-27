@@ -9,6 +9,7 @@ import { toast } from "../../utils/toast";
 import "./EnquiriesPage.css";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const isMasterAdmin = () => localStorage.getItem("nnc_role") === "master_admin";
 
 /* ── Constants ────────────────────────────────────────── */
 const SERVICES = [
@@ -29,6 +30,24 @@ const SERVICES = [
 const SOURCES = [
   "Walk-In", "Referral", "Website", "Phone Call",
   "WhatsApp", "Instagram", "Google Ads", "JustDial",
+];
+
+const LANDING_PAGES = [
+  { label: "Home Page",               value: "Home Page" },
+  { label: "Contact Page",            value: "Contact Page" },
+  { label: "Mobile App Dev Page",     value: "Mobile App Dev Page" },
+  { label: "Website Dev Page",        value: "Website Dev Page" },
+  { label: "Web Application Dev Page",value: "Web Application Dev Page" },
+  { label: "Corporate Website Dev Page", value: "Corporate Website Dev Page" },
+  { label: "E-Commerce Dev Page",     value: "E-Commerce Dev Page" },
+  { label: "Custom CRM Dev Page",     value: "Custom CRM Dev Page" },
+  { label: "SEO Page",                value: "SEO Page" },
+  { label: "Digital Marketing Page",  value: "Digital Marketing Page" },
+  { label: "Animation Page",          value: "Animation Page" },
+  { label: "Graphic Design Page",     value: "Graphic Design Page" },
+  { label: "Corporate Video Page",    value: "Corporate Video Page" },
+  { label: "Progressive Web App Page",value: "Progressive Web App Page" },
+  { label: "Landing Page Dev Page",   value: "Landing Page Dev Page" },
 ];
 
 const STATUSES = ["new", "contacted", "follow-up", "quoted", "won", "lost"];
@@ -69,7 +88,7 @@ export default function EnquiriesPage() {
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [filters, setFilters] = useState({ branch: "", status: "", source: "", service: "", q: "", dateRange: "", page: 1 });
+  const [filters, setFilters] = useState({ branch: "", status: "", source: "", service: "", landingPage: "", q: "", dateRange: "", page: 1 });
   const [exporting, setExporting] = useState(false);
   const [formData, setFormData] = useState({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState(null);
@@ -86,12 +105,13 @@ export default function EnquiriesPage() {
   /* ── Build query params from filters ── */
   function buildParams(extra = {}) {
     const p = new URLSearchParams();
-    if (filters.branch)    p.set("branch",    filters.branch);
-    if (filters.status)    p.set("status",    filters.status);
-    if (filters.source)    p.set("source",    filters.source);
-    if (filters.service)   p.set("service",   filters.service);
-    if (filters.q)         p.set("q",         filters.q);
-    if (filters.dateRange) p.set("dateRange", filters.dateRange);
+    if (filters.branch)      p.set("branch",      filters.branch);
+    if (filters.status)      p.set("status",      filters.status);
+    if (filters.source)      p.set("source",      filters.source);
+    if (filters.service)     p.set("service",     filters.service);
+    if (filters.landingPage) p.set("landingPage", filters.landingPage);
+    if (filters.q)           p.set("q",           filters.q);
+    if (filters.dateRange)   p.set("dateRange",   filters.dateRange);
     Object.entries(extra).forEach(([k, v]) => p.set(k, v));
     return p;
   }
@@ -282,7 +302,7 @@ export default function EnquiriesPage() {
 
   /* ── Filter change ── */
   const setFilter = (key, val) => setFilters(f => ({ ...f, [key]: val, page: 1 }));
-  const clearFilters = () => setFilters({ branch: "", status: "", source: "", service: "", q: "", dateRange: "", page: 1 });
+  const clearFilters = () => setFilters({ branch: "", status: "", source: "", service: "", landingPage: "", q: "", dateRange: "", page: 1 });
 
   /* ── Form field change ── */
   const setField = (key, val) => setFormData(f => ({ ...f, [key]: val }));
@@ -389,13 +409,21 @@ export default function EnquiriesPage() {
                   <option value="">All Statuses</option>
                   {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                 </select>
-                <select value={filters.source} onChange={e => setFilter("source", e.target.value)}>
+                <select value={filters.source} onChange={e => { setFilter("source", e.target.value); if (e.target.value !== "Website") setFilter("landingPage", ""); }}>
                   <option value="">All Sources</option>
                   {SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
                 <select value={filters.service} onChange={e => setFilter("service", e.target.value)}>
                   <option value="">All Services</option>
-                  {SERVICES.map(s => <option key={s.label} value={s.label}>{s.label}</option>)}
+                  {SERVICES.map(s => <option key={s.label} value={s.label}>{s.icon} {s.label}</option>)}
+                </select>
+                <select
+                  value={filters.landingPage}
+                  onChange={e => { setFilter("landingPage", e.target.value); if (e.target.value) setFilter("source", "Website"); }}
+                  title="Filter by website landing page"
+                >
+                  <option value="">All Landing Pages</option>
+                  {LANDING_PAGES.map(p => <option key={p.value} value={p.value}>🌐 {p.label}</option>)}
                 </select>
                 <div className="enq-search-wrap">
                   <Search size={14} />
@@ -477,7 +505,21 @@ export default function EnquiriesPage() {
                                 {(!enq.services || enq.services.length === 0) && <span style={{ color: "#94a3b8", fontSize: 12 }}>—</span>}
                               </div>
                             </td>
-                            <td>{enq.source || "—"}</td>
+                            <td>
+                              <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                                <span>{enq.source || "—"}</span>
+                                {enq.source === "Website" && enq.landingPage && (
+                                  <span
+                                    className="enq-landing-badge"
+                                    title={enq.landingPage}
+                                    onClick={() => setFilter("landingPage", enq.landingPage)}
+                                    style={{ cursor:"pointer" }}
+                                  >
+                                    🌐 {enq.landingPage}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
                             <td>{enq.branch || "—"}</td>
                             <td>{enq.assignedTo || "—"}</td>
                             <td>{fmtDate(enq.followUpDate)}</td>
@@ -502,9 +544,11 @@ export default function EnquiriesPage() {
                                 >
                                   <ArrowRightCircle size={15} />
                                 </button>
-                                <button className="enq-btn-icon danger" title="Delete" onClick={() => handleDelete(enq._id)}>
-                                  <Trash2 size={15} />
-                                </button>
+                                {isMasterAdmin() && (
+                                  <button className="enq-btn-icon danger" title="Delete" onClick={() => handleDelete(enq._id)}>
+                                    <Trash2 size={15} />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
