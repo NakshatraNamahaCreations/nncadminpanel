@@ -12,6 +12,7 @@ import { ShimmerKpiGrid, ShimmerTable, BtnSpinner } from "../../components/ui/Sh
 import "./ExpenseTracker.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
+function auth() { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
 
 const CATEGORIES = [
   { key: "rent",        label: "Rent",         icon: Building2,    color: "#3b82f6", bg: "#dbeafe" },
@@ -92,7 +93,7 @@ export default function ExpenseTracker() {
   const fetchRentStatus = useCallback(async () => {
     setRentLoading(true);
     try {
-      const res  = await fetch(`${API_BASE}/api/expenses/rent-status?year=${viewYear}&month=${viewMonth}`);
+      const res  = await fetch(`${API_BASE}/api/expenses/rent-status?year=${viewYear}&month=${viewMonth}`, { headers: auth() });
       const json = await res.json();
       if (json.success) setRentStatus(json.data || []);
     } catch (_) {}
@@ -104,8 +105,8 @@ export default function ExpenseTracker() {
     try {
       const base = `year=${viewYear}&month=${viewMonth}`;
       const [sumRes, expRes] = await Promise.all([
-        fetch(`${API_BASE}/api/expenses/summary?${base}`),
-        fetch(`${API_BASE}/api/expenses?${base}`),
+        fetch(`${API_BASE}/api/expenses/summary?${base}`, { headers: auth() }),
+        fetch(`${API_BASE}/api/expenses?${base}`, { headers: auth() }),
       ]);
       const [sumJson, expJson] = await Promise.all([sumRes.json(), expRes.json()]);
       if (sumJson.success) setSummary(sumJson.data);
@@ -164,7 +165,7 @@ export default function ExpenseTracker() {
       const method = editId ? "PUT" : "POST";
       const res    = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth() },
         body: JSON.stringify({ ...form, amount: Number(form.amount) }),
       });
       const json = await res.json();
@@ -184,7 +185,7 @@ export default function ExpenseTracker() {
     if (!window.confirm("Delete this expense?")) return;
     setDeleting(id);
     try {
-      const res  = await fetch(`${API_BASE}/api/expenses/${id}`, { method: "DELETE" });
+      const res  = await fetch(`${API_BASE}/api/expenses/${id}`, { method: "DELETE", headers: auth() });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message);
       toast.success("Deleted");
@@ -202,7 +203,7 @@ export default function ExpenseTracker() {
     try {
       const res  = await fetch(`${API_BASE}/api/expenses/${exp._id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth() },
         body: JSON.stringify({ status: newStatus }),
       });
       const json = await res.json();
@@ -225,7 +226,7 @@ export default function ExpenseTracker() {
     try {
       const res  = await fetch(`${API_BASE}/api/expenses/rent-config/${rentEditBranch}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth() },
         body: JSON.stringify({
           amount: Number(rentEditForm.amount),
           dueDay: Number(rentEditForm.dueDay),

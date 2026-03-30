@@ -39,7 +39,7 @@ export default function SalaryTab({ branch }) {
       if (filterBranch) p.set("branch", filterBranch);
       const res  = await fetch(`${API}/api/attendance/salary?${p}`, { headers: authHeader() });
       const json = await res.json();
-      if (json.success) setSalaryRecords(json.data || []);
+      if (res.ok && json.success) setSalaryRecords(json.data || []);
       else toast.error(json.message || "Failed to load salary data");
     } catch { toast.error("Failed to load salary data"); }
     finally { setLoading(false); }
@@ -58,8 +58,17 @@ export default function SalaryTab({ branch }) {
         body: JSON.stringify({ month, year, branch: filterBranch }),
       });
       const json = await res.json();
-      if (json.success) { toast.success("Salaries generated!"); fetchSalary(); }
-      else toast.error(json.message || "Generation failed");
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Generation failed");
+        return;
+      }
+      const { generated = [], errors = [] } = json.data || {};
+      if (errors.length > 0) {
+        toast.error(`${generated.length} generated, ${errors.length} failed: ${errors.map(e => e.name || e.employeeId).join(", ")}`);
+      } else {
+        toast.success(`${generated.length} salaries generated!`);
+      }
+      fetchSalary();
     } catch { toast.error("Generation failed"); }
     finally { setGenerating(false); }
   };
@@ -72,8 +81,12 @@ export default function SalaryTab({ branch }) {
         body: JSON.stringify({ employeeId, month, year }),
       });
       const json = await res.json();
-      if (json.success) { toast.success("Salary generated!"); fetchSalary(); }
-      else toast.error(json.message || "Generation failed");
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Generation failed");
+        return;
+      }
+      toast.success("Salary generated!");
+      fetchSalary();
     } catch { toast.error("Generation failed"); }
   };
 
@@ -81,15 +94,31 @@ export default function SalaryTab({ branch }) {
     try {
       const res  = await fetch(`${API}/api/attendance/salary/${id}/paid`, { method: "PATCH", headers: authHeader() });
       const json = await res.json();
-      if (json.success) { toast.success("Marked as paid!"); fetchSalary(); }
-      else toast.error(json.message || "Failed to update");
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Failed to update");
+        return;
+      }
+      toast.success("Marked as paid!");
+      fetchSalary();
     } catch { toast.error("Failed to update payment status"); }
   };
 
   const downloadSlip = async (id, empName) => {
     try {
       const res = await fetch(`${API}/api/attendance/salary/${id}/slip-pdf`, { headers: authHeader() });
-      if (!res.ok) { toast.error("Failed to download slip"); return; }
+      if (!res.ok) {
+        // Try to parse JSON error from backend
+        let errMsg = "Failed to download slip";
+        try {
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const json = await res.json();
+            errMsg = json.message || errMsg;
+          }
+        } catch { /* ignore parse error */ }
+        toast.error(errMsg);
+        return;
+      }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a");

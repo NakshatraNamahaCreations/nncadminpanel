@@ -46,7 +46,7 @@ export default function MonthlyTab({ branch }) {
       if (branch) p.set("branch", branch);
       const res  = await fetch(`${API}/api/attendance/monthly?${p}`, { headers: authHeader() });
       const json = await res.json();
-      if (json.success) setReport(json.data || []);
+      if (res.ok && json.success) setReport(json.data || []);
       else toast.error(json.message || "Failed to load monthly report");
     } catch {
       toast.error("Failed to load monthly report");

@@ -442,9 +442,13 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
     try {
       if (!emailResponseText.trim() || !emailResponseId) return;
       setEmailResponseSaving(true);
-      const res = await fetch(`${apiBase}/leads/${leadId}/email-logs/${emailResponseId}/response`, {
+      const token = localStorage.getItem("nnc_token");
+      const res = await fetch(`${apiBase}/api/leads/${leadId}/email-logs/${emailResponseId}/response`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ response: emailResponseText.trim() }),
       });
       const json = await res.json();

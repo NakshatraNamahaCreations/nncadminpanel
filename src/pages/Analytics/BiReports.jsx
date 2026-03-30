@@ -148,17 +148,39 @@ function ConfigModal({ cfg, onClose, onSave }) {
   const [form, setForm] = useState({ ...cfg });
   const [saving, setSaving] = useState(false);
 
+  const [err, setErr] = useState("");
+
   async function save() {
+    setErr("");
+    // Validate all numeric fields
+    const checks = [
+      [form.taxRatePercent, "Tax Rate", 0, 60],
+      [form.bufferMonths, "Buffer Months", 1, 12],
+      [form.emergencyPct, "Emergency %", 0, 30],
+      [form.growthFundPct, "Growth Fund %", 0, 50],
+      [form.bufferBalance, "Buffer Balance", 0, Infinity],
+      [form.emergencyBalance, "Emergency Balance", 0, Infinity],
+      [form.taxReserveBalance, "Tax Reserve Balance", 0, Infinity],
+      [form.growthBalance, "Growth Balance", 0, Infinity],
+    ];
+    for (const [val, label, min, max] of checks) {
+      const n = Number(val);
+      if (val === "" || val == null || isNaN(n)) { setErr(`${label} must be a valid number`); return; }
+      if (n < min || n > max) { setErr(`${label} must be between ${min} and ${max === Infinity ? "∞" : max}`); return; }
+    }
     setSaving(true);
     try {
-      await fetch(`${API}/api/bi/config`, {
+      const r = await fetch(`${API}/api/bi/config`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...auth() },
         body: JSON.stringify(form),
       });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.message || "Failed to save config");
       onSave();
       onClose();
-    } finally { setSaving(false); }
+    } catch (e) { setErr(e.message); }
+    finally { setSaving(false); }
   }
 
   function field(key, label, min, max, step = 1, prefix = "") {
@@ -217,6 +239,7 @@ function ConfigModal({ cfg, onClose, onSave }) {
             {fundField("growthBalance",    "Growth Fund Balance")}
           </div>
         </div>
+        {err && <div style={{color:"#ef4444",fontSize:13,padding:"0 20px 8px",fontWeight:500}}>{err}</div>}
         <div className="bi-modal-footer">
           <button className="bi-btn-cancel" onClick={onClose}>Cancel</button>
           <button className="bi-btn-save" onClick={save} disabled={saving}>
@@ -293,8 +316,8 @@ export default function Analytics() {
   if (!data) return null;
 
   const { incomeStatement: IS, ytd, mom, target, unitEconomics: UE,
-          orderBreakdown: OB, dealBuckets, funds, fundSummary,
-          trendSeries, scenarios, pipelineValue, pipelineCount } = data;
+          orderBreakdown: OB, dealBuckets = [], funds = [], fundSummary = {},
+          trendSeries = [], scenarios = [], pipelineValue = 0, pipelineCount = 0 } = data;
 
   // ── Expense pie data ──────────────────────────────────────────────────────
   const expPieData = Object.entries(IS.expByCat)
@@ -692,6 +715,9 @@ export default function Analytics() {
           {/* ══════════════════════════ TAB 3: Scenario Planner ═════════════════ */}
           {tab === 3 && (
             <div className="bi-tab-content">
+              {scenarios.length === 0 && (
+                <div style={{color:"#64748b",textAlign:"center",padding:40}}>No scenario data available.</div>
+              )}
               <div className="bi-scenario-grid">
                 {scenarios.map((sc, si) => {
                   const colors = [C.red, C.blue, C.green];
@@ -734,6 +760,7 @@ export default function Analytics() {
               </div>
 
               {/* Scenario comparison chart */}
+              {scenarios.length >= 3 && scenarios[0].months?.length > 0 && (
               <div className="bi-card" style={{marginTop:16}}>
                 <div className="bi-card-h"><span>3-Month Net Profit — Scenario Comparison</span></div>
                 <ResponsiveContainer width="100%" height={260}>
@@ -758,6 +785,7 @@ export default function Analytics() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              )}
 
               <div className="bi-sc-note">
                 <Info size={14}/> Scenarios use your last 12-month average + linear trend. COGS, tax rate, and opex come from your Financial Configuration. Update them via <button className="bi-link" onClick={()=>setCfgOpen(true)}>Settings</button>.
@@ -768,8 +796,11 @@ export default function Analytics() {
           {/* ══════════════════════════ TAB 4: 12-Month Trend ════════════════════ */}
           {tab === 4 && (
             <div className="bi-tab-content">
+              {trendSeries.length === 0 && (
+                <div style={{color:"#64748b",textAlign:"center",padding:40}}>No trend data available for the selected period.</div>
+              )}
               {/* Revenue + Gross Profit + Net Profit area chart */}
-              <div className="bi-card">
+              {trendSeries.length > 0 && <div className="bi-card">
                 <div className="bi-card-h"><span>Revenue · Gross Profit · Net Profit (12 Months)</span></div>
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={trendSeries}>
@@ -793,10 +824,10 @@ export default function Analytics() {
                     <Line type="monotone" dataKey="netProfit"   name="Net Profit ₹"    stroke={C.amber}  strokeWidth={2} dot={{r:3}}/>
                   </AreaChart>
                 </ResponsiveContainer>
-              </div>
+              </div>}
 
               {/* OpEx trend */}
-              <div className="bi-card" style={{marginTop:16}}>
+              {trendSeries.length > 0 && <div className="bi-card" style={{marginTop:16}}>
                 <div className="bi-card-h"><span>EBITDA vs Operating Expenses (12 Months)</span></div>
                 <ResponsiveContainer width="100%" height={240}>
                   <ComposedChart data={trendSeries}>
@@ -810,10 +841,10 @@ export default function Analytics() {
                     <ReferenceLine y={0} stroke="#cbd5e1"/>
                   </ComposedChart>
                 </ResponsiveContainer>
-              </div>
+              </div>}
 
               {/* Monthly table */}
-              <div className="bi-card" style={{marginTop:16}}>
+              {trendSeries.length > 0 && <div className="bi-card" style={{marginTop:16}}>
                 <div className="bi-card-h"><span>Monthly Financial Summary</span></div>
                 <div className="bi-trend-table-wrap">
                   <table className="bi-trend-table">
@@ -848,7 +879,7 @@ export default function Analytics() {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </div>}
             </div>
           )}
 

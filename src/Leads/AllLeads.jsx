@@ -9,6 +9,14 @@ import "./AllLeads.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
 
+const authHeaders = (extra = {}) => {
+  const token = localStorage.getItem("nnc_token");
+  return {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...extra,
+  };
+};
+
 const money = (n) => {
   try {
     if (n == null || n === 0) return "—";
@@ -133,7 +141,7 @@ export default function AllLeads() {
   const fetchReps = async () => {
     try {
       setRepsLoading(true);
-      const res  = await fetch(`${API_BASE}/api/reps`);
+      const res  = await fetch(`${API_BASE}/api/reps`, { headers: authHeaders() });
       const json = await res.json();
       if (!res.ok || !json?.success) return;
       const rawData = Array.isArray(json?.data) ? json.data : [];
@@ -153,7 +161,7 @@ export default function AllLeads() {
     try {
       setLoading(true);
       setErr("");
-      const res  = await fetch(`${API_BASE}/api/leads?${queryParams}`);
+      const res  = await fetch(`${API_BASE}/api/leads?${queryParams}`, { headers: authHeaders() });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to fetch leads");
       setRows((json.data || []).map(x => ({
@@ -213,7 +221,7 @@ export default function AllLeads() {
       setPlanningId(row.id);
       const res  = await fetch(`${API_BASE}/api/today-plan/from-lead/${row.id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ taskType: "new_call", priority: row.priority === "Hot" ? "urgent" : "medium", section: "call_immediately", dueLabel: "ASAP", subtitle: row.business, plannedDate: new Date().toISOString() }),
       });
       const json = await res.json();
@@ -228,7 +236,7 @@ export default function AllLeads() {
       e.stopPropagation();
       if (!window.confirm("Delete this lead?")) return;
       setDeletingId(id);
-      const res  = await fetch(`${API_BASE}/api/leads/${id}`, { method: "DELETE" });
+      const res  = await fetch(`${API_BASE}/api/leads/${id}`, { method: "DELETE", headers: authHeaders() });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to delete");
       if (selectedId === id) { setDrawerOpen(false); setSelectedId(null); }
@@ -240,7 +248,7 @@ export default function AllLeads() {
   const handleExport = async () => {
     try {
       setExporting(true);
-      const res = await fetch(`${API_BASE}/api/leads/export/csv?${queryParams}`);
+      const res = await fetch(`${API_BASE}/api/leads/export/csv?${queryParams}`, { headers: authHeaders() });
       if (!res.ok) throw new Error("Failed to export");
       const blob = await res.blob();
       const url  = window.URL.createObjectURL(blob);
@@ -262,7 +270,7 @@ export default function AllLeads() {
     try {
       e.stopPropagation();
       setEditLoading(true); setEditOpen(true);
-      const res  = await fetch(`${API_BASE}/api/leads/${id}`);
+      const res  = await fetch(`${API_BASE}/api/leads/${id}`, { headers: authHeaders() });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to load");
       const l = json?.data || {};
@@ -298,7 +306,7 @@ export default function AllLeads() {
       setEditSaving(true);
       const res  = await fetch(`${API_BASE}/api/leads/${editForm._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           name:                editForm.name,
           phone:               editForm.phone,
@@ -334,10 +342,9 @@ export default function AllLeads() {
       if (!addForm.phone?.trim()) { toast.warning("Phone is required"); return; }
       if (!addForm.email?.trim()) { toast.warning("Email is required"); return; }
       setAddSaving(true);
-      const token = localStorage.getItem("nnc_token");
       const res   = await fetch(`${API_BASE}/api/leads`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: authHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({ ...addForm, value: addForm.value !== "" ? Number(addForm.value) : 0, createdAt: addForm.leadDateTime ? new Date(addForm.leadDateTime).toISOString() : new Date().toISOString() }),
       });
       const json = await res.json();

@@ -51,7 +51,7 @@ export default function DailyTab({ branch }) {
       if (branch) p.set("branch", branch);
       const res  = await fetch(`${API}/api/attendance/daily?${p}`, { headers: authHeader() });
       const json = await res.json();
-      if (json.success) {
+      if (res.ok && json.success) {
         setRecords(json.data || []);
         const map = {};
         (json.data || []).forEach(r => {
@@ -79,13 +79,15 @@ export default function DailyTab({ branch }) {
         body: JSON.stringify(body),
       });
       const json = await res.json();
-      if (json.success) {
-        setRecords(prev => prev.map(r =>
-          (r.employee?._id === empId)
-            ? { ...r, attendance: { ...(r.attendance || {}), status, checkIn: ci || r.attendance?.checkIn } }
-            : r
-        ));
-      } else toast.error(json.message || "Save failed");
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Save failed");
+        return;
+      }
+      setRecords(prev => prev.map(r =>
+        (r.employee?._id === empId)
+          ? { ...r, attendance: { ...(r.attendance || {}), status, checkIn: ci || r.attendance?.checkIn } }
+          : r
+      ));
     } catch { toast.error("Save failed"); }
     finally { setSaving(s => { const n={...s}; delete n[empId]; return n; }); }
   };
@@ -104,14 +106,16 @@ export default function DailyTab({ branch }) {
         body: JSON.stringify({ employeeId: empId, date: selectedDate, checkIn: time, status: curStatus }),
       });
       const json = await res.json();
-      if (json.success) {
-        setRecords(prev => prev.map(r =>
-          (r.employee?._id === empId)
-            ? { ...r, attendance: { ...(r.attendance || {}), checkIn: time } }
-            : r
-        ));
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Failed to save check-in time");
+        return;
       }
-    } catch { /* silent */ }
+      setRecords(prev => prev.map(r =>
+        (r.employee?._id === empId)
+          ? { ...r, attendance: { ...(r.attendance || {}), checkIn: time } }
+          : r
+      ));
+    } catch { toast.error("Failed to save check-in time"); }
     finally { setSaving(s => { const n={...s}; delete n[empId]; return n; }); }
   };
 
@@ -133,16 +137,32 @@ export default function DailyTab({ branch }) {
   };
 
   const handleBulk = async (status) => {
-    if (!window.confirm(`Mark ALL employees as "${status}" for ${selectedDate}?`)) return;
+    if (records.length === 0) return toast.error("No employees to mark");
+    if (!window.confirm(`Mark ALL ${records.length} employees as "${status}" for ${selectedDate}?`)) return;
     try {
-      await fetch(`${API}/api/attendance/mark-bulk`, {
+      const bulkRecords = records.map(r => ({
+        employeeId: r.employee?._id,
+        date: selectedDate,
+        status,
+      }));
+      const res = await fetch(`${API}/api/attendance/mark-bulk`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader() },
-        body: JSON.stringify({ date: selectedDate, status, branch }),
+        body: JSON.stringify({ records: bulkRecords }),
       });
-      toast.success(`All marked as ${status}`);
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Bulk mark failed");
+        return;
+      }
+      const { successCount = 0, errorCount = 0 } = json.data || {};
+      if (errorCount > 0) {
+        toast.error(`${successCount} marked, ${errorCount} failed`);
+      } else {
+        toast.success(`All ${successCount} marked as ${status}`);
+      }
       fetchDaily();
-    } catch { toast.error("Failed"); }
+    } catch { toast.error("Bulk mark failed"); }
   };
 
   const counts = records.reduce((acc, r) => {
@@ -166,7 +186,15 @@ export default function DailyTab({ branch }) {
         <input
           type="date"
           value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
+          max={todayStr()}
+          onChange={e => {
+            const val = e.target.value;
+            if (val && val > todayStr()) {
+              toast.error("Cannot select a future date");
+              return;
+            }
+            setSelectedDate(val);
+          }}
           className="att-date-input"
         />
         {isToday && <LiveClock />}

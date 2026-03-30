@@ -10,6 +10,7 @@ import { toast } from "../../utils/toast";
 import "./PnLPage.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
+function auth() { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
 
 const MONTH_NAMES  = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const MONTH_SHORT  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -80,7 +81,7 @@ export default function PnLPage() {
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res  = await fetch(`${API_BASE}/api/pnl/dashboard?year=${navYear}&month=${navMonth}`);
+      const res  = await fetch(`${API_BASE}/api/pnl/dashboard?year=${navYear}&month=${navMonth}`, { headers: auth() });
       const json = await res.json();
       if (!res.ok || !json.success) throw new Error(json.message);
       setDb(json.data);
@@ -93,7 +94,7 @@ export default function PnLPage() {
     try {
       let url = `${API_BASE}/api/pnl?view=${view}&year=${navYear}`;
       if (view === "daily") url += `&month=${navMonth}`;
-      const res  = await fetch(url);
+      const res  = await fetch(url, { headers: auth() });
       const json = await res.json();
       if (json.success) setBdData(json.data);
     } catch (_) {}
@@ -117,7 +118,7 @@ export default function PnLPage() {
     try {
       const res  = await fetch(`${API_BASE}/api/dashboard/target`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...auth() },
         body: JSON.stringify({ year: navYear, month: navMonth, targetRevenue: Number(targetInput) }),
       });
       const json = await res.json();

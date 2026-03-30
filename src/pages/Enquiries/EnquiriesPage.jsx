@@ -136,7 +136,7 @@ export default function EnquiriesPage() {
     try {
       const p = buildParams();
       const res = await fetch(`${API}/api/enquiries/export?${p}`, { headers: authHeader() });
-      if (!res.ok) { toast.error("Export failed"); return; }
+      if (!res.ok) { toast.error("Export failed"); setExporting(false); return; }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement("a");
@@ -315,6 +315,13 @@ export default function EnquiriesPage() {
 
   /* ── Pagination ── */
   const totalPages = Math.max(1, Math.ceil(totalCount / 20));
+
+  // Clamp page if it exceeds totalPages (e.g. after filtering reduces results)
+  useEffect(() => {
+    if (filters.page > totalPages) {
+      setFilters(f => ({ ...f, page: totalPages }));
+    }
+  }, [totalPages, filters.page]);
 
   /* ════════════════════════════════════════════════
      RENDER

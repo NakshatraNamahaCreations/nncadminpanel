@@ -98,6 +98,15 @@ function ProfileTab({ toast }) {
   const [show, setShow] = useState({ cur:false, next:false, confirm:false });
   const [saving, setSaving] = useState(false);
 
+  // Forgot password / OTP flow
+  const [fpStep, setFpStep] = useState(0); // 0=hidden, 1=enter email, 2=enter OTP+new pw
+  const [fpEmail, setFpEmail] = useState(user.email || "");
+  const [fpOtp, setFpOtp] = useState("");
+  const [fpNewPw, setFpNewPw] = useState("");
+  const [fpConfirm, setFpConfirm] = useState("");
+  const [fpLoading, setFpLoading] = useState(false);
+  const [fpShowPw, setFpShowPw] = useState(false);
+
   const save = async () => {
     if (!pw.cur || !pw.next || !pw.confirm) return toast("error","All fields are required");
     if (pw.next.length < 6)                 return toast("error","New password must be at least 6 characters");
@@ -110,6 +119,35 @@ function ProfileTab({ toast }) {
       setPw({ cur:"", next:"", confirm:"" });
     } catch(e) { toast("error", e.message || "Failed"); }
     finally { setSaving(false); }
+  };
+
+  const sendOtp = async () => {
+    if (!fpEmail.trim()) return toast("error", "Email is required");
+    setFpLoading(true);
+    try {
+      const j = await api("POST", "/api/auth/forgot-password", { email: fpEmail.trim() });
+      if (!j.success) throw new Error(j.message);
+      toast("success", "OTP sent to your email");
+      setFpStep(2);
+    } catch(e) { toast("error", e.message || "Failed to send OTP"); }
+    finally { setFpLoading(false); }
+  };
+
+  const resetWithOtp = async () => {
+    if (!fpOtp.trim())       return toast("error", "OTP is required");
+    if (!fpNewPw.trim())     return toast("error", "New password is required");
+    if (fpNewPw.length < 6)  return toast("error", "Password must be at least 6 characters");
+    if (fpNewPw !== fpConfirm) return toast("error", "Passwords do not match");
+    setFpLoading(true);
+    try {
+      const j = await api("POST", "/api/auth/reset-password", {
+        email: fpEmail.trim(), otp: fpOtp.trim(), newPassword: fpNewPw,
+      });
+      if (!j.success) throw new Error(j.message);
+      toast("success", "Password reset successfully");
+      setFpStep(0); setFpOtp(""); setFpNewPw(""); setFpConfirm("");
+    } catch(e) { toast("error", e.message || "Failed to reset password"); }
+    finally { setFpLoading(false); }
   };
 
   return (
@@ -148,11 +186,61 @@ function ProfileTab({ toast }) {
             </div>
           </Field>
         </div>
-        <button className="st-btn-primary" onClick={save} disabled={saving}>
-          {saving ? <RefreshCcw size={14} className="st-spin"/> : <Save size={14}/>}
-          {saving ? "Saving…" : "Update Password"}
-        </button>
+        <div style={{display:"flex", alignItems:"center", gap:12, flexWrap:"wrap"}}>
+          <button className="st-btn-primary" onClick={save} disabled={saving}>
+            {saving ? <RefreshCcw size={14} className="st-spin"/> : <Save size={14}/>}
+            {saving ? "Saving…" : "Update Password"}
+          </button>
+          <button className="st-btn-ghost" type="button" onClick={() => { setFpStep(fpStep ? 0 : 1); setFpOtp(""); setFpNewPw(""); setFpConfirm(""); }}>
+            {fpStep ? "Cancel Reset" : "Forgot Password?"}
+          </button>
+        </div>
       </Section>
+
+      {fpStep > 0 && (
+        <Section title="Reset Password via OTP" sub={fpStep === 1 ? "Enter your email to receive an OTP" : "Enter the OTP and your new password"}>
+          {fpStep === 1 && (
+            <>
+              <div className="st-form-grid" style={{maxWidth:420}}>
+                <Field label="Email Address">
+                  <Input type="email" value={fpEmail} onChange={e=>setFpEmail(e.target.value)} placeholder="your@email.com"/>
+                </Field>
+              </div>
+              <button className="st-btn-primary" onClick={sendOtp} disabled={fpLoading}>
+                {fpLoading ? <RefreshCcw size={14} className="st-spin"/> : <Send size={14}/>}
+                {fpLoading ? "Sending…" : "Send OTP"}
+              </button>
+            </>
+          )}
+          {fpStep === 2 && (
+            <>
+              <div className="st-form-grid">
+                <Field label="OTP Code">
+                  <Input placeholder="Enter the OTP from your email" value={fpOtp} onChange={e=>setFpOtp(e.target.value)} maxLength={6}/>
+                </Field>
+                <Field label="New Password">
+                  <div className="st-pw-wrap">
+                    <input className="st-input" type={fpShowPw?"text":"password"} placeholder="Min 6 characters" value={fpNewPw} onChange={e=>setFpNewPw(e.target.value)}/>
+                    <button className="st-eye" onClick={()=>setFpShowPw(v=>!v)}>{fpShowPw?<EyeOff size={15}/>:<Eye size={15}/>}</button>
+                  </div>
+                </Field>
+                <Field label="Confirm New Password">
+                  <div className="st-pw-wrap">
+                    <input className="st-input" type={fpShowPw?"text":"password"} placeholder="Confirm password" value={fpConfirm} onChange={e=>setFpConfirm(e.target.value)}/>
+                  </div>
+                </Field>
+              </div>
+              <div style={{display:"flex", gap:10, flexWrap:"wrap"}}>
+                <button className="st-btn-primary" onClick={resetWithOtp} disabled={fpLoading}>
+                  {fpLoading ? <RefreshCcw size={14} className="st-spin"/> : <Save size={14}/>}
+                  {fpLoading ? "Resetting…" : "Reset Password"}
+                </button>
+                <button className="st-btn-ghost" onClick={sendOtp} disabled={fpLoading}>Resend OTP</button>
+              </div>
+            </>
+          )}
+        </Section>
+      )}
     </div>
   );
 }
@@ -179,6 +267,12 @@ function UsersTab({ toast }) {
   const openEdit   = u  => setModal({ mode:"edit",   data:{ ...u, password:"" } });
 
   const save = async (data) => {
+    if (!data.name?.trim())     return toast("error", "Name is required");
+    if (!data.username?.trim()) return toast("error", "Username is required");
+    if (modal.mode === "create" && !data.password?.trim()) return toast("error", "Password is required");
+    if (data.password && data.password.length < 6) return toast("error", "Password must be at least 6 characters");
+    if (!data.role?.trim())     return toast("error", "Role is required");
+
     const path  = modal.mode === "create" ? "/api/users" : `/api/users/${data._id}`;
     const method= modal.mode === "create" ? "POST" : "PUT";
     const payload = { ...data };

@@ -66,7 +66,7 @@ function TxModal({ fund, config, onClose, onSave }) {
   const maxWithdraw = fund.balance;
 
   async function save() {
-    if (!amount || Number(amount) <= 0) { setErr("Enter a valid amount"); return; }
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) { setErr("Enter a valid positive amount"); return; }
     if (type === "withdrawal" && Number(amount) > maxWithdraw) {
       setErr(`Cannot withdraw more than current balance (${fmtFull(maxWithdraw)})`);
       return;
@@ -143,7 +143,7 @@ function TxModal({ fund, config, onClose, onSave }) {
           </div>
 
           {/* Preview */}
-          {amount > 0 && (
+          {Number(amount) > 0 && (
             <div className="fd-preview">
               <span>New balance after this {type}:</span>
               <strong style={{color: type==="deposit"?"#10b981":"#ef4444"}}>

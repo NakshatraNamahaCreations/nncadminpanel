@@ -60,7 +60,10 @@ export default function PipelinePage() {
     try {
       setLoading(true);
       setErr("");
-      const res  = await fetch(`${API_BASE}/api/leads/pipeline-data/all`);
+      const token = localStorage.getItem("nnc_token");
+      const res  = await fetch(`${API_BASE}/api/leads/pipeline-data/all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to load pipeline");
       setPipeline(json?.data || {});

@@ -205,6 +205,9 @@ function OverviewTab({ summary, branches, revenueProjection }) {
       </div>
 
       {/* Branch Cards */}
+      {branches.length === 0 && (
+        <div className="brEmpty">No branch data available for the selected period.</div>
+      )}
       <div className="brBranchGrid">
         {branches.map((b, i) => (
           <BranchCard
@@ -379,6 +382,10 @@ function FunnelTab({ branches }) {
         </select>
       </div>
 
+      {shown.length === 0 && (
+        <div className="brEmpty">No branch data available for the selected filter.</div>
+      )}
+
       <div className="brFunnelCards">
         {shown.map(b => {
           const idx   = branches.findIndex(x => x.name === b.name);
@@ -445,6 +452,10 @@ function FunnelTab({ branches }) {
 
 /* ─── REVENUE TAB ────────────────────────────────────────────────── */
 function RevenueTab({ branches }) {
+  if (!branches?.length) {
+    return <div className="brEmpty">No revenue data available for the selected period.</div>;
+  }
+
   const chartData = branches.map((b, i) => ({
     name:    b.name,
     Revenue: b.revenue,

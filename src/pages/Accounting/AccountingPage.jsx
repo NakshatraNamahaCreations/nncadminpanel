@@ -11,6 +11,7 @@ import { ShimmerTable, BtnSpinner } from "../../components/ui/Shimmer";
 import "./AccountingPage.css";
 
 const API = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
+function auth() { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
 
 /* ── Constants ──────────────────────────────────────────────── */
 /* ── Service catalog ─────────────────────────────────────────── */
@@ -158,7 +159,7 @@ export default function AccountingPage() {
       if (filters.status)         p.set("status",         filters.status);
       if (filters.officeLocation) p.set("officeLocation", filters.officeLocation);
       if (filters.search)         p.set("search",         filters.search);
-      const res  = await fetch(`${API}/api/invoices?${p}`);
+      const res  = await fetch(`${API}/api/invoices?${p}`, { headers: auth() });
       const json = await res.json();
       if (json.success) { setInvoices(json.data); setTotal(json.total); }
     } catch (e) { toast.error("Failed to load invoices"); }
@@ -204,7 +205,7 @@ export default function AccountingPage() {
   const openPreview = async (inv) => {
     if (inv._id) {
       try {
-        const res  = await fetch(`${API}/api/invoices/${inv._id}`);
+        const res  = await fetch(`${API}/api/invoices/${inv._id}`, { headers: auth() });
         const json = await res.json();
         if (json.success) { setPreviewInv(json.data); setMode("preview"); return; }
       } catch (_) {}
@@ -230,7 +231,7 @@ export default function AccountingPage() {
         url = `${API}/api/invoices`; method = "POST";
       }
       const res  = await fetch(url, {
-        method, headers: { "Content-Type": "application/json" },
+        method, headers: { "Content-Type": "application/json", ...auth() },
         body: JSON.stringify(form),
       });
       const json = await res.json();
@@ -247,7 +248,7 @@ export default function AccountingPage() {
   const handleDelete = async (id) => {
     if (!window.confirm("Cancel this invoice?")) return;
     try {
-      await fetch(`${API}/api/invoices/${id}`, { method: "DELETE" });
+      await fetch(`${API}/api/invoices/${id}`, { method: "DELETE", headers: auth() });
       toast.success("Invoice cancelled");
       fetchInvoices();
     } catch (_) { toast.error("Failed"); }
@@ -256,7 +257,7 @@ export default function AccountingPage() {
   const handleStatus = async (id, status) => {
     try {
       await fetch(`${API}/api/invoices/${id}/status`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
+        method: "PATCH", headers: { "Content-Type": "application/json", ...auth() },
         body: JSON.stringify({ status }),
       });
       fetchInvoices();
@@ -302,7 +303,7 @@ export default function AccountingPage() {
     if (gstin.length !== 15) { toast.error("Enter a valid 15-character GSTIN"); return; }
     setGstLookupStatus("loading");
     try {
-      const res  = await fetch(`${API}/api/gst-lookup/${gstin}`);
+      const res  = await fetch(`${API}/api/gst-lookup/${gstin}`, { headers: auth() });
       const data = await res.json();
       if (!data.success) { toast.error(data.message || "GSTIN lookup failed"); setGstLookupStatus("error"); return; }
       setForm(f => ({

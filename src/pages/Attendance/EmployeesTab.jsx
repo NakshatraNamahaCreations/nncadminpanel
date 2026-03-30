@@ -50,7 +50,7 @@ export default function EmployeesTab({ branch }) {
       if (filterBranch) p.set("branch", filterBranch);
       const res  = await fetch(`${API}/api/attendance/employees?${p}`, { headers: authHeader() });
       const json = await res.json();
-      if (json.success) setEmployees(json.data || []);
+      if (res.ok && json.success) setEmployees(json.data || []);
       else toast.error(json.message || "Failed to load employees");
     } catch { toast.error("Failed to load employees"); }
     finally { setLoading(false); }
@@ -85,8 +85,12 @@ export default function EmployeesTab({ branch }) {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim()) return toast.error("Name is required");
     if (!form.employeeId.trim()) return toast.error("Employee ID is required");
+    if (!form.name.trim()) return toast.error("Name is required");
+    if (!form.branch) return toast.error("Branch is required");
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return toast.error("Invalid email format");
+    if (form.monthlySalary && Number(form.monthlySalary) < 0) return toast.error("Salary cannot be negative");
+    if (form.joinedDate && form.joinedDate > new Date().toISOString().split("T")[0]) return toast.error("Joined date cannot be in the future");
     setSaving(true);
     try {
       const isEdit = editOpen && editTarget;
@@ -100,13 +104,15 @@ export default function EmployeesTab({ branch }) {
         body: JSON.stringify(form),
       });
       const json = await res.json();
-      if (json.success) {
-        toast.success(isEdit ? "Employee updated!" : "Employee added!");
-        setAddOpen(false);
-        setEditOpen(false);
-        setEditTarget(null);
-        fetchEmployees();
-      } else toast.error(json.message || "Save failed");
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Save failed");
+        return;
+      }
+      toast.success(isEdit ? "Employee updated!" : "Employee added!");
+      setAddOpen(false);
+      setEditOpen(false);
+      setEditTarget(null);
+      fetchEmployees();
     } catch { toast.error("Save failed"); }
     finally { setSaving(false); }
   };
@@ -116,8 +122,12 @@ export default function EmployeesTab({ branch }) {
     try {
       const res  = await fetch(`${API}/api/attendance/employees/${id}`, { method: "DELETE", headers: authHeader() });
       const json = await res.json();
-      if (json.success) { toast.success("Employee deactivated"); fetchEmployees(); }
-      else toast.error(json.message || "Failed to deactivate");
+      if (!res.ok || !json.success) {
+        toast.error(json.message || "Failed to deactivate");
+        return;
+      }
+      toast.success("Employee deactivated");
+      fetchEmployees();
     } catch { toast.error("Failed to deactivate"); }
   };
 

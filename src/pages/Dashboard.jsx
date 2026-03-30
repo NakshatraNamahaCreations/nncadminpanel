@@ -72,7 +72,10 @@ export default function Dashboard() {
     try {
       setError("");
       if (isRefresh) setRefreshing(true); else setLoading(true);
-      const res  = await fetch(`${API_BASE}/api/dashboard/summary`);
+      const token = localStorage.getItem("nnc_token");
+      const res  = await fetch(`${API_BASE}/api/dashboard/summary`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed");
       setDashboard(json?.data || null);
@@ -89,7 +92,10 @@ export default function Dashboard() {
     try {
       let url = `${API_BASE}/api/dashboard/sales?period=${period}`;
       if (period === "custom" && from && to) url += `&from=${from}&to=${to}`;
-      const res  = await fetch(url);
+      const token = localStorage.getItem("nnc_token");
+      const res  = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed");
       setSalesData(json?.data || null);
@@ -103,7 +109,10 @@ export default function Dashboard() {
   const fetchTarget = useCallback(async () => {
     try {
       const now = new Date();
-      const res  = await fetch(`${API_BASE}/api/dashboard/target?year=${now.getFullYear()}&month=${now.getMonth() + 1}`);
+      const token = localStorage.getItem("nnc_token");
+      const res  = await fetch(`${API_BASE}/api/dashboard/target?year=${now.getFullYear()}&month=${now.getMonth() + 1}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const json = await res.json();
       if (json?.success && json?.data) setTarget(json.data);
     } catch (_) {}
@@ -117,9 +126,10 @@ export default function Dashboard() {
   const handleSendFollowup = async (leadId, followupNumber) => {
     setSendingEmail(leadId);
     try {
+      const token = localStorage.getItem("nnc_token");
       const res  = await fetch(`${API_BASE}/api/leads/${leadId}/send-email`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ type: "followup", followupNumber }),
       });
       const json = await res.json();
@@ -137,9 +147,10 @@ export default function Dashboard() {
     setTargetSaving(true);
     try {
       const now = new Date();
+      const token = localStorage.getItem("nnc_token");
       const res  = await fetch(`${API_BASE}/api/dashboard/target`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           year:  now.getFullYear(),
           month: now.getMonth() + 1,

@@ -5,6 +5,8 @@ import DocCard from "../components/DocCard/DocCard";
 import { API_BASE_URL } from "../services/api";
 import "./Documents.css";
 
+function auth() { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
+
 export default function Documents() {
   const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState({
@@ -36,7 +38,7 @@ export default function Documents() {
         params.toString() ? `?${params.toString()}` : ""
       }`;
 
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: auth() });
       const result = await response.json();
 
       if (!response.ok || !result.success) {
@@ -54,7 +56,7 @@ export default function Documents() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/documents/stats`);
+      const response = await fetch(`${API_BASE_URL}/api/documents/stats`, { headers: auth() });
       const result = await response.json();
 
       if (!response.ok || !result.success) {
@@ -74,6 +76,7 @@ export default function Documents() {
 
       const response = await fetch(`${API_BASE_URL}/api/documents/${id}`, {
         method: "DELETE",
+        headers: auth(),
       });
 
       const result = await response.json();

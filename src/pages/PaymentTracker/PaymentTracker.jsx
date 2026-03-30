@@ -5,6 +5,7 @@ import { Download, Eye, Search, X, RefreshCcw } from "lucide-react";
 import "./PaymentTracker.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
+function auth() { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
 
 const money = (n) => {
   if (n == null || n === 0) return "₹0";
@@ -55,7 +56,7 @@ export default function PaymentTracker() {
       if (filters.rep    !== "All") p.set("rep",     filters.rep);
       if (filters.q.trim())         p.set("q",       filters.q.trim());
 
-      const res  = await fetch(`${API_BASE}/api/leads?${p}`);
+      const res  = await fetch(`${API_BASE}/api/leads?${p}`, { headers: auth() });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed");
 
@@ -84,7 +85,7 @@ export default function PaymentTracker() {
 
   const fetchReps = async () => {
     try {
-      const res  = await fetch(`${API_BASE}/api/reps`);
+      const res  = await fetch(`${API_BASE}/api/reps`, { headers: auth() });
       const json = await res.json();
       if (!res.ok || !json?.success) return;
       const names = (Array.isArray(json.data) ? json.data : [])

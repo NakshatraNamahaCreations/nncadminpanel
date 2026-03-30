@@ -235,14 +235,22 @@ export default function Leaderboard() {
   const [search,  setSearch]  = useState("");
   const [data,    setData]    = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError("");
     try {
       const r = await fetch(`${API}/api/leaderboard?period=${period}&branch=${branch}`, { headers: auth() });
+      if (!r.ok) throw new Error(`Server error (${r.status})`);
       const j = await r.json();
       if (j.success) setData(j.data);
-    } catch(e) { console.error(e); }
+      else throw new Error(j.message || "Failed to load leaderboard");
+    } catch(e) {
+      console.error(e);
+      setError(e.message || "Failed to load leaderboard");
+      setData(null);
+    }
     finally { setLoading(false); }
   }, [period, branch]);
 
@@ -283,8 +291,16 @@ export default function Leaderboard() {
           ))}
         </div>
 
+        {error && <div className="lb-error-banner" style={{background:"#fef2f2",color:"#b91c1c",border:"1px solid #fecaca",borderRadius:8,padding:"10px 16px",margin:"0 0 12px",fontSize:13,display:"flex",alignItems:"center",gap:8}}>{error}</div>}
+
         {loading ? (
           <div className="lb-loading"><RefreshCcw size={24} className="lb-spin"/> Loading leaderboard…</div>
+        ) : !data ? (
+          <div className="lb-empty" style={{textAlign:"center",padding:"60px 20px",color:"#94a3b8",fontSize:15}}>
+            <Users size={40} style={{marginBottom:12,opacity:0.4}}/>
+            <div>No leaderboard data available</div>
+            <div style={{fontSize:12,marginTop:4}}>Try a different period or branch filter</div>
+          </div>
         ) : (
           <>
             {/* ── KPI Strip ── */}

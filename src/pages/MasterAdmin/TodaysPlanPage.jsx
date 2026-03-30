@@ -200,7 +200,10 @@ function EmailModal({ onClose, apiBase }) {
   const searchClients = useCallback(async (q) => {
     try {
       setLoadingClients(true);
-      const res  = await fetch(`${apiBase}/api/leads?q=${encodeURIComponent(q)}&limit=10`);
+      const token = localStorage.getItem("nnc_token");
+      const res  = await fetch(`${apiBase}/api/leads?q=${encodeURIComponent(q)}&limit=10`, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
       const json = await res.json();
       setClients(Array.isArray(json?.data?.leads) ? json.data.leads : Array.isArray(json?.data) ? json.data : []);
     } catch {
@@ -732,7 +735,15 @@ export default function TodaysPlanPage() {
   const fetchDashboard = async () => {
     try {
       setLoading(true); setErr("");
-      const res  = await fetch(`${API_BASE}/api/today-plan/dashboard`);
+      const token = localStorage.getItem("nnc_token");
+      const res  = await fetch(`${API_BASE}/api/today-plan/dashboard`, {
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      if (res.status === 401) {
+        ["nnc_token","nnc_auth","nnc_user","nnc_role","nnc_email","nnc_modules"].forEach(k => localStorage.removeItem(k));
+        window.location.href = "/";
+        return;
+      }
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to fetch");
       setDashboard(json?.data || null);
@@ -792,7 +803,11 @@ export default function TodaysPlanPage() {
     if (String(taskId).startsWith("auto-")) return; // auto-generated — no-op, open lead instead
     try {
       setActionId(taskId);
-      const res  = await fetch(`${API_BASE}/api/today-plan/${taskId}/toggle`, { method: "PATCH" });
+      const token = localStorage.getItem("nnc_token");
+      const res  = await fetch(`${API_BASE}/api/today-plan/${taskId}/toggle`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message);
       await fetchDashboard();
@@ -805,7 +820,11 @@ export default function TodaysPlanPage() {
     if (!window.confirm("Delete this task?")) return;
     try {
       setActionId(taskId);
-      const res  = await fetch(`${API_BASE}/api/today-plan/${taskId}`, { method: "DELETE" });
+      const token = localStorage.getItem("nnc_token");
+      const res  = await fetch(`${API_BASE}/api/today-plan/${taskId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message);
       await fetchDashboard();

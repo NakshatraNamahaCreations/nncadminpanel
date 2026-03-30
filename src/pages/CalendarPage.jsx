@@ -156,7 +156,7 @@ export default function CalendarPage() {
         const res  = await fetch(
           `${API_BASE}/api/leads?search=${encodeURIComponent(leadSearch.trim())}&limit=8`,
           { headers: authHeader() }
-        );
+        ).then(handle401);
         const json = await res.json();
         const arr  = Array.isArray(json.data) ? json.data
                    : Array.isArray(json.leads) ? json.leads : [];
@@ -176,7 +176,7 @@ export default function CalendarPage() {
         const res  = await fetch(
           `${API_BASE}/api/enquiries?q=${encodeURIComponent(enqSearch.trim())}&limit=8`,
           { headers: authHeader() }
-        );
+        ).then(handle401);
         const json = await res.json();
         setEnqResults(Array.isArray(json.data) ? json.data : []);
       } catch { setEnqResults([]); }
@@ -228,6 +228,7 @@ export default function CalendarPage() {
 
   /* ── Delete event ───────────────────────────────────────────── */
   const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this event?")) return;
     try {
       const res  = await fetch(`${API_BASE}/api/calendar-events/${id}`, {
         method: "DELETE", headers: authHeader(),
@@ -584,6 +585,13 @@ export default function CalendarPage() {
                         {searchingEnq && <span className="calLeadSearchSpin">…</span>}
                       </div>
                     )}
+                    {!form.enquiryId && enqSearch.trim().length > 0 && !searchingEnq && enqResults.length === 0 && (
+                      <div className="calLeadDropdown">
+                        <div className="calLeadNoResults" style={{ padding: "12px 14px", color: "#94a3b8", fontSize: 13, textAlign: "center" }}>
+                          No enquiries found for "{enqSearch.trim()}"
+                        </div>
+                      </div>
+                    )}
                     {enqResults.length > 0 && !form.enquiryId && (
                       <div className="calLeadDropdown">
                         {enqResults.map(enq => (
@@ -644,6 +652,13 @@ export default function CalendarPage() {
                         autoFocus
                       />
                       {searching && <span className="calLeadSearchSpin">…</span>}
+                    </div>
+                  )}
+                  {!form.leadId && leadSearch.trim().length > 0 && !searching && leadResults.length === 0 && (
+                    <div className="calLeadDropdown">
+                      <div className="calLeadNoResults" style={{ padding: "12px 14px", color: "#94a3b8", fontSize: 13, textAlign: "center" }}>
+                        No clients found for "{leadSearch.trim()}"
+                      </div>
                     </div>
                   )}
                   {leadResults.length > 0 && !form.leadId && (
