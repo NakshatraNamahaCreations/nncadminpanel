@@ -58,6 +58,7 @@ const EMPTY_EDIT_FORM = {
   branch: "Bangalore", source: "WhatsApp",
   stage: "Lead Capture", priority: "Hot", value: "", days: "0d", rep: "",
   advanceReceived: "", advanceReceivedDate: "", agreedTimeline: "",
+  onboardedDate: "", projectCompleted: false, projectCompletionDate: "",
 };
 
 /* Format a Date/ISO string → "YYYY-MM-DD" for <input type="date"> */
@@ -291,8 +292,11 @@ export default function AllLeads() {
         days:                l.days               || "0d",
         rep:                 l.rep                || "",
         advanceReceived:     l.advanceReceived > 0 ? Number(l.advanceReceived) : "",
-        advanceReceivedDate: toDateInput(l.advanceReceivedDate),
-        agreedTimeline:      l.agreedTimeline > 0  ? Number(l.agreedTimeline) : "",
+        advanceReceivedDate:     toDateInput(l.advanceReceivedDate),
+        agreedTimeline:          l.agreedTimeline > 0 ? Number(l.agreedTimeline) : "",
+        onboardedDate:           toDateInput(l.onboardedDate),
+        projectCompleted:        !!l.projectCompleted,
+        projectCompletionDate:   toDateInput(l.projectCompletionDate),
       });
     } catch (e) { toast.error(e?.message || "Failed to load lead"); setEditOpen(false); }
     finally { setEditLoading(false); }
@@ -322,9 +326,12 @@ export default function AllLeads() {
           value:               Number(editForm.value || 0),
           days:                editForm.days,
           rep:                 editForm.rep,
-          advanceReceived:     editForm.advanceReceived !== "" ? Number(editForm.advanceReceived) : 0,
-          advanceReceivedDate: editForm.advanceReceivedDate || null,
-          agreedTimeline:      editForm.agreedTimeline !== "" ? Number(editForm.agreedTimeline) : 0,
+          advanceReceived:       editForm.advanceReceived !== "" ? Number(editForm.advanceReceived) : 0,
+          advanceReceivedDate:   editForm.advanceReceivedDate || null,
+          agreedTimeline:        editForm.agreedTimeline !== "" ? Number(editForm.agreedTimeline) : 0,
+          onboardedDate:         editForm.onboardedDate || null,
+          projectCompleted:      editForm.projectCompleted,
+          projectCompletionDate: editForm.projectCompletionDate || null,
         }),
       });
       const json = await res.json();
@@ -550,6 +557,12 @@ export default function AllLeads() {
                       <div className="alFinalPayDate">{addDays(editForm.advanceReceivedDate, editForm.agreedTimeline)}</div>
                     </div>
                   ) : null}
+                  <div className="fg"><label>Client Onboarded Date</label><input type="date" value={editForm.onboardedDate} onChange={e => setEditForm(p => ({ ...p, onboardedDate: e.target.value }))}/></div>
+                  <div className="fg"><label>Project Completion Date</label><input type="date" value={editForm.projectCompletionDate} onChange={e => setEditForm(p => ({ ...p, projectCompletionDate: e.target.value }))}/></div>
+                  <div className="fg full" style={{flexDirection:"row",alignItems:"center",gap:10}}>
+                    <input type="checkbox" id="alProjDone" checked={editForm.projectCompleted} onChange={e => setEditForm(p => ({ ...p, projectCompleted: e.target.checked }))} style={{width:16,height:16,accentColor:"#2563eb",cursor:"pointer"}}/>
+                    <label htmlFor="alProjDone" style={{marginBottom:0,cursor:"pointer",textTransform:"none",fontSize:"13px",fontWeight:700,color:"#374151",letterSpacing:0}}>Project Completed</label>
+                  </div>
                   <div className="fg full"><label>Requirements</label><textarea value={editForm.requirements} onChange={e => setEditForm(p => ({ ...p, requirements: e.target.value }))} rows={3}/></div>
                 </div>
                 <div className="alModalFooter">

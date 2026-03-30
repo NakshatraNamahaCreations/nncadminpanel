@@ -3,6 +3,7 @@ import {
   Plus, Search, Eye, Edit2, ArrowRightCircle, Trash2,
   ChevronLeft, ChevronRight, RefreshCcw, MessageSquare,
   Calendar, TrendingUp, Clock, Activity, Download,
+  FileText, CheckCircle, XCircle, Send, IndianRupee,
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import { toast } from "../../utils/toast";
@@ -79,7 +80,25 @@ function fmtDate(d) {
 /* ═══════════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════ */
+/* ── Quotation constants ──────────────────────────── */
+const QUOTE_STATUSES = ["draft", "sent", "accepted", "rejected", "expired"];
+const EMPTY_LINE = { description: "", qty: 1, rate: 0, amount: 0 };
+const EMPTY_QUOTE = {
+  clientName: "", clientPhone: "", clientEmail: "", clientCompany: "",
+  enquiryId: "", branch: "Bangalore", services: [],
+  lineItems: [{ ...EMPTY_LINE }],
+  discount: 0, tax: 18, validUntil: "", notes: "", terms: "",
+};
+
+function fmtCurrency(n) {
+  return `₹${Number(n || 0).toLocaleString("en-IN")}`;
+}
+function getQuoteStatusClass(s) {
+  return { draft:"qt-st-draft", sent:"qt-st-sent", accepted:"qt-st-accepted", rejected:"qt-st-rejected", expired:"qt-st-expired" }[s] || "qt-st-draft";
+}
+
 export default function EnquiriesPage() {
+  const [activeTab, setActiveTab] = useState("enquiries"); // enquiries | quotations
   const [mode, setMode] = useState("list"); // list | form | view
   const [enquiries, setEnquiries] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -96,11 +115,117 @@ export default function EnquiriesPage() {
   const [noteForm, setNoteForm] = useState({ action: "", note: "" });
   const [savingNote, setSavingNote] = useState(false);
 
+  // ── Quotation state ──────────────────────────────
+  const [quoteMode, setQuoteMode]           = useState("list"); // list | form | view
+  const [quotes, setQuotes]                 = useState([]);
+  const [quoteTotalCount, setQuoteTotalCount] = useState(0);
+  const [quoteStats, setQuoteStats]         = useState({ total:0, byStatus:{}, thisMonth:0, acceptedValue:0, conversionRate:0 });
+  const [quoteLoading, setQuoteLoading]     = useState(false);
+  const [quoteSaving, setQuoteSaving]       = useState(false);
+  const [quoteFilters, setQuoteFilters]     = useState({ branch:"", status:"", q:"", page:1 });
+  const [quoteForm, setQuoteForm]           = useState({ ...EMPTY_QUOTE });
+  const [quoteEditId, setQuoteEditId]       = useState(null);
+  const [viewingQuote, setViewingQuote]     = useState(null);
+
   /* ── Auth header ── */
   function authHeader() {
     const token = localStorage.getItem("nnc_token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
+
+  /* ── Quotation API helpers ── */
+  const fetchQuotes = useCallback(async () => {
+    setQuoteLoading(true);
+    try {
+      const p = new URLSearchParams();
+      if (quoteFilters.branch) p.set("branch", quoteFilters.branch);
+      if (quoteFilters.status) p.set("status", quoteFilters.status);
+      if (quoteFilters.q)      p.set("q",      quoteFilters.q);
+      p.set("page", quoteFilters.page);
+      const res  = await fetch(`${API}/api/quotations?${p}`, { headers: authHeader() });
+      const json = await res.json();
+      if (json.success) { setQuotes(json.data || []); setQuoteTotalCount(json.total || 0); }
+      else toast.error(json.message || "Failed to load quotations");
+    } catch { toast.error("Failed to load quotations"); }
+    finally { setQuoteLoading(false); }
+  }, [quoteFilters]);
+
+  const fetchQuoteStats = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/api/quotations/stats`, { headers: authHeader() });
+      const json = await res.json();
+      if (json.success) setQuoteStats(json.data);
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => { if (activeTab === "quotations") { fetchQuotes(); fetchQuoteStats(); } }, [activeTab, fetchQuotes, fetchQuoteStats]);
+
+  const saveQuote = async () => {
+    if (!quoteForm.clientName.trim()) return toast.error("Client name is required");
+    if (!quoteForm.branch)            return toast.error("Branch is required");
+    setQuoteSaving(true);
+    try {
+      const method = quoteEditId ? "PUT" : "POST";
+      const url    = quoteEditId ? `${API}/api/quotations/${quoteEditId}` : `${API}/api/quotations`;
+      const res    = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify(quoteForm),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(quoteEditId ? "Quotation updated!" : "Quotation created!");
+        setQuoteMode("list");
+        fetchQuotes();
+        fetchQuoteStats();
+      } else toast.error(json.message || "Save failed");
+    } catch { toast.error("Save failed"); }
+    finally { setQuoteSaving(false); }
+  };
+
+  const deleteQuote = async (id) => {
+    if (!window.confirm("Delete this quotation?")) return;
+    try {
+      const res  = await fetch(`${API}/api/quotations/${id}`, { method: "DELETE", headers: authHeader() });
+      const json = await res.json();
+      if (json.success) { toast.success("Deleted"); fetchQuotes(); fetchQuoteStats(); }
+      else toast.error(json.message || "Delete failed");
+    } catch { toast.error("Delete failed"); }
+  };
+
+  const updateQuoteStatus = async (id, status) => {
+    try {
+      const res  = await fetch(`${API}/api/quotations/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({ status }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        toast.success(`Marked as ${status}`);
+        fetchQuotes();
+        fetchQuoteStats();
+        if (viewingQuote?._id === id) setViewingQuote(json.data);
+      } else toast.error(json.message || "Update failed");
+    } catch { toast.error("Update failed"); }
+  };
+
+  // Line item helpers
+  const updateLineItem = (idx, field, val) => {
+    setQuoteForm(f => {
+      const items = [...f.lineItems];
+      items[idx] = { ...items[idx], [field]: val };
+      if (field === "qty" || field === "rate") {
+        items[idx].amount = Number(items[idx].qty || 0) * Number(items[idx].rate || 0);
+      }
+      const subtotal = items.reduce((s, i) => s + Number(i.amount || 0), 0);
+      const taxAmt   = ((subtotal - Number(f.discount || 0)) * Number(f.tax || 0)) / 100;
+      return { ...f, lineItems: items, subtotal, total: Math.max(0, subtotal - Number(f.discount || 0) + taxAmt) };
+    });
+  };
+  const addLineItem    = () => setQuoteForm(f => ({ ...f, lineItems: [...f.lineItems, { ...EMPTY_LINE }] }));
+  const removeLineItem = (idx) => setQuoteForm(f => ({ ...f, lineItems: f.lineItems.filter((_, i) => i !== idx) }));
+  const setQuoteField  = (key, val) => setQuoteForm(f => ({ ...f, [key]: val }));
 
   /* ── Build query params from filters ── */
   function buildParams(extra = {}) {
@@ -330,7 +455,427 @@ export default function EnquiriesPage() {
     <div className="enq-layout">
       <Sidebar />
       <div className="enq-main">
-        {mode === "list" && (
+
+        {/* ── Tab switcher ── */}
+        <div className="enq-tab-bar">
+          <button
+            className={`enq-tab-btn${activeTab === "enquiries" ? " active" : ""}`}
+            onClick={() => { setActiveTab("enquiries"); setMode("list"); }}
+          >
+            <MessageSquare size={15} /> Enquiries
+          </button>
+          <button
+            className={`enq-tab-btn${activeTab === "quotations" ? " active" : ""}`}
+            onClick={() => { setActiveTab("quotations"); setQuoteMode("list"); }}
+          >
+            <FileText size={15} /> Quotations
+          </button>
+        </div>
+
+        {/* ══════════════ QUOTATIONS TAB ══════════════ */}
+        {activeTab === "quotations" && (
+          <>
+            {quoteMode === "list" && (
+              <>
+                <div className="enq-header">
+                  <div>
+                    <div className="enq-eyebrow">NNC CRM</div>
+                    <div className="enq-title">Quotations</div>
+                    <div className="enq-subtitle">Create and manage client quotations</div>
+                  </div>
+                  <div className="enq-header-acts">
+                    <button className="enq-btn-sec" onClick={fetchQuotes}>
+                      <RefreshCcw size={14} className={quoteLoading ? "enq-spin" : ""} /> Refresh
+                    </button>
+                    <button className="enq-btn-prim" onClick={() => { setQuoteForm({ ...EMPTY_QUOTE }); setQuoteEditId(null); setQuoteMode("form"); }}>
+                      <Plus size={15} /> New Quotation
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPI strip */}
+                <div className="enq-kpi-strip">
+                  <div className="enq-kpi-item">
+                    <div className="enq-kpi-icon"><FileText size={20} /></div>
+                    <div className="enq-kpi-text">
+                      <div className="enq-kpi-val">{quoteStats.total}</div>
+                      <div className="enq-kpi-label">Total Quotations</div>
+                    </div>
+                  </div>
+                  <div className="enq-kpi-item">
+                    <div className="enq-kpi-icon"><Calendar size={20} /></div>
+                    <div className="enq-kpi-text">
+                      <div className="enq-kpi-val">{quoteStats.thisMonth}</div>
+                      <div className="enq-kpi-label">This Month</div>
+                    </div>
+                  </div>
+                  <div className="enq-kpi-item">
+                    <div className="enq-kpi-icon"><IndianRupee size={20} /></div>
+                    <div className="enq-kpi-text">
+                      <div className="enq-kpi-val">{fmtCurrency(quoteStats.acceptedValue)}</div>
+                      <div className="enq-kpi-label">Accepted Value</div>
+                    </div>
+                  </div>
+                  <div className="enq-kpi-item">
+                    <div className="enq-kpi-icon"><TrendingUp size={20} /></div>
+                    <div className="enq-kpi-text">
+                      <div className="enq-kpi-val">{quoteStats.conversionRate}%</div>
+                      <div className="enq-kpi-label">Acceptance Rate</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filter bar */}
+                <div className="enq-filter-bar">
+                  <div className="enq-filter-selects">
+                    <select value={quoteFilters.branch} onChange={e => setQuoteFilters(f => ({ ...f, branch: e.target.value, page: 1 }))}>
+                      <option value="">All Branches</option>
+                      {["Bangalore","Mysore","Mumbai"].map(b => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                    <select value={quoteFilters.status} onChange={e => setQuoteFilters(f => ({ ...f, status: e.target.value, page: 1 }))}>
+                      <option value="">All Statuses</option>
+                      {QUOTE_STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    </select>
+                    <div className="enq-search-wrap">
+                      <Search size={14} />
+                      <input placeholder="Search client, quote no…" value={quoteFilters.q} onChange={e => setQuoteFilters(f => ({ ...f, q: e.target.value, page: 1 }))} />
+                    </div>
+                    <button className="enq-filter-clear" onClick={() => setQuoteFilters({ branch:"", status:"", q:"", page:1 })}>Clear</button>
+                  </div>
+                </div>
+
+                {/* Table */}
+                <div className="enq-table-section">
+                  <div className="enq-table-card">
+                    <div className="enq-table-head">
+                      <span className="enq-table-head-title">All Quotations <span className="enq-table-head-count">({quoteTotalCount})</span></span>
+                    </div>
+                    {quoteLoading ? (
+                      <div className="enq-loading"><RefreshCcw size={28} className="enq-spin" /></div>
+                    ) : quotes.length === 0 ? (
+                      <div className="enq-empty">
+                        <div className="enq-empty-icon"><FileText size={40} /></div>
+                        <div className="enq-empty-text">No quotations yet</div>
+                        <div className="enq-empty-sub">Create your first quotation</div>
+                      </div>
+                    ) : (
+                      <div className="enq-table-wrap">
+                        <table className="enq-table">
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Quote No.</th>
+                              <th>Client</th>
+                              <th>Branch</th>
+                              <th>Total</th>
+                              <th>Valid Until</th>
+                              <th>Status</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {quotes.map((q, idx) => (
+                              <tr key={q._id}>
+                                <td>{(quoteFilters.page - 1) * 50 + idx + 1}</td>
+                                <td><span className="qt-number">{q.quoteNumber}</span></td>
+                                <td>
+                                  <div className="enq-name">{q.clientName}</div>
+                                  <div className="enq-phone">{q.clientPhone || q.clientCompany || "—"}</div>
+                                </td>
+                                <td>{q.branch}</td>
+                                <td><strong>{fmtCurrency(q.total)}</strong></td>
+                                <td>{fmtDate(q.validUntil)}</td>
+                                <td><span className={`enq-status ${getQuoteStatusClass(q.status)}`}>{q.status}</span></td>
+                                <td>
+                                  <div className="enq-actions">
+                                    <button className="enq-btn-icon" title="View" onClick={() => { setViewingQuote(q); setQuoteMode("view"); }}>
+                                      <Eye size={15} />
+                                    </button>
+                                    <button className="enq-btn-icon" title="Edit" onClick={() => {
+                                      setQuoteForm({
+                                        clientName: q.clientName, clientPhone: q.clientPhone||"", clientEmail: q.clientEmail||"", clientCompany: q.clientCompany||"",
+                                        enquiryId: q.enquiryId||"", branch: q.branch, services: q.services||[],
+                                        lineItems: q.lineItems?.length ? q.lineItems : [{ ...EMPTY_LINE }],
+                                        discount: q.discount||0, tax: q.tax||18,
+                                        validUntil: q.validUntil ? q.validUntil.split("T")[0] : "",
+                                        notes: q.notes||"", terms: q.terms||"",
+                                      });
+                                      setQuoteEditId(q._id);
+                                      setQuoteMode("form");
+                                    }}>
+                                      <Edit2 size={15} />
+                                    </button>
+                                    {q.status === "draft" && (
+                                      <button className="enq-btn-icon convert" title="Mark as Sent" onClick={() => updateQuoteStatus(q._id, "sent")}>
+                                        <Send size={15} />
+                                      </button>
+                                    )}
+                                    {q.status === "sent" && (
+                                      <button className="enq-btn-icon" title="Mark Accepted" onClick={() => updateQuoteStatus(q._id, "accepted")} style={{ color:"#16a34a" }}>
+                                        <CheckCircle size={15} />
+                                      </button>
+                                    )}
+                                    {isMasterAdmin() && (
+                                      <button className="enq-btn-icon danger" title="Delete" onClick={() => deleteQuote(q._id)}>
+                                        <Trash2 size={15} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ── QUOTATION FORM ── */}
+            {quoteMode === "form" && (
+              <div className="enq-form-view">
+                <div className="enq-form-subheader">
+                  <button className="enq-back-btn" onClick={() => setQuoteMode("list")}><ChevronLeft size={15} /> Back</button>
+                  <div>
+                    <div className="enq-form-heading">{quoteEditId ? "Edit Quotation" : "New Quotation"}</div>
+                    <div className="enq-form-subheading">Fill in client details and line items</div>
+                  </div>
+                  <div style={{ marginLeft:"auto" }}>
+                    <button className="enq-save-btn" disabled={quoteSaving} onClick={saveQuote} style={{ padding:"10px 24px" }}>
+                      {quoteSaving ? "Saving…" : quoteEditId ? "Update" : "Create Quotation"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="enq-form-2col">
+                  <div className="enq-form-left">
+                    {/* Client info */}
+                    <div className="enq-form-card">
+                      <div className="enq-form-card-title"><span className="enq-card-icon">👤</span> Client Information</div>
+                      <div className="enq-form-card-body">
+                        <div className="enq-form-grid">
+                          <div className="enq-field">
+                            <label className="enq-label">Client Name <span className="enq-req">*</span></label>
+                            <input className="enq-input" value={quoteForm.clientName} onChange={e => setQuoteField("clientName", e.target.value)} placeholder="Full name" />
+                          </div>
+                          <div className="enq-field">
+                            <label className="enq-label">Phone</label>
+                            <input className="enq-input" value={quoteForm.clientPhone} onChange={e => setQuoteField("clientPhone", e.target.value)} placeholder="+91 9900000000" />
+                          </div>
+                          <div className="enq-field">
+                            <label className="enq-label">Email</label>
+                            <input className="enq-input" type="email" value={quoteForm.clientEmail} onChange={e => setQuoteField("clientEmail", e.target.value)} placeholder="email@company.com" />
+                          </div>
+                          <div className="enq-field">
+                            <label className="enq-label">Company</label>
+                            <input className="enq-input" value={quoteForm.clientCompany} onChange={e => setQuoteField("clientCompany", e.target.value)} placeholder="Company name" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Line items */}
+                    <div className="enq-form-card">
+                      <div className="enq-form-card-title"><span className="enq-card-icon">📋</span> Line Items</div>
+                      <div className="enq-form-card-body">
+                        <div className="qt-line-header">
+                          <span style={{ flex:3 }}>Description</span>
+                          <span style={{ flex:1, textAlign:"center" }}>Qty</span>
+                          <span style={{ flex:1, textAlign:"right" }}>Rate (₹)</span>
+                          <span style={{ flex:1, textAlign:"right" }}>Amount (₹)</span>
+                          <span style={{ width:32 }}></span>
+                        </div>
+                        {quoteForm.lineItems.map((item, idx) => (
+                          <div key={idx} className="qt-line-row">
+                            <input className="enq-input" style={{ flex:3 }} value={item.description} onChange={e => updateLineItem(idx, "description", e.target.value)} placeholder="Service / item description" />
+                            <input className="enq-input" style={{ flex:1, textAlign:"center" }} type="number" min="0" value={item.qty} onChange={e => updateLineItem(idx, "qty", e.target.value)} />
+                            <input className="enq-input" style={{ flex:1, textAlign:"right" }} type="number" min="0" value={item.rate} onChange={e => updateLineItem(idx, "rate", e.target.value)} />
+                            <input className="enq-input qt-amount-cell" style={{ flex:1 }} readOnly value={Number(item.amount || 0).toLocaleString("en-IN")} />
+                            <button className="qt-remove-line" onClick={() => removeLineItem(idx)} disabled={quoteForm.lineItems.length === 1}><XCircle size={15} /></button>
+                          </div>
+                        ))}
+                        <button className="qt-add-line-btn" onClick={addLineItem}><Plus size={13} /> Add Line Item</button>
+
+                        {/* Totals */}
+                        <div className="qt-totals">
+                          <div className="qt-total-row">
+                            <span>Subtotal</span>
+                            <span>{fmtCurrency(quoteForm.lineItems.reduce((s,i) => s + Number(i.amount||0), 0))}</span>
+                          </div>
+                          <div className="qt-total-row">
+                            <span>Discount (₹)</span>
+                            <input className="enq-input qt-total-input" type="number" min="0" value={quoteForm.discount} onChange={e => {
+                              const d = Number(e.target.value || 0);
+                              const sub = quoteForm.lineItems.reduce((s,i) => s + Number(i.amount||0), 0);
+                              const tax = ((sub - d) * Number(quoteForm.tax || 0)) / 100;
+                              setQuoteForm(f => ({ ...f, discount: d, total: Math.max(0, sub - d + tax) }));
+                            }} />
+                          </div>
+                          <div className="qt-total-row">
+                            <span>GST (%)</span>
+                            <input className="enq-input qt-total-input" type="number" min="0" max="100" value={quoteForm.tax} onChange={e => {
+                              const t = Number(e.target.value || 0);
+                              const sub = quoteForm.lineItems.reduce((s,i) => s + Number(i.amount||0), 0);
+                              const tax = ((sub - Number(quoteForm.discount||0)) * t) / 100;
+                              setQuoteForm(f => ({ ...f, tax: t, total: Math.max(0, sub - Number(f.discount||0) + tax) }));
+                            }} />
+                          </div>
+                          <div className="qt-total-row qt-grand-total">
+                            <span>Grand Total</span>
+                            <span>{fmtCurrency(quoteForm.total || quoteForm.lineItems.reduce((s,i) => s+Number(i.amount||0),0))}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Notes & Terms */}
+                    <div className="enq-form-card">
+                      <div className="enq-form-card-title"><span className="enq-card-icon">📝</span> Notes & Terms</div>
+                      <div className="enq-form-card-body" style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                        <div className="enq-field">
+                          <label className="enq-label">Notes (visible to client)</label>
+                          <textarea className="enq-textarea" rows={3} value={quoteForm.notes} onChange={e => setQuoteField("notes", e.target.value)} placeholder="Any additional notes for the client…" style={{ width:"100%", boxSizing:"border-box" }} />
+                        </div>
+                        <div className="enq-field">
+                          <label className="enq-label">Terms & Conditions</label>
+                          <textarea className="enq-textarea" rows={3} value={quoteForm.terms} onChange={e => setQuoteField("terms", e.target.value)} placeholder="Payment terms, delivery, warranties…" style={{ width:"100%", boxSizing:"border-box" }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sidebar */}
+                  <div className="enq-form-sidebar">
+                    <div className="enq-form-card">
+                      <div className="enq-form-card-title"><span className="enq-card-icon">⚙️</span> Details</div>
+                      <div className="enq-form-card-body" style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                        <div className="enq-field">
+                          <label className="enq-label">Branch <span className="enq-req">*</span></label>
+                          <select className="enq-select" value={quoteForm.branch} onChange={e => setQuoteField("branch", e.target.value)}>
+                            {["Bangalore","Mysore","Mumbai"].map(b => <option key={b} value={b}>{b}</option>)}
+                          </select>
+                        </div>
+                        <div className="enq-field">
+                          <label className="enq-label">Valid Until</label>
+                          <input className="enq-input" type="date" value={quoteForm.validUntil} onChange={e => setQuoteField("validUntil", e.target.value)} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="enq-form-sidebar-actions">
+                      <button className="enq-save-btn" disabled={quoteSaving} onClick={saveQuote} style={{ width:"100%" }}>
+                        {quoteSaving ? "Saving…" : quoteEditId ? "Update Quotation" : "Create Quotation"}
+                      </button>
+                      <button className="enq-cancel-btn" onClick={() => setQuoteMode("list")} style={{ width:"100%" }}>Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── QUOTATION VIEW ── */}
+            {quoteMode === "view" && viewingQuote && (
+              <div className="enq-form-view">
+                <div className="enq-detail-topbar">
+                  <div className="enq-detail-topbar-left">
+                    <button className="enq-back-btn" onClick={() => setQuoteMode("list")}><ChevronLeft size={15} /> Back</button>
+                    <div>
+                      <div className="enq-detail-name">{viewingQuote.quoteNumber}</div>
+                      <div className="enq-detail-phone">{viewingQuote.clientName} · {viewingQuote.clientPhone || viewingQuote.clientEmail || ""}</div>
+                    </div>
+                    <span className={`enq-status ${getQuoteStatusClass(viewingQuote.status)}`}>{viewingQuote.status}</span>
+                  </div>
+                  <div className="enq-detail-acts">
+                    {viewingQuote.status === "draft" && (
+                      <button className="enq-convert-btn" onClick={() => updateQuoteStatus(viewingQuote._id, "sent")}><Send size={14} /> Mark as Sent</button>
+                    )}
+                    {viewingQuote.status === "sent" && (
+                      <>
+                        <button className="enq-convert-btn" style={{ background:"#16a34a" }} onClick={() => updateQuoteStatus(viewingQuote._id, "accepted")}><CheckCircle size={14} /> Accept</button>
+                        <button className="enq-btn-sec" onClick={() => updateQuoteStatus(viewingQuote._id, "rejected")}><XCircle size={14} /> Reject</button>
+                      </>
+                    )}
+                    <button className="enq-btn-sec" onClick={() => {
+                      setQuoteForm({
+                        clientName: viewingQuote.clientName, clientPhone: viewingQuote.clientPhone||"", clientEmail: viewingQuote.clientEmail||"", clientCompany: viewingQuote.clientCompany||"",
+                        enquiryId: viewingQuote.enquiryId||"", branch: viewingQuote.branch, services: viewingQuote.services||[],
+                        lineItems: viewingQuote.lineItems?.length ? viewingQuote.lineItems : [{ ...EMPTY_LINE }],
+                        discount: viewingQuote.discount||0, tax: viewingQuote.tax||18,
+                        validUntil: viewingQuote.validUntil ? viewingQuote.validUntil.split("T")[0] : "",
+                        notes: viewingQuote.notes||"", terms: viewingQuote.terms||"",
+                      });
+                      setQuoteEditId(viewingQuote._id);
+                      setQuoteMode("form");
+                    }}><Edit2 size={14} /> Edit</button>
+                  </div>
+                </div>
+
+                <div className="enq-detail-body">
+                  <div className="enq-detail-cols">
+                    <div className="enq-form-card">
+                      <div className="enq-form-card-title">Quotation Details</div>
+                      <div className="enq-form-card-body">
+                        {[
+                          ["Quote No.", viewingQuote.quoteNumber],
+                          ["Client",   viewingQuote.clientName],
+                          ["Phone",    viewingQuote.clientPhone || "—"],
+                          ["Email",    viewingQuote.clientEmail || "—"],
+                          ["Company",  viewingQuote.clientCompany || "—"],
+                          ["Branch",   viewingQuote.branch],
+                          ["Valid Until", fmtDate(viewingQuote.validUntil)],
+                          ["Created",  fmtDate(viewingQuote.createdAt)],
+                        ].map(([label, val]) => (
+                          <div key={label} className="enq-detail-field">
+                            <div className="enq-detail-field-label">{label}</div>
+                            <div className="enq-detail-field-val">{val}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="enq-form-card">
+                      <div className="enq-form-card-title">Line Items & Totals</div>
+                      <div className="enq-form-card-body">
+                        <table className="enq-table" style={{ marginBottom:16 }}>
+                          <thead>
+                            <tr>
+                              <th>Description</th>
+                              <th style={{ textAlign:"center" }}>Qty</th>
+                              <th style={{ textAlign:"right" }}>Rate</th>
+                              <th style={{ textAlign:"right" }}>Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(viewingQuote.lineItems || []).map((item, i) => (
+                              <tr key={i}>
+                                <td>{item.description}</td>
+                                <td style={{ textAlign:"center" }}>{item.qty}</td>
+                                <td style={{ textAlign:"right" }}>{fmtCurrency(item.rate)}</td>
+                                <td style={{ textAlign:"right" }}><strong>{fmtCurrency(item.amount)}</strong></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <div className="qt-totals">
+                          <div className="qt-total-row"><span>Subtotal</span><span>{fmtCurrency(viewingQuote.subtotal)}</span></div>
+                          {viewingQuote.discount > 0 && <div className="qt-total-row"><span>Discount</span><span>- {fmtCurrency(viewingQuote.discount)}</span></div>}
+                          {viewingQuote.tax > 0 && <div className="qt-total-row"><span>GST ({viewingQuote.tax}%)</span><span>{fmtCurrency(((viewingQuote.subtotal - viewingQuote.discount) * viewingQuote.tax) / 100)}</span></div>}
+                          <div className="qt-total-row qt-grand-total"><span>Grand Total</span><span>{fmtCurrency(viewingQuote.total)}</span></div>
+                        </div>
+                        {viewingQuote.notes && <div style={{ marginTop:16 }}><div className="enq-detail-field-label">Notes</div><div className="enq-detail-field-val" style={{ whiteSpace:"pre-wrap" }}>{viewingQuote.notes}</div></div>}
+                        {viewingQuote.terms && <div style={{ marginTop:10 }}><div className="enq-detail-field-label">Terms</div><div className="enq-detail-field-val" style={{ whiteSpace:"pre-wrap" }}>{viewingQuote.terms}</div></div>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ══════════════ ENQUIRIES TAB ══════════════ */}
+        {activeTab === "enquiries" && mode === "list" && (
           <>
             {/* Hero header */}
             <div className="enq-header">
@@ -590,7 +1135,7 @@ export default function EnquiriesPage() {
         )}
 
         {/* ─── FORM VIEW ──────────────────────────────── */}
-        {mode === "form" && (
+        {activeTab === "enquiries" && mode === "form" && (
           <div className="enq-form-view">
             {/* Form header */}
             <div className="enq-form-subheader">
@@ -772,7 +1317,7 @@ export default function EnquiriesPage() {
         )}
 
         {/* ─── DETAIL VIEW ──────────────────────────────── */}
-        {mode === "view" && viewingEnquiry && (
+        {activeTab === "enquiries" && mode === "view" && viewingEnquiry && (
           <div className="enq-form-view">
             <div className="enq-detail-topbar">
               <div className="enq-detail-topbar-left">

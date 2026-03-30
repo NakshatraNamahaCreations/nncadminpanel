@@ -5,6 +5,8 @@ import {
   CalendarDays, Rocket, AlertCircle, MessageSquare,
   Eye, RefreshCcw, Trash2, Plus, Search, X,
   Mail, Send, ChevronRight, ChevronLeft, CheckCircle2, Check,
+  ReceiptText, User, ChevronDown,
+  CreditCard, BadgeCheck, Building2, Filter,
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import LeadDrawer from "../../Leads/LeadDrawer";
@@ -714,6 +716,7 @@ function EmailModal({ onClose, apiBase }) {
   );
 }
 
+
 /* ─── Main page ─────────────────────────────────────────────── */
 export default function TodaysPlanPage() {
   const [dashboard, setDashboard]   = useState(null);
@@ -722,6 +725,8 @@ export default function TodaysPlanPage() {
   const [actionId, setActionId]     = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [callPriorityFilter, setCallPriorityFilter] = useState("");
+  const [callRepFilter, setCallRepFilter]     = useState("");
   const [activeTab, setActiveTab]   = useState("all");
   const [search, setSearch]         = useState("");
   const [addOpen, setAddOpen]       = useState(false);
@@ -731,6 +736,35 @@ export default function TodaysPlanPage() {
   const [quickActionId, setQuickActionId] = useState(null);
   const [qaData, setQaData]         = useState({ outcome: "", notes: "", nextDate: "" });
   const [qaSubmitting, setQaSubmitting] = useState(false);
+  const [priorityFilter, setPriorityFilter] = useState("");
+
+  // Quick View Modal state
+  const [qvOpen, setQvOpen]         = useState(false);
+  const [qvTask, setQvTask]         = useState(null);
+  const [qvLead, setQvLead]         = useState(null);
+  const [qvInvoices, setQvInvoices] = useState([]);
+  const [qvQuotations, setQvQuotations] = useState([]);
+  const [qvSelQuote, setQvSelQuote] = useState("");
+  const [qvLoading, setQvLoading]   = useState(false);
+  const [qvPayStatus, setQvPayStatus] = useState("");
+  const [qvSelectedInvoice, setQvSelectedInvoice] = useState("");
+  const [qvSaving, setQvSaving]     = useState(false);
+  const [qvFollowupType, setQvFollowupType] = useState(""); // payment | meeting | proposal | invoice
+  const [qvMeetingNotes, setQvMeetingNotes] = useState("");
+  const [qvMeetingNext,  setQvMeetingNext]  = useState("");
+  const [qvMeetingDate,  setQvMeetingDate]  = useState("");
+  const QV_DONE_KEY = `tp_done_ids_${new Date().toISOString().slice(0,10)}`; // e.g. tp_done_ids_2026-03-30
+  const [qvDoneIds, setQvDoneIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem(QV_DONE_KEY);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+
+  // Persist done IDs to localStorage so they survive page refresh
+  useEffect(() => {
+    try { localStorage.setItem(QV_DONE_KEY, JSON.stringify([...qvDoneIds])); } catch {}
+  }, [qvDoneIds]);
 
   const fetchDashboard = async () => {
     try {
@@ -759,14 +793,25 @@ export default function TodaysPlanPage() {
 
   const allTasks = useMemo(() => {
     if (!dashboard) return [];
-    return [
+    const combined = [
       ...(dashboard.sections?.immediateTasks || []),
       ...(dashboard.sections?.scheduleTasks  || []),
     ];
+    // Deduplicate by _id — same task can appear in both sections
+    const seen = new Set();
+    return combined.filter(t => {
+      if (seen.has(t._id)) return false;
+      seen.add(t._id);
+      return true;
+    });
   }, [dashboard]);
 
   const filtered = useMemo(() => {
-    let tasks = activeTab === "all" ? allTasks : allTasks.filter(t => t.taskType === activeTab);
+    // new_call and follow_up are already shown in the Today's Calls grid above — exclude from task list
+    const CALL_TYPES = new Set(["new_call", "follow_up"]);
+    let tasks = activeTab === "all"
+      ? allTasks.filter(t => !CALL_TYPES.has(t.taskType))
+      : allTasks.filter(t => t.taskType === activeTab);
     if (search.trim()) {
       const q = search.toLowerCase();
       tasks = tasks.filter(t =>
@@ -776,19 +821,28 @@ export default function TodaysPlanPage() {
         t.ownerName?.toLowerCase().includes(q)
       );
     }
+    if (priorityFilter) tasks = tasks.filter(t => t.priority === priorityFilter);
     return tasks;
-  }, [allTasks, activeTab, search]);
+  }, [allTasks, activeTab, search, priorityFilter]);
 
   const tabCounts = useMemo(() => {
-    const counts = { all: allTasks.length };
+    const CALL_TYPES = new Set(["new_call", "follow_up"]);
+    const counts = { all: allTasks.filter(t => !CALL_TYPES.has(t.taskType)).length };
     TABS.slice(1).forEach(tab => { counts[tab.key] = allTasks.filter(t => t.taskType === tab.key).length; });
     return counts;
   }, [allTasks]);
 
   // Dedicated calls section — calls with phone numbers
-  const todaysCalls = useMemo(() =>
+  const todaysCallsAll = useMemo(() =>
     allTasks.filter(t => (t.taskType === "new_call" || t.taskType === "follow_up") && t.phone && t.status !== "completed"),
   [allTasks]);
+  const todaysCalls = useMemo(() => {
+    let c = todaysCallsAll;
+    if (callPriorityFilter) c = c.filter(t => t.priority === callPriorityFilter);
+    if (callRepFilter)      c = c.filter(t => (t.ownerName || "").toLowerCase().includes(callRepFilter.toLowerCase()));
+    return c;
+  }, [todaysCallsAll, callPriorityFilter, callRepFilter]);
+  const callReps = useMemo(() => [...new Set(todaysCallsAll.map(t => t.ownerName).filter(Boolean))], [todaysCallsAll]);
   const todaysCallsDone = useMemo(() =>
     allTasks.filter(t => (t.taskType === "new_call" || t.taskType === "follow_up") && t.phone && t.status === "completed"),
   [allTasks]);
@@ -855,6 +909,85 @@ export default function TodaysPlanPage() {
     if (!task?.leadId) return;
     setSelectedLeadId(task.leadId);
     setDrawerOpen(true);
+  };
+
+  const openQuickView = async (task) => {
+    if (!task?.leadId) { toast.error("No lead linked"); return; }
+    setQvTask(task);
+    setQvLead(null);
+    setQvInvoices([]);
+    setQvQuotations([]);
+    setQvSelQuote("");
+    setQvPayStatus("");
+    setQvSelectedInvoice("");
+    setQvFollowupType("");
+    setQvMeetingNotes("");
+    setQvMeetingNext("");
+    setQvMeetingDate("");
+    setQvOpen(true);
+    setQvLoading(true);
+    try {
+      const token = localStorage.getItem("nnc_token");
+      const authH = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+      const [leadRes, invRes, qtRes] = await Promise.all([
+        fetch(`${API_BASE}/api/leads/${task.leadId}`, { headers: authH }),
+        fetch(`${API_BASE}/api/invoices?limit=50`, { headers: authH }),
+        fetch(`${API_BASE}/api/quotations?limit=50`, { headers: authH }),
+      ]);
+      const leadJson = await leadRes.json();
+      const invJson  = await invRes.json();
+      const qtJson   = await qtRes.json().catch(() => ({ data: [] }));
+      const lead = leadJson?.data || leadJson?.lead || null;
+      setQvLead(lead);
+      setQvPayStatus(lead?.paymentStatus || "");
+      // Filter invoices by client name match
+      const allInv = Array.isArray(invJson?.data) ? invJson.data
+        : Array.isArray(invJson?.invoices) ? invJson.invoices : [];
+      const clientName = (lead?.name || task.title || "").toLowerCase();
+      const matched = allInv.filter(inv =>
+        inv.clientName?.toLowerCase().includes(clientName.split(" ")[0]) ||
+        inv.leadId === task.leadId
+      );
+      setQvInvoices(matched.length > 0 ? matched : allInv.slice(0, 20));
+      // Filter quotations by phone or name
+      const allQt = Array.isArray(qtJson?.data) ? qtJson.data : [];
+      const phone = lead?.phone?.replace(/\D/g,"") || "";
+      const matchedQt = allQt.filter(q =>
+        (phone && q.clientPhone?.replace(/\D/g,"") === phone) ||
+        (lead?.name && q.clientName?.toLowerCase() === lead.name?.toLowerCase())
+      );
+      setQvQuotations(matchedQt.length > 0 ? matchedQt : allQt.slice(0, 10));
+    } catch { toast.error("Failed to load lead details"); }
+    finally { setQvLoading(false); }
+  };
+
+  const handleQvSave = async () => {
+    if (!qvTask?.leadId) return;
+    setQvSaving(true);
+    try {
+      const token = localStorage.getItem("nnc_token");
+      const updateBody = {};
+      if (qvFollowupType === "payment")  updateBody.paymentStatus = qvPayStatus;
+      if (qvFollowupType === "meeting")  updateBody.lastMeetingOutcome = qvPayStatus;
+      if (qvFollowupType === "proposal") updateBody.proposalDecision = qvPayStatus;
+      if (qvFollowupType === "invoice")  updateBody.paymentStatus = qvPayStatus;
+
+      if (Object.keys(updateBody).length > 0) {
+        const res = await fetch(`${API_BASE}/api/leads/${qvTask.leadId}`, {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify(updateBody),
+        });
+        const json = await res.json();
+        if (!res.ok || !json?.success) throw new Error(json?.message || "Failed to update");
+      }
+
+      const typeLabel = { payment:"Payment", meeting:"Meeting", proposal:"Proposal", invoice:"Invoice" }[qvFollowupType] || "Follow-up";
+      toast.success(`${typeLabel} follow-up marked as done ✓`);
+      if (qvTask?._id) setQvDoneIds(prev => new Set([...prev, qvTask._id]));
+      setQvOpen(false);
+    } catch (e) { toast.error(e?.message || "Failed to save"); }
+    finally { setQvSaving(false); }
   };
 
   const handleQuickLog = async (task) => {
@@ -985,18 +1118,39 @@ export default function TodaysPlanPage() {
                         <span className="tp-calls-count done">{todaysCallsDone.length} done</span>
                       )}
                     </div>
+                    <div className="tp-calls-filters">
+                      <select className="tp-calls-filter-sel" value={callPriorityFilter} onChange={e => setCallPriorityFilter(e.target.value)}>
+                        <option value="">All Priority</option>
+                        <option value="urgent">Urgent</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                      </select>
+                      {callReps.length > 1 && (
+                        <select className="tp-calls-filter-sel" value={callRepFilter} onChange={e => setCallRepFilter(e.target.value)}>
+                          <option value="">All Reps</option>
+                          {callReps.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      )}
+                      {(callPriorityFilter || callRepFilter) && (
+                        <button className="tp-calls-filter-clear" onClick={() => { setCallPriorityFilter(""); setCallRepFilter(""); }}>
+                          <X size={12}/> Clear
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="tp-calls-grid">
                     {todaysCalls.map(task => {
-                      const isAuto = !!task.isAutoGenerated;
+                      const isAuto  = !!task.isAutoGenerated;
+                      const isDone  = qvDoneIds.has(task._id);
                       return (
-                        <div key={`call-${task._id}`} className={`tp-call-card tp-prio-${task.priority}`}>
+                        <div key={`call-${task._id}`} className={`tp-call-card tp-prio-${task.priority}${isDone ? " qv-call-done" : ""}`}>
                           <div className="tp-call-card-top">
                             <div
-                              className={`tp-checkbox${isAuto ? " disabled" : ""}`}
-                              onClick={() => !isAuto && handleToggle(task._id)}
+                              className={`tp-checkbox${isAuto ? " disabled" : ""}${isDone ? " checked" : ""}`}
+                              onClick={() => !isAuto && !isDone && handleToggle(task._id)}
                             >
-                              <span className="tp-checkmark"/>
+                              <span className="tp-checkmark">{isDone && <Check size={13}/>}</span>
                             </div>
                             <div className="tp-call-info">
                               <div className="tp-call-name">{task.title}</div>
@@ -1005,21 +1159,29 @@ export default function TodaysPlanPage() {
                                 {task.ownerName && <span>{task.ownerName}</span>}
                               </div>
                             </div>
-                            {task.priority === "urgent" && <span className="tp-call-prio-flag urgent">URGENT</span>}
-                            {task.priority === "high" && <span className="tp-call-prio-flag high">HIGH</span>}
+                            {isDone
+                              ? <span className="tp-call-prio-flag done">DONE</span>
+                              : task.priority === "urgent"
+                                ? <span className="tp-call-prio-flag urgent">URGENT</span>
+                                : task.priority === "high"
+                                  ? <span className="tp-call-prio-flag high">HIGH</span>
+                                  : null
+                            }
                           </div>
                           <div className="tp-call-card-bottom">
-                            <a href={`tel:${task.phone}`} className="tp-call-phone-btn">
+                            <a href={`tel:${task.phone}`} className={`tp-call-phone-btn${isDone ? " frozen" : ""}`}>
                               <Phone size={14}/> {task.phone}
                             </a>
-                            <button type="button" className="tp-call-wa-btn"
-                              onClick={() => window.open(`https://wa.me/${task.phone?.replace(/\D/g,"")}`, "_blank")}>
+                            <button type="button" className={`tp-call-wa-btn${isDone ? " frozen" : ""}`}
+                              onClick={() => !isDone && window.open(`https://wa.me/${task.phone?.replace(/\D/g,"")}`, "_blank")}>
                               <MessageSquare size={14}/> WhatsApp
                             </button>
                             {task.leadId && (
-                              <button type="button" className="tp-call-profile-btn" onClick={() => openLead(task)}>
-                                <Eye size={12}/> View
-                              </button>
+                              isDone
+                                ? <span className="tp-call-profile-btn done-badge"><CheckCircle2 size={12}/> Done</span>
+                                : <button type="button" className="tp-call-profile-btn" onClick={() => openQuickView(task)}>
+                                    <Eye size={12}/> View
+                                  </button>
                             )}
                           </div>
                         </div>
@@ -1052,220 +1214,6 @@ export default function TodaysPlanPage() {
                 </div>
               )}
 
-              {/* ── Content ── */}
-              <div className="tp-content">
-
-                {/* Filter bar */}
-                <div className="tp-filter-bar">
-                  <div className="tp-tabs">
-                    {TABS.map(tab => (
-                      <button key={tab.key} type="button"
-                        className={`tp-tab ${activeTab === tab.key ? "active" : ""}`}
-                        onClick={() => setActiveTab(tab.key)}>
-                        {tab.label}
-                        {tabCounts[tab.key] > 0 && <span className="tp-tab-count">{tabCounts[tab.key]}</span>}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="tp-search-wrap">
-                    <Search size={13} className="tp-search-icon"/>
-                    <input className="tp-search" placeholder="Search name, phone, rep..."
-                      value={search} onChange={e => setSearch(e.target.value)}/>
-                    {search && <button type="button" className="tp-search-clear" onClick={() => setSearch("")}><X size={13}/></button>}
-                  </div>
-                </div>
-
-                {/* Task panel */}
-                <div className="tp-task-panel">
-                  <div className="tp-panel-head">
-                    <div className="tp-panel-title">
-                      {activeTab === "all" ? "All Tasks" : TABS.find(t => t.key === activeTab)?.label}
-                    </div>
-                    <div className="tp-panel-counts">
-                      <span className="tp-count-badge pending">{pendingFiltered.length} pending</span>
-                      {doneFiltered.length > 0 && <span className="tp-count-badge done">{doneFiltered.length} done</span>}
-                    </div>
-                  </div>
-
-                  {filtered.length === 0 ? (
-                    <div className="tp-empty-box">No tasks found{search ? " for your search" : ""}.</div>
-                  ) : (
-                    <div className="tp-task-list">
-
-                      {/* ── Pending tasks ── */}
-                      {pendingFiltered.length > 0 && (
-                        <div className="tp-section-header pending">
-                          <span className="tp-section-dot" />
-                          <span>Pending</span>
-                          <span className="tp-section-count">{pendingFiltered.length}</span>
-                        </div>
-                      )}
-
-                      {pendingFiltered.map(task => {
-                        const isAuto   = !!task.isAutoGenerated;
-                        const isBusy   = actionId === task._id;
-                        const isQAOpen = quickActionId === task._id;
-                        const typeIcon = {
-                          new_call:"📞", follow_up:"🔁", payment:"💳",
-                          proposal:"📄", meeting:"🗓️", onboarding:"🚀",
-                        }[task.taskType] || "📌";
-
-                        return (
-                          <div key={task._id} className={`tp-row-card tp-prio-${task.priority}`}>
-                            <div className="tp-row-main">
-                              {/* Checkbox */}
-                              <div
-                                className={`tp-checkbox${isAuto ? " disabled" : ""}`}
-                                onClick={(e) => { e.stopPropagation(); if (!isAuto && !isBusy) handleToggle(task._id); }}
-                                title={isAuto ? "Use Take Action to complete" : "Mark as done"}
-                              >
-                                {isBusy
-                                  ? <RefreshCcw size={11} className="tp-spin-icon"/>
-                                  : <span className="tp-checkmark">{typeIcon}</span>
-                                }
-                              </div>
-                              <div className="tp-row-info">
-                                <div className="tp-row-name">{task.title}</div>
-                                <div className="tp-row-meta">
-                                  {task.phone     && <span className="tp-meta-ph">📞 {task.phone}</span>}
-                                  {task.subtitle  && <span>{task.subtitle}</span>}
-                                  {task.ownerName && <span>👤 {task.ownerName}</span>}
-                                  {task.dueLabel && task.dueLabel !== "Today" && <span>⏰ {task.dueLabel}</span>}
-                                  {isAuto && <span className="tp-meta-auto-badge">Auto</span>}
-                                </div>
-                              </div>
-                              <div className="tp-row-right">
-                                {task.priority === "urgent" && <span className="tp-prio-flag urgent">🔥</span>}
-                                {task.priority === "high"   && <span className="tp-prio-flag high">⬆</span>}
-                                {task.phone && (
-                                  <button type="button" className="tp-icon-btn green" title="Call"
-                                    onClick={() => { window.location.href = `tel:${task.phone}`; }}>
-                                    <Phone size={12}/>
-                                  </button>
-                                )}
-                                {task.phone && (
-                                  <button type="button" className="tp-icon-btn sky" title="WhatsApp"
-                                    onClick={() => window.open(`https://wa.me/${task.phone?.replace(/\D/g,"")}`, "_blank")}>
-                                    <MessageSquare size={12}/>
-                                  </button>
-                                )}
-                                {!isAuto && (
-                                  <button type="button" className="tp-icon-btn red" title="Delete"
-                                    onClick={() => handleDelete(task._id)}>
-                                    <Trash2 size={12}/>
-                                  </button>
-                                )}
-                                {isAuto && (
-                                  <button type="button"
-                                    className={`tp-row-action-btn${isQAOpen ? " cancel" : ""}`}
-                                    onClick={() => {
-                                      setQuickActionId(isQAOpen ? null : task._id);
-                                      if (!isQAOpen) setQaData({ outcome: "", notes: "", nextDate: "" });
-                                    }}>
-                                    {isQAOpen ? "✕ Cancel" : "⚡ Take Action"}
-                                  </button>
-                                )}
-                                {task.leadId && (
-                                  <button type="button" className="tp-icon-btn blue" title="View Lead"
-                                    onClick={() => openLead(task)}>
-                                    <Eye size={12}/>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Inline Quick Action Panel */}
-                            {isAuto && isQAOpen && (
-                              <div className="tp-qa-panel">
-                                <div className="tp-qa-header">
-                                  📋 What happened with <strong>{task.title}</strong>?
-                                </div>
-                                <div className="tp-qa-outcomes">
-                                  {[
-                                    { key: "Answered",    icon: "📞" },
-                                    { key: "Voicemail",   icon: "📬" },
-                                    { key: "No Answer",   icon: "❌" },
-                                    { key: "Meeting Set", icon: "🗓️" },
-                                  ].map(o => (
-                                    <button key={o.key} type="button"
-                                      className={`tp-qa-out-btn${qaData.outcome === o.key ? " active" : ""}`}
-                                      onClick={() => setQaData(p => ({ ...p, outcome: o.key }))}>
-                                      {o.icon} {o.key}
-                                    </button>
-                                  ))}
-                                </div>
-                                <textarea className="tp-qa-notes" rows={2}
-                                  placeholder="Quick notes (optional)..."
-                                  value={qaData.notes}
-                                  onChange={e => setQaData(p => ({ ...p, notes: e.target.value }))}/>
-                                <div className="tp-qa-footer">
-                                  <div className="tp-qa-next">
-                                    <label>Next follow-up</label>
-                                    <input type="date" value={qaData.nextDate}
-                                      onChange={e => setQaData(p => ({ ...p, nextDate: e.target.value }))}/>
-                                  </div>
-                                  <div className="tp-qa-btns">
-                                    <button type="button" className="tp-qa-view-btn" onClick={() => openLead(task)}>
-                                      <Eye size={12}/> Profile
-                                    </button>
-                                    <button type="button" className="tp-qa-log-btn"
-                                      disabled={!qaData.outcome || qaSubmitting}
-                                      onClick={() => handleQuickLog(task)}>
-                                      {qaSubmitting
-                                        ? <><RefreshCcw size={12} className="tp-spin-icon"/> Saving…</>
-                                        : <><CheckCircle2 size={12}/> Log & Done</>
-                                      }
-                                    </button>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-
-                      {/* ── Completed tasks ── */}
-                      {doneFiltered.length > 0 && (
-                        <>
-                          <div className="tp-section-header done">
-                            <span className="tp-section-dot done" />
-                            <span>Completed</span>
-                            <span className="tp-section-count">{doneFiltered.length}</span>
-                          </div>
-                          {doneFiltered.map(task => {
-                            const isAuto = !!task.isAutoGenerated;
-                            const isBusy = actionId === task._id;
-                            return (
-                              <div key={task._id} className="tp-row-card is-done">
-                                <div className="tp-row-main">
-                                  <div
-                                    className={`tp-checkbox checked${isAuto ? " disabled" : ""}`}
-                                    onClick={(e) => { e.stopPropagation(); if (!isAuto && !isBusy) handleToggle(task._id); }}
-                                    title={isAuto ? "" : "Click to undo"}
-                                  >
-                                    {isBusy
-                                      ? <RefreshCcw size={11} className="tp-spin-icon"/>
-                                      : <span className="tp-checkmark"><Check size={13}/></span>
-                                    }
-                                  </div>
-                                  <div className="tp-row-info">
-                                    <div className="tp-row-name">{task.title}</div>
-                                    <div className="tp-row-meta">
-                                      {task.phone && <span>📞 {task.phone}</span>}
-                                      {task.ownerName && <span>👤 {task.ownerName}</span>}
-                                      <span>{task.taskType?.replace(/_/g," ")}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
             </>
           )}
 
@@ -1346,6 +1294,282 @@ export default function TodaysPlanPage() {
               apiBase={API_BASE}
               onClose={() => setEmailOpen(false)}
             />
+          )}
+
+          {/* ── Quick View Modal ── */}
+          {qvOpen && (
+            <div className="qv-overlay" onClick={() => setQvOpen(false)}>
+              <div className="qv-modal" onClick={e => e.stopPropagation()}>
+
+                {/* Header */}
+                <div className="qv-header">
+                  <div className="qv-header-left">
+                    <div className="qv-avatar">{(qvTask?.title || "?").charAt(0).toUpperCase()}</div>
+                    <div>
+                      <div className="qv-title">{qvTask?.title}</div>
+                      <div className="qv-subtitle">{qvTask?.subtitle} {qvTask?.ownerName && `· ${qvTask.ownerName}`}</div>
+                    </div>
+                  </div>
+                  <div className="qv-header-right">
+                    <span className={`qv-prio-badge ${qvTask?.priority}`}>{qvTask?.priority?.toUpperCase()}</span>
+                    {qvFollowupType && (
+                      <button className="qv-back-btn" onClick={() => setQvFollowupType("")}>← Back</button>
+                    )}
+                    <button className="qv-close" onClick={() => setQvOpen(false)}>×</button>
+                  </div>
+                </div>
+
+                {qvLoading ? (
+                  <div className="qv-loading"><RefreshCcw size={20} className="tp-spin-icon"/> Loading details...</div>
+                ) : !qvFollowupType ? (
+
+                  /* ── STEP 1: Choose followup type ── */
+                  <div className="qv-body">
+                    <div className="qv-choose-title">What type of follow-up is this?</div>
+                    <div className="qv-type-grid">
+                      <button className="qv-type-card payment" onClick={() => setQvFollowupType("payment")}>
+                        <div className="qv-type-icon">💳</div>
+                        <div className="qv-type-label">Payment Follow-up</div>
+                        <div className="qv-type-desc">Check payment status, amounts due &amp; received</div>
+                      </button>
+                      <button className="qv-type-card meeting" onClick={() => setQvFollowupType("meeting")}>
+                        <div className="qv-type-icon">🗓️</div>
+                        <div className="qv-type-label">Meeting Follow-up</div>
+                        <div className="qv-type-desc">Log meeting outcome, next steps &amp; MOM</div>
+                      </button>
+                      <button className="qv-type-card proposal" onClick={() => setQvFollowupType("proposal")}>
+                        <div className="qv-type-icon">📄</div>
+                        <div className="qv-type-label">Proposal Follow-up</div>
+                        <div className="qv-type-desc">Review quotation status &amp; client decision</div>
+                      </button>
+                      <button className="qv-type-card invoice" onClick={() => setQvFollowupType("invoice")}>
+                        <div className="qv-type-icon">🧾</div>
+                        <div className="qv-type-label">Invoice Follow-up</div>
+                        <div className="qv-type-desc">Verify invoice details &amp; payment confirmation</div>
+                      </button>
+                    </div>
+                    {/* Client mini info */}
+                    {qvLead && (
+                      <div className="qv-mini-client">
+                        <span>👤 {qvLead.name}</span>
+                        {qvLead.phone && <a href={`tel:${qvLead.phone}`}>📞 {qvLead.phone}</a>}
+                        {qvLead.stage && <span className="qv-stage-badge">{qvLead.stage}</span>}
+                      </div>
+                    )}
+                  </div>
+
+                ) : (
+
+                  /* ── STEP 2: Followup detail ── */
+                  <div className="qv-body">
+
+                    {/* Client strip */}
+                    {qvLead && (
+                      <div className="qv-client-strip">
+                        <div className="qv-cs-name">{qvLead.name}</div>
+                        <div className="qv-cs-meta">
+                          {qvLead.phone    && <a href={`tel:${qvLead.phone}`}>📞 {qvLead.phone}</a>}
+                          {qvLead.email    && <span>✉ {qvLead.email}</span>}
+                          {qvLead.business && <span>🏢 {qvLead.business}</span>}
+                          {qvLead.stage    && <span className="qv-stage-badge">{qvLead.stage}</span>}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── PAYMENT FOLLOWUP ── */}
+                    {qvFollowupType === "payment" && (
+                      <>
+                        <div className="qv-section">
+                          <div className="qv-section-title">💳 Payment Status</div>
+                          <div className="qv-field">
+                            <label>Update Payment Status</label>
+                            <select className="qv-select" value={qvPayStatus} onChange={e => setQvPayStatus(e.target.value)}>
+                              <option value="">— Select Status —</option>
+                              <option value="Pending">🟡 Pending</option>
+                              <option value="Partial">🟠 Partial Received</option>
+                              <option value="Advance Received">🔵 Advance Received</option>
+                              <option value="Completed">🟢 Fully Paid</option>
+                              <option value="Overdue">🔴 Overdue</option>
+                            </select>
+                          </div>
+                          {qvLead && (
+                            <div className="qv-pay-summary">
+                              <div className="qv-pay-row"><span>Agreed Total</span><span>₹{Number(qvLead.agreedAmount||0).toLocaleString("en-IN")}</span></div>
+                              <div className="qv-pay-row green"><span>Advance Received</span><span>₹{Number(qvLead.advanceReceived||0).toLocaleString("en-IN")}</span></div>
+                              <div className="qv-pay-row red"><span>Balance Due</span><span>₹{Math.max(0,Number(qvLead.agreedAmount||0)-Number(qvLead.advanceReceived||0)).toLocaleString("en-IN")}</span></div>
+                            </div>
+                          )}
+                        </div>
+                        {qvInvoices.length > 0 && (
+                          <div className="qv-section">
+                            <div className="qv-section-title">🧾 Related Invoices</div>
+                            <select className="qv-select" value={qvSelectedInvoice} onChange={e => setQvSelectedInvoice(e.target.value)}>
+                              <option value="">— Select Invoice —</option>
+                              {qvInvoices.map(inv => (
+                                <option key={inv._id} value={inv._id}>
+                                  {inv.invoiceNumber || inv._id?.slice(-6)} — ₹{Number(inv.totalAmount||inv.total||0).toLocaleString("en-IN")} — {inv.status||"Draft"}
+                                </option>
+                              ))}
+                            </select>
+                            {qvSelectedInvoice && (() => { const inv = qvInvoices.find(i=>i._id===qvSelectedInvoice); if(!inv) return null; return (
+                              <div className="qv-invoice-detail">
+                                <div className="qv-inv-row"><span>Invoice #</span><span>{inv.invoiceNumber||"—"}</span></div>
+                                <div className="qv-inv-row"><span>Amount</span><span className="qv-amount">₹{Number(inv.totalAmount||inv.total||0).toLocaleString("en-IN")}</span></div>
+                                <div className="qv-inv-row"><span>Status</span><span className={`qv-inv-status ${(inv.status||"").toLowerCase()}`}>{inv.status||"Draft"}</span></div>
+                                {inv.dueDate && <div className="qv-inv-row"><span>Due Date</span><span>{new Date(inv.dueDate).toLocaleDateString("en-IN")}</span></div>}
+                              </div>
+                            );})()}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* ── MEETING FOLLOWUP ── */}
+                    {qvFollowupType === "meeting" && (
+                      <div className="qv-section">
+                        <div className="qv-section-title">🗓️ Meeting Details</div>
+                        {qvLead && (
+                          <div className="qv-info-grid">
+                            {qvLead.stage         && <div className="qv-info-item"><span>Current Stage</span><span className="qv-stage-badge">{qvLead.stage}</span></div>}
+                            {qvLead.agreedAmount  && <div className="qv-info-item"><span>Agreed Amount</span><span className="qv-amount">₹{Number(qvLead.agreedAmount).toLocaleString("en-IN")}</span></div>}
+                            {qvLead.nextFollowUp  && <div className="qv-info-item"><span>Last Follow-up</span><span>{new Date(qvLead.nextFollowUp).toLocaleDateString("en-IN")}</span></div>}
+                            {qvLead.notes         && <div className="qv-info-item" style={{flexDirection:"column",gap:4,alignItems:"flex-start"}}><span>Notes</span><span style={{color:"#374151",marginTop:4,lineHeight:1.5}}>{qvLead.notes}</span></div>}
+                          </div>
+                        )}
+                        <div className="qv-field" style={{marginTop:12}}>
+                          <label>Outcome / Update Status</label>
+                          <select className="qv-select" value={qvPayStatus} onChange={e => setQvPayStatus(e.target.value)}>
+                            <option value="">— Select Outcome —</option>
+                            <option value="Meeting Done">✅ Meeting Done</option>
+                            <option value="Demo Given">🖥️ Demo Given</option>
+                            <option value="Rescheduled">📅 Rescheduled</option>
+                            <option value="No Show">❌ No Show</option>
+                            <option value="Interested">🔥 Interested</option>
+                            <option value="Not Interested">👎 Not Interested</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── PROPOSAL FOLLOWUP ── */}
+                    {qvFollowupType === "proposal" && (
+                      <div className="qv-section">
+                        <div className="qv-section-title">📄 Proposal / Quotation Status</div>
+                        {qvQuotations.length === 0 ? (
+                          <div className="qv-no-invoices">No quotations found for this client</div>
+                        ) : (
+                          <>
+                            <div className="qv-field">
+                              <label>Select Quotation</label>
+                              <select className="qv-select" value={qvSelQuote} onChange={e => setQvSelQuote(e.target.value)}>
+                                <option value="">— Select —</option>
+                                {qvQuotations.map(q => (
+                                  <option key={q._id} value={q._id}>
+                                    {q.quoteNumber} — ₹{Number(q.total||0).toLocaleString("en-IN")} — {q.status}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {qvSelQuote && (() => { const q = qvQuotations.find(x=>x._id===qvSelQuote); if(!q) return null; return (
+                              <div className="qv-invoice-detail">
+                                <div className="qv-inv-row"><span>Quote #</span><span style={{fontFamily:"monospace",fontWeight:700,color:"#7c3aed"}}>{q.quoteNumber}</span></div>
+                                <div className="qv-inv-row"><span>Client</span><span>{q.clientName}</span></div>
+                                <div className="qv-inv-row"><span>Total</span><span className="qv-amount">₹{Number(q.total||0).toLocaleString("en-IN")}</span></div>
+                                {q.discount > 0 && <div className="qv-inv-row"><span>Discount</span><span style={{color:"#16a34a"}}>−₹{Number(q.discount||0).toLocaleString("en-IN")}</span></div>}
+                                <div className="qv-inv-row"><span>Status</span><span className={`qv-inv-status ${(q.status||"").toLowerCase()}`}>{q.status}</span></div>
+                                {q.validUntil && <div className="qv-inv-row"><span>Valid Until</span><span>{new Date(q.validUntil).toLocaleDateString("en-IN")}</span></div>}
+                                {(q.lineItems||[]).length > 0 && (
+                                  <div style={{marginTop:8,borderTop:"1px solid #f1f5f9",paddingTop:8}}>
+                                    {q.lineItems.map((it,i) => (
+                                      <div key={i} style={{display:"flex",justifyContent:"space-between",fontSize:12,padding:"3px 0",color:"#475569"}}>
+                                        <span>{it.description}</span>
+                                        <span style={{fontWeight:700}}>₹{Number(it.amount||0).toLocaleString("en-IN")}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );})()}
+                          </>
+                        )}
+                        <div className="qv-field" style={{marginTop:12}}>
+                          <label>Client Decision</label>
+                          <select className="qv-select" value={qvPayStatus} onChange={e => setQvPayStatus(e.target.value)}>
+                            <option value="">— Select —</option>
+                            <option value="Approved">✅ Approved</option>
+                            <option value="Under Negotiation">🔄 Under Negotiation</option>
+                            <option value="Revision Requested">✏️ Revision Requested</option>
+                            <option value="Rejected">❌ Rejected</option>
+                            <option value="Pending">⏳ Pending Response</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── INVOICE FOLLOWUP ── */}
+                    {qvFollowupType === "invoice" && (
+                      <div className="qv-section">
+                        <div className="qv-section-title">🧾 Invoice Details</div>
+                        {qvInvoices.length === 0 ? (
+                          <div className="qv-no-invoices">No invoices found for this client</div>
+                        ) : (
+                          <>
+                            <div className="qv-field">
+                              <label>Select Invoice</label>
+                              <select className="qv-select" value={qvSelectedInvoice} onChange={e => setQvSelectedInvoice(e.target.value)}>
+                                <option value="">— Select Invoice —</option>
+                                {qvInvoices.map(inv => (
+                                  <option key={inv._id} value={inv._id}>
+                                    {inv.invoiceNumber||inv._id?.slice(-6)} — ₹{Number(inv.totalAmount||inv.total||0).toLocaleString("en-IN")} — {inv.status||"Draft"}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            {qvSelectedInvoice && (() => { const inv = qvInvoices.find(i=>i._id===qvSelectedInvoice); if(!inv) return null; return (
+                              <div className="qv-invoice-detail">
+                                <div className="qv-inv-row"><span>Invoice #</span><span style={{fontWeight:800}}>{inv.invoiceNumber||"—"}</span></div>
+                                <div className="qv-inv-row"><span>Client</span><span>{inv.clientName||"—"}</span></div>
+                                <div className="qv-inv-row"><span>Amount</span><span className="qv-amount">₹{Number(inv.totalAmount||inv.total||0).toLocaleString("en-IN")}</span></div>
+                                <div className="qv-inv-row"><span>Status</span><span className={`qv-inv-status ${(inv.status||"").toLowerCase()}`}>{inv.status||"Draft"}</span></div>
+                                {inv.dueDate && <div className="qv-inv-row"><span>Due Date</span><span style={{color: new Date(inv.dueDate) < new Date() ? "#dc2626":"#374151"}}>{new Date(inv.dueDate).toLocaleDateString("en-IN")}</span></div>}
+                                {inv.paidAmount && <div className="qv-inv-row"><span>Paid</span><span className="qv-amount-green">₹{Number(inv.paidAmount).toLocaleString("en-IN")}</span></div>}
+                              </div>
+                            );})()}
+                          </>
+                        )}
+                        <div className="qv-field" style={{marginTop:12}}>
+                          <label>Payment Confirmation</label>
+                          <select className="qv-select" value={qvPayStatus} onChange={e => setQvPayStatus(e.target.value)}>
+                            <option value="">— Select —</option>
+                            <option value="Paid">✅ Paid — Confirmed</option>
+                            <option value="Partial">🟠 Partial Payment Done</option>
+                            <option value="Pending">🟡 Still Pending</option>
+                            <option value="Overdue">🔴 Overdue — Escalate</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                )}
+
+                {/* Footer */}
+                <div className="qv-footer">
+                  <button className="qv-btn-ghost" onClick={() => { setQvOpen(false); openLead(qvTask); }}>
+                    <Eye size={13}/> Full Profile
+                  </button>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <button className="qv-btn-ghost" onClick={() => setQvOpen(false)}>Cancel</button>
+                    {qvFollowupType && (
+                      <button className="qv-btn-save" disabled={qvSaving || !qvPayStatus} onClick={handleQvSave}>
+                        {qvSaving ? <><RefreshCcw size={13} className="tp-spin-icon"/> Saving…</> : <><BadgeCheck size={13}/> Save &amp; Done</>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            </div>
           )}
 
         </div>

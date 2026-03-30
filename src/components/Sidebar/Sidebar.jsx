@@ -21,6 +21,7 @@ import {
   PiggyBank,
   X,
   Grid3X3,
+  ReceiptText,
 } from "lucide-react";
 import nncLogo from "../../assets/nnclogo.png";
 import "./Sidebar.css";
@@ -96,8 +97,9 @@ export default function Sidebar() {
       items: [
         { label: "Pipeline",  path: "/pipeline",  moduleKey: "pipeline",  icon: <KanbanSquare size={15} /> },
         { label: "All Leads", path: "/leads",     moduleKey: "all-leads", icon: <Users size={15} /> },
-        { label: "Enquiries", path: "/enquiries", moduleKey: "enquiries", icon: <MessageSquare size={15} /> },
-        { label: "Calendar",  path: "/calendar",  moduleKey: "calendar",  icon: <CalendarDays size={15} /> },
+        { label: "Enquiries",  path: "/enquiries",   moduleKey: "enquiries",   icon: <MessageSquare size={15} /> },
+        { label: "Quotations", path: "/quotations",  moduleKey: "quotations",  icon: <ReceiptText size={15} /> },
+        { label: "Calendar",   path: "/calendar",    moduleKey: "calendar",    icon: <CalendarDays size={15} /> },
       ],
     },
     {

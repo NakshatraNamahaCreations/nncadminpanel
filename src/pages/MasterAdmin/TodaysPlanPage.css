@@ -408,11 +408,23 @@
 }
 .tp-calls-header {
   padding:12px 16px; background:linear-gradient(135deg,#0a0a0a,#1a1a1a);
-  display:flex; align-items:center; justify-content:space-between;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
 }
 .tp-calls-header-left {
-  display:flex; align-items:center; gap:10px;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
 }
+.tp-calls-filters { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.tp-calls-filter-sel {
+  padding:5px 10px; border-radius:8px; border:1.5px solid rgba(255,255,255,.2);
+  background:rgba(255,255,255,.08); color:#fff; font-size:12px; cursor:pointer; outline:none;
+}
+.tp-calls-filter-sel option { background:#1a1a2e; color:#fff; }
+.tp-calls-filter-clear {
+  display:flex; align-items:center; gap:3px;
+  padding:5px 10px; border-radius:8px; border:1.5px solid rgba(239,68,68,.4);
+  background:rgba(239,68,68,.1); color:#fca5a5; font-size:11px; font-weight:700; cursor:pointer;
+}
+.tp-calls-filter-clear:hover { background:rgba(239,68,68,.2); }
 .tp-calls-icon { color:#ef4444; }
 .tp-calls-title { color:#fff; font-size:15px; font-weight:900; margin:0; }
 .tp-calls-count {
@@ -781,4 +793,386 @@
   .tp-task-card { grid-template-columns:20px 1fr; }
   .tp-task-actions { flex-direction:row; grid-column:1/-1; }
   .tp-modal-grid { grid-template-columns:1fr; }
+}
+
+/* ═══════════════════════════════════════════════
+   PRIORITY FILTER + FILTER BAR
+═══════════════════════════════════════════════ */
+.tp-filter-right {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.tp-priority-filter {
+  padding: 7px 10px; border-radius: 9px; border: 1.5px solid #e2e8f0;
+  background: #fff; font-size: 12px; font-weight: 600; color: #374151;
+  cursor: pointer; outline: none; transition: border-color .15s;
+}
+.tp-priority-filter:focus { border-color: #dc2626; }
+.tp-search-clear-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 6px 10px; border-radius: 8px;
+  border: 1.5px solid #fca5a5; background: #fef2f2;
+  font-size: 11px; font-weight: 700; color: #dc2626; cursor: pointer;
+}
+.tp-search-clear-btn:hover { background: #fee2e2; }
+
+/* ═══════════════════════════════════════════════
+   QUICK VIEW MODAL
+═══════════════════════════════════════════════ */
+.qv-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1100; padding: 16px;
+}
+.qv-modal {
+  background: #fff; border-radius: 18px; width: 100%; max-width: 520px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22); overflow: hidden;
+  display: flex; flex-direction: column; max-height: 90vh;
+}
+
+/* Header */
+.qv-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; background: linear-gradient(135deg,#0f172a,#1e3a5f);
+  gap: 12px;
+}
+.qv-header-left { display: flex; align-items: center; gap: 12px; }
+.qv-avatar {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  background: rgba(255,255,255,.15); color: #fff; font-size: 18px;
+  font-weight: 900; display: flex; align-items: center; justify-content: center;
+}
+.qv-title    { font-size: 15px; font-weight: 800; color: #fff; }
+.qv-subtitle { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 2px; }
+.qv-header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.qv-close {
+  background: rgba(255,255,255,.12); border: none; color: #fff;
+  width: 28px; height: 28px; border-radius: 8px; font-size: 18px;
+  cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center;
+}
+.qv-close:hover { background: rgba(255,255,255,.25); }
+
+.qv-prio-badge {
+  padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 800; letter-spacing: .5px;
+}
+.qv-prio-badge.urgent { background: #fef2f2; color: #dc2626; }
+.qv-prio-badge.high   { background: #ffedd5; color: #ea580c; }
+.qv-prio-badge.medium { background: #dbeafe; color: #1d4ed8; }
+.qv-prio-badge.low    { background: #f1f5f9; color: #475569; }
+
+/* Loading */
+.qv-loading {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 48px 20px; font-size: 13px; color: #64748b;
+}
+
+/* Body */
+.qv-body { padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+.qv-section {
+  background: #f8fafc; border-radius: 12px; border: 1.5px solid #e2e8f0;
+  padding: 14px 16px;
+}
+.qv-section-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .8px;
+  color: #64748b; margin-bottom: 12px;
+}
+
+/* Info grid */
+.qv-info-grid { display: flex; flex-direction: column; gap: 7px; }
+.qv-info-item {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; padding: 3px 0; border-bottom: 1px solid #f1f5f9;
+}
+.qv-info-item:last-child { border-bottom: none; }
+.qv-info-item span:first-child { color: #94a3b8; font-weight: 600; }
+.qv-info-item span:last-child  { color: #0f172a; font-weight: 600; }
+.qv-info-item a { color: #2563eb; font-weight: 600; text-decoration: none; }
+.qv-stage-badge {
+  background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 700;
+}
+.qv-amount       { color: #0f172a; font-weight: 800; }
+.qv-amount-green { color: #059669; font-weight: 800; }
+
+/* Payment section */
+.qv-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.qv-field label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
+.qv-select {
+  padding: 9px 12px; border-radius: 9px; border: 1.5px solid #e2e8f0;
+  font-size: 13px; color: #0f172a; background: #fff; outline: none;
+  transition: border-color .15s; cursor: pointer;
+}
+.qv-select:focus { border-color: #7c3aed; }
+
+.qv-pay-summary { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; }
+.qv-pay-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; font-weight: 600; padding: 5px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.qv-pay-row:last-child { border-bottom: none; }
+.qv-pay-row span:first-child { color: #64748b; }
+.qv-pay-row span:last-child  { color: #0f172a; }
+.qv-pay-row.green span:last-child { color: #059669; }
+.qv-pay-row.red   span:last-child { color: #dc2626; }
+
+.qv-no-invoices { font-size: 12px; color: #94a3b8; text-align: center; padding: 10px 0; }
+
+.qv-invoice-detail {
+  background: #fff; border-radius: 9px; border: 1.5px solid #e2e8f0;
+  padding: 10px 14px; margin-top: 8px; display: flex; flex-direction: column; gap: 5px;
+}
+.qv-inv-row {
+  display: flex; justify-content: space-between;
+  font-size: 12px; padding: 3px 0; border-bottom: 1px solid #f8fafc;
+}
+.qv-inv-row:last-child { border-bottom: none; }
+.qv-inv-row span:first-child { color: #94a3b8; font-weight: 600; }
+.qv-inv-status {
+  padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+}
+.qv-inv-status.paid    { background: #d1fae5; color: #065f46; }
+.qv-inv-status.pending { background: #fef3c7; color: #92400e; }
+.qv-inv-status.draft   { background: #f1f5f9; color: #475569; }
+.qv-inv-status.overdue { background: #fee2e2; color: #991b1b; }
+
+/* Footer */
+.qv-footer {
+  padding: 14px 20px; border-top: 1.5px solid #e2e8f0; background: #fff;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.qv-btn-ghost {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 16px; border-radius: 9px; border: 1.5px solid #e2e8f0;
+  background: #fff; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer;
+  transition: background .12s;
+}
+.qv-btn-ghost:hover { background: #f8fafc; }
+
+.qv-btn-save {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 9px; border: none;
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  font-size: 12px; font-weight: 800; color: #fff; cursor: pointer;
+  box-shadow: 0 4px 12px rgba(124,58,237,.35); transition: opacity .15s;
+}
+.qv-btn-save:hover    { opacity: .9; }
+.qv-btn-save:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Quick View — back button ── */
+.qv-back-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 8px;
+  border: 1.5px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.12); color: #fff;
+  font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: background .12s;
+}
+.qv-back-btn:hover { background: rgba(255,255,255,.22); }
+
+/* ── Quick View — step 1: choose follow-up type ── */
+.qv-choose-title {
+  font-size: 14px; font-weight: 800; color: #1e293b;
+  text-align: center; padding: 6px 0 10px;
+}
+
+.qv-type-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.qv-type-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; padding: 18px 12px 16px;
+  border-radius: 14px; border: 2px solid #e2e8f0;
+  background: #fff; cursor: pointer;
+  transition: transform .12s, box-shadow .12s, border-color .12s;
+  text-align: center;
+}
+.qv-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,.1);
+}
+
+.qv-type-card.payment { border-color: #dbeafe; }
+.qv-type-card.payment:hover { border-color: #3b82f6; box-shadow: 0 6px 18px rgba(59,130,246,.15); }
+
+.qv-type-card.meeting { border-color: #d1fae5; }
+.qv-type-card.meeting:hover { border-color: #10b981; box-shadow: 0 6px 18px rgba(16,185,129,.15); }
+
+.qv-type-card.proposal { border-color: #fef3c7; }
+.qv-type-card.proposal:hover { border-color: #f59e0b; box-shadow: 0 6px 18px rgba(245,158,11,.15); }
+
+.qv-type-card.invoice { border-color: #ede9fe; }
+.qv-type-card.invoice:hover { border-color: #7c3aed; box-shadow: 0 6px 18px rgba(124,58,237,.15); }
+
+.qv-type-icon {
+  font-size: 28px; line-height: 1;
+}
+
+.qv-type-label {
+  font-size: 12px; font-weight: 800; color: #0f172a; line-height: 1.2;
+}
+
+.qv-type-desc {
+  font-size: 10px; font-weight: 500; color: #94a3b8; line-height: 1.4;
+}
+
+/* ── Quick View — mini client strip (step 2 top) ── */
+.qv-mini-client {
+  margin-bottom: 4px;
+}
+
+.qv-client-strip {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: #f8fafc;
+  border: 1px solid #e2e8f0; border-radius: 10px;
+  flex-wrap: wrap; gap: 4px;
+}
+
+.qv-cs-name {
+  font-size: 13px; font-weight: 800; color: #0f172a;
+}
+
+.qv-cs-meta {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 600; color: #64748b;
+}
+
+/* ── Followup Type Chooser ───────────────────────────── */
+.qv-choose-title {
+  font-size: 13px; font-weight: 800; color: #0f172a; text-align: center;
+  margin-bottom: 14px; padding-top: 4px;
+}
+.qv-type-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.qv-type-card {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: 4px; padding: 14px 14px; border-radius: 12px; border: 2px solid #e2e8f0;
+  background: #fafbff; cursor: pointer; text-align: left;
+  transition: border-color .15s, box-shadow .15s, transform .1s;
+}
+.qv-type-card:hover {
+  transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.08);
+}
+.qv-type-card.payment  { border-color: #bfdbfe; }
+.qv-type-card.payment:hover  { border-color: #3b82f6; background: #eff6ff; }
+.qv-type-card.meeting  { border-color: #bbf7d0; }
+.qv-type-card.meeting:hover  { border-color: #22c55e; background: #f0fdf4; }
+.qv-type-card.proposal { border-color: #ddd6fe; }
+.qv-type-card.proposal:hover { border-color: #7c3aed; background: #f5f3ff; }
+.qv-type-card.invoice  { border-color: #fde68a; }
+.qv-type-card.invoice:hover  { border-color: #f59e0b; background: #fffbeb; }
+
+.qv-type-icon  { font-size: 22px; margin-bottom: 2px; }
+.qv-type-label { font-size: 12px; font-weight: 800; color: #0f172a; }
+.qv-type-desc  { font-size: 11px; color: #64748b; line-height: 1.4; }
+
+/* ── Client mini strip (chooser screen) ─────────────── */
+.qv-mini-client {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 14px; padding: 9px 12px; border-radius: 10px;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  font-size: 12px; font-weight: 600; color: #374151;
+}
+.qv-mini-client a { color: #2563eb; text-decoration: none; }
+.qv-mini-client a:hover { text-decoration: underline; }
+
+/* ── Client strip (detail screen) ───────────────────── */
+.qv-client-strip {
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+  padding: 9px 13px; margin-bottom: 10px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.qv-cs-name {
+  font-size: 13px; font-weight: 800; color: #0f172a;
+}
+.qv-cs-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 12px; color: #64748b;
+}
+.qv-cs-meta a { color: #2563eb; text-decoration: none; font-weight: 600; }
+
+/* ── Textarea ────────────────────────────────────────── */
+.qv-textarea {
+  width: 100%; padding: 9px 12px; border-radius: 9px; border: 1.5px solid #e2e8f0;
+  font-size: 13px; color: #0f172a; background: #fff; outline: none; resize: vertical;
+  font-family: inherit; transition: border-color .15s; box-sizing: border-box;
+}
+.qv-textarea:focus { border-color: #7c3aed; }
+
+/* ── Back button ─────────────────────────────────────── */
+.qv-back-btn {
+  padding: 5px 12px; border-radius: 8px; border: 1.5px solid #e2e8f0;
+  background: #f8fafc; font-size: 12px; font-weight: 700; color: #475569; cursor: pointer;
+  transition: background .12s;
+}
+.qv-back-btn:hover { background: #e2e8f0; }
+
+/* ── Followup Done State (call card) ─────────────────── */
+.tp-call-card.qv-call-done {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
+  border-color: #86efac !important;
+  opacity: .92;
+}
+.tp-call-card.qv-call-done .tp-call-name {
+  color: #166534;
+  text-decoration: line-through;
+  opacity: .75;
+}
+.tp-call-card.qv-call-done .tp-call-meta { opacity: .6; }
+
+.tp-call-prio-flag.done {
+  background: #bbf7d0; color: #166534; border: 1px solid #86efac;
+  padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 800;
+}
+
+.tp-call-phone-btn.frozen,
+.tp-call-wa-btn.frozen {
+  opacity: .45; pointer-events: none; cursor: default;
+}
+
+.tp-call-profile-btn.done-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 8px;
+  background: #dcfce7; color: #166534;
+  border: 1.5px solid #86efac; font-size: 11px; font-weight: 800;
+  cursor: default;
+}
+
+/* ── Row card — follow-up done state ── */
+.tp-row-card.tp-followup-done {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7) !important;
+  border-left-color: #22c55e !important;
+  border-color: #86efac !important;
+  opacity: .93;
+}
+.tp-row-card.tp-followup-done .tp-row-name {
+  color: #166534;
+  text-decoration: line-through;
+  opacity: .75;
+}
+.tp-row-card.tp-followup-done .tp-row-meta { opacity: .6; }
+
+.tp-row-card.tp-followup-done .tp-icon-btn.frozen {
+  opacity: .35; pointer-events: none; cursor: default;
+}
+
+/* Done badge — replaces Eye button in row card */
+.tp-row-done-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 10px; border-radius: 8px;
+  background: #dcfce7; color: #166534;
+  border: 1.5px solid #86efac; font-size: 11px; font-weight: 800;
+  cursor: default; white-space: nowrap;
+}
+
+/* Meta chip — "✓ Follow-up Done" label */
+.tp-meta-done-badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 20px;
+  background: #dcfce7; color: #166534;
+  border: 1px solid #86efac; font-size: 10px; font-weight: 800;
 }

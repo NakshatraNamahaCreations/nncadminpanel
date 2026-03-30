@@ -513,3 +513,86 @@
 @media (max-width: 768px) {
   .enq-main { padding-bottom: 68px; }
 }
+
+/* ═══════════════════════════════════════════════
+   TAB BAR
+═══════════════════════════════════════════════ */
+.enq-tab-bar {
+  display: flex; gap: 4px; padding: 12px 20px 0;
+  background: #fff; border-bottom: 2px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.enq-tab-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border: none; background: transparent;
+  font-size: 13px; font-weight: 700; color: #64748b;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; border-radius: 6px 6px 0 0;
+  transition: color .15s, border-color .15s;
+}
+.enq-tab-btn:hover { color: #1e293b; }
+.enq-tab-btn.active { color: #7c3aed; border-bottom-color: #7c3aed; background: #faf5ff; }
+
+/* ═══════════════════════════════════════════════
+   QUOTATION STATUS BADGES
+═══════════════════════════════════════════════ */
+.qt-st-draft    { background: #f1f5f9; color: #475569; }
+.qt-st-sent     { background: #eff6ff; color: #1d4ed8; }
+.qt-st-accepted { background: #f0fdf4; color: #15803d; }
+.qt-st-rejected { background: #fef2f2; color: #dc2626; }
+.qt-st-expired  { background: #fefce8; color: #a16207; }
+
+/* ═══════════════════════════════════════════════
+   QUOTATION LINE ITEMS
+═══════════════════════════════════════════════ */
+.qt-number {
+  font-family: monospace; font-size: 12px; font-weight: 800;
+  background: #f1f5f9; color: #7c3aed;
+  padding: 3px 8px; border-radius: 6px; letter-spacing: .5px;
+}
+.qt-line-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 4px; font-size: 11px; font-weight: 700;
+  color: #64748b; text-transform: uppercase; letter-spacing: .5px;
+  border-bottom: 1px solid #e2e8f0; margin-bottom: 6px;
+}
+.qt-line-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.qt-amount-cell { background: #f8fafc; font-weight: 700; color: #0f172a; }
+.qt-remove-line {
+  width: 28px; height: 28px; border: none; background: transparent;
+  color: #dc2626; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; border-radius: 6px; flex-shrink: 0;
+  transition: background .15s;
+}
+.qt-remove-line:hover { background: #fef2f2; }
+.qt-remove-line:disabled { color: #cbd5e1; cursor: not-allowed; }
+.qt-add-line-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border: 1.5px dashed #c4b5fd; border-radius: 8px;
+  background: transparent; color: #7c3aed; font-size: 12px;
+  font-weight: 700; cursor: pointer; margin-top: 4px;
+  transition: background .15s;
+}
+.qt-add-line-btn:hover { background: #faf5ff; }
+
+/* ═══════════════════════════════════════════════
+   QUOTATION TOTALS
+═══════════════════════════════════════════════ */
+.qt-totals {
+  margin-top: 16px; border-top: 2px solid #e2e8f0; padding-top: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+  max-width: 340px; margin-left: auto;
+}
+.qt-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; color: #475569;
+}
+.qt-total-row input.qt-total-input {
+  width: 110px; text-align: right;
+}
+.qt-grand-total {
+  border-top: 2px solid #0f172a; padding-top: 10px; margin-top: 4px;
+  font-size: 15px; font-weight: 900; color: #0f172a;
+}

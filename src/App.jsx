@@ -18,6 +18,7 @@ import ExpenseTracker from "./pages/ExpenseTracker/ExpenseTracker";
 import PnLPage        from "./pages/PnL/PnLPage";
 import AccountingPage from "./pages/Accounting/AccountingPage";
 import EnquiriesPage  from "./pages/Enquiries/EnquiriesPage";
+import QuotationPage  from "./pages/Quotation/QuotationPage";
 import AttendancePage from "./pages/Attendance/AttendancePage";
 import FundsPage      from "./pages/Funds/FundsPage";
 
@@ -201,6 +202,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <EnquiriesPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/quotations"
+        element={
+          <ProtectedRoute>
+            <QuotationPage />
           </ProtectedRoute>
         }
       />

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.routes\\\\.js$|\\\\.js$\")",
+      "Bash(node -e \":*)"
+    ]
+  }
+}

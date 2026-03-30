@@ -1022,6 +1022,10 @@ function InfoGridCard({ title, children }) {
 
 function ProfileTab({ lead }) {
   const timestamps = lead.stageTimestamps || [];
+  const remaining = Math.max(0, Number(lead.value || 0) - Number(lead.advanceReceived || 0));
+  const finalPayDate = lead.agreedTimeline > 0
+    ? (() => { const d = new Date(); d.setDate(d.getDate() + Number(lead.agreedTimeline)); return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }); })()
+    : "—";
 
   return (
     <div className="ldTabStack">
@@ -1059,6 +1063,70 @@ function ProfileTab({ lead }) {
             <div className="ldLabel">Branch</div>
             <div className="ldVal">{lead.branch || "-"}</div>
           </div>
+          <div className="ldInfoItem">
+            <div className="ldLabel">Stage</div>
+            <div className="ldVal">{lead.stage || "-"}</div>
+          </div>
+          <div className="ldInfoItem">
+            <div className="ldLabel">Priority</div>
+            <div className="ldVal">{lead.priority || "-"}</div>
+          </div>
+        </div>
+      </InfoGridCard>
+
+      <InfoGridCard title="FINANCIAL DETAILS">
+        <div className="ldGrid2">
+          <div className="ldInfoItem">
+            <div className="ldLabel">Total Amount Agreed (₹)</div>
+            <div className="ldVal">{lead.value > 0 ? `₹${Number(lead.value).toLocaleString("en-IN")}` : "-"}</div>
+          </div>
+          <div className="ldInfoItem">
+            <div className="ldLabel">Advance Received (₹)</div>
+            <div className="ldVal">{lead.advanceReceived > 0 ? `₹${Number(lead.advanceReceived).toLocaleString("en-IN")}` : "-"}</div>
+          </div>
+          <div className="ldInfoItem">
+            <div className="ldLabel">Advance Received Date</div>
+            <div className="ldVal">{lead.advanceReceivedDate ? new Date(lead.advanceReceivedDate).toLocaleDateString("en-IN") : "-"}</div>
+          </div>
+          <div className="ldInfoItem">
+            <div className="ldLabel">Remaining Balance (₹)</div>
+            <div className="ldVal" style={{color: remaining > 0 ? "#dc2626" : "#16a34a", fontWeight:700}}>
+              {lead.value > 0 ? `₹${remaining.toLocaleString("en-IN")}` : "-"}
+            </div>
+          </div>
+          <div className="ldInfoItem">
+            <div className="ldLabel">Agreed Timeline (days)</div>
+            <div className="ldVal">{lead.agreedTimeline > 0 ? `${lead.agreedTimeline} days` : "-"}</div>
+          </div>
+          <div className="ldInfoItem">
+            <div className="ldLabel">Final Payment Date</div>
+            <div className="ldVal">{lead.agreedTimeline > 0 ? finalPayDate : "-"}</div>
+          </div>
+        </div>
+      </InfoGridCard>
+
+      <InfoGridCard title="PROJECT INFO">
+        <div className="ldGrid2">
+          <div className="ldInfoItem">
+            <div className="ldLabel">Client Onboarded Date</div>
+            <div className="ldVal">{lead.onboardedDate ? new Date(lead.onboardedDate).toLocaleDateString("en-IN") : "-"}</div>
+          </div>
+          <div className="ldInfoItem">
+            <div className="ldLabel">Project Completed</div>
+            <div className="ldVal">{lead.projectCompleted ? "✅ Yes" : "❌ No"}</div>
+          </div>
+          {lead.projectCompleted && (
+            <div className="ldInfoItem">
+              <div className="ldLabel">Project Completion Date</div>
+              <div className="ldVal">{lead.projectCompletionDate ? new Date(lead.projectCompletionDate).toLocaleDateString("en-IN") : "-"}</div>
+            </div>
+          )}
+          {lead.requirements && (
+            <div className="ldInfoItem" style={{gridColumn:"1/-1"}}>
+              <div className="ldLabel">Requirements</div>
+              <div className="ldVal" style={{whiteSpace:"pre-wrap",lineHeight:1.5}}>{lead.requirements}</div>
+            </div>
+          )}
         </div>
       </InfoGridCard>
 
