@@ -1,894 +1,599 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Shield, AlertTriangle, TrendingUp, Receipt, DollarSign,
-  Target, Settings, Save, X, ChevronRight, RefreshCcw,
-  Info, ArrowUp, ArrowDown, Minus, Zap, Send, Mail,
+  Brain, AlertTriangle, CheckCircle, DollarSign, Users, Target,
+  Zap, ArrowRight, RefreshCw, AlertCircle, XCircle, Activity,
+  FileText, Receipt, MessageSquare, TrendingUp, TrendingDown,
+  Clock, Phone, Building2, Star, ChevronRight, Flame,
 } from "lucide-react";
-import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, Legend, AreaChart, Area, LineChart, Line,
-  ComposedChart, ReferenceLine, Cell, PieChart, Pie,
-} from "recharts";
 import Sidebar from "../../components/Sidebar/Sidebar";
-import { ShimmerKpiGrid, ShimmerTable } from "../../components/ui/Shimmer";
 import "./BiReports.css";
 
-const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-function auth() { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
+const API  = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const auth = () => { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; };
 
-// ── Formatters ────────────────────────────────────────────────────────────────
-function fmtINR(n) {
+const f = n => {
   const v = Number(n) || 0;
-  if (v >= 10000000) return `₹${(v / 10000000).toFixed(1)}Cr`;
-  if (v >= 100000)   return `₹${(v / 100000).toFixed(1)}L`;
-  if (v >= 1000)     return `₹${(v / 1000).toFixed(1)}K`;
-  return `₹${v.toLocaleString("en-IN")}`;
-}
-function fmtFull(n) { return `₹${(Number(n) || 0).toLocaleString("en-IN")}`; }
-function pctColor(v) { return v >= 80 ? "g" : v >= 50 ? "a" : "r"; }
-function sign(v) { return v > 0 ? "+" : ""; }
-
-// ── Palette ───────────────────────────────────────────────────────────────────
-const C = {
-  blue:"#2563eb", green:"#16a34a", amber:"#d97706",
-  red:"#dc2626",  purple:"#7c3aed", teal:"#0d9488",
-  slate:"#475569", indigo:"#4f46e5",
+  if (v >= 10000000) return "₹" + (v / 10000000).toFixed(2) + "Cr";
+  if (v >= 100000)   return "₹" + (v / 100000).toFixed(1) + "L";
+  if (v >= 1000)     return "₹" + (v / 1000).toFixed(1) + "K";
+  return "₹" + v.toLocaleString("en-IN");
 };
+const pct  = (a, b) => b > 0 ? ((a / b) * 100).toFixed(1) : "0.0";
+const abs  = n => Math.abs(Number(n) || 0);
+const days = d => Math.floor((Date.now() - new Date(d)) / 86400000);
+const name = l => l.name || l.clientName || l.business || l.clientBusiness || "Unknown";
 
-// ── Custom Recharts Tooltip ───────────────────────────────────────────────────
-function CT({ active, payload, label, currency }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bi-ct">
-      <div className="bi-ct-label">{label}</div>
-      {payload.map((p, i) => p.value != null && (
-        <div key={i} className="bi-ct-row">
-          <span className="bi-ct-dot" style={{ background: p.color }} />
-          <span className="bi-ct-name">{p.name}</span>
-          <strong className="bi-ct-val">
-            {currency || p.name?.startsWith("₹") ? fmtFull(p.value) : p.value?.toLocaleString("en-IN")}
-          </strong>
-        </div>
-      ))}
-    </div>
-  );
-}
+// ── Build all insight sections from raw data ────────────────────────────────
+function buildSections(d) {
+  const sections = [];
+  const L  = d.leads        || {};
+  const IN = d.invoices     || {};
+  const QT = d.quotations   || {};
+  const EN = d.enquiries    || {};
 
-// ── Trend badge ───────────────────────────────────────────────────────────────
-function Trend({ v }) {
-  if (v == null) return <span className="bi-trend neutral"><Minus size={12}/> —</span>;
-  const cls = v > 0 ? "up" : v < 0 ? "down" : "neutral";
-  const Icon = v > 0 ? ArrowUp : v < 0 ? ArrowDown : Minus;
-  return <span className={`bi-trend ${cls}`}><Icon size={12}/> {Math.abs(v)}%</span>;
-}
+  const repPerf      = d.repPerf      || [];
+  const sourcePerf   = d.sourcePerf   || [];
+  const stageDistrib = d.stageDistrib || [];
+  const staleLeads   = d.staleLeads   || [];
+  const lostLeads    = d.lostLeads    || [];
+  const unpaidInv    = d.unpaidInvoices || [];
+  const pendingQuots = d.pendingQuots || [];
+  const unconvEnq    = d.unconvertedEnquiries || [];
+  const closedLeads  = d.closedLeads  || [];
+  const recentLeads  = d.recentLeads  || [];
+  const enquiryBySvc = d.enquiryByService || [];
 
-// ── Status pill ───────────────────────────────────────────────────────────────
-function StatusPill({ status }) {
-  const map = { funded:"funded", partial:"partial", critical:"critical", underfunded:"critical" };
-  const labelMap = { funded:"Funded", partial:"Partial", critical:"Critical", underfunded:"Underfunded" };
-  return <span className={`bi-fund-status ${map[status]||"partial"}`}>{labelMap[status]||status}</span>;
-}
+  // ── 1. BUSINESS PULSE ────────────────────────────────────────────────────
+  {
+    const points = [], actions = [], highlights = [];
+    const collPct = L.collectionPct || 0;
 
-// ── KPI card ──────────────────────────────────────────────────────────────────
-function KPI({ label, value, sub, trend, color = "blue", icon: Icon }) {
-  return (
-    <div className={`bi-kpi bi-kpi-${color}`}>
-      <div className="bi-kpi-top">
-        <span className="bi-kpi-label">{label}</span>
-        {Icon && <Icon size={16} />}
-      </div>
-      <div className="bi-kpi-value">{value}</div>
-      <div className="bi-kpi-sub">
-        {sub}
-        {trend != null && <Trend v={trend} />}
-      </div>
-    </div>
-  );
-}
+    highlights.push({ label: "Total Revenue", value: f(L.totalValue), color: "emerald" });
+    highlights.push({ label: "Collected",     value: f(L.totalCollected), color: "blue" });
+    highlights.push({ label: "Pending",       value: f(L.pendingBalance), color: collPct < 50 ? "rose" : "amber" });
+    highlights.push({ label: "Conversion",    value: L.convRate + "%", color: L.convRate >= 20 ? "emerald" : "amber" });
 
-// ── Income Statement row ──────────────────────────────────────────────────────
-function ISRow({ label, amount, ytd, indent = 0, bold, green, red, borderTop }) {
-  const cls = ["bi-is-row",
-    bold ? "bi-is-bold" : "",
-    green ? "bi-is-green" : "",
-    red ? "bi-is-red" : "",
-    borderTop ? "bi-is-btop" : "",
-  ].filter(Boolean).join(" ");
-  return (
-    <div className={cls} style={{ paddingLeft: indent * 16 + 8 }}>
-      <span className="bi-is-label">{label}</span>
-      <span className="bi-is-val">{fmtFull(amount)}</span>
-      <span className="bi-is-ytd">{fmtFull(ytd)}</span>
-    </div>
-  );
-}
+    points.push(`${L.total} total leads · ${L.closed} closed · ${L.lost} lost · ${L.total - L.closed - L.lost} still active`);
 
-// ── Fund card ─────────────────────────────────────────────────────────────────
-function FundCard({ fund }) {
-  const iconMap = {
-    shield: Shield, alert: AlertTriangle, receipt: Receipt, trending: TrendingUp,
-  };
-  const Icon = iconMap[fund.icon] || Shield;
-  const pct = Math.min(100, fund.fundedPct);
-  const barColor = fund.status === "funded" ? C.green : fund.status === "partial" ? C.amber : C.red;
-  return (
-    <div className="bi-fund-card">
-      <div className="bi-fund-header">
-        <div className="bi-fund-icon"><Icon size={20}/></div>
-        <div className="bi-fund-meta">
-          <div className="bi-fund-name">{fund.name}</div>
-          <div className="bi-fund-desc">{fund.description}</div>
-        </div>
-        <StatusPill status={fund.status}/>
-      </div>
-      <div className="bi-fund-bar-wrap">
-        <div className="bi-fund-bar" style={{ width: `${pct}%`, background: barColor }}/>
-      </div>
-      <div className="bi-fund-nums">
-        <div>
-          <div className="bi-fund-num-label">Current Balance</div>
-          <div className="bi-fund-num">{fmtFull(fund.balance)}</div>
-        </div>
-        <div className="bi-fund-pct">{pct}%</div>
-        <div style={{textAlign:"right"}}>
-          <div className="bi-fund-num-label">Target</div>
-          <div className="bi-fund-num">{fmtFull(fund.target)}</div>
-        </div>
-      </div>
-      <div className="bi-fund-contrib">
-        Monthly contribution needed: <strong>{fmtFull(fund.monthlyContrib)}</strong>
-      </div>
-      <div className="bi-fund-purpose"><Info size={12}/> {fund.purpose}</div>
-    </div>
-  );
-}
-
-// ── Config Modal ──────────────────────────────────────────────────────────────
-function ConfigModal({ cfg, onClose, onSave }) {
-  const [form, setForm] = useState({ ...cfg });
-  const [saving, setSaving] = useState(false);
-
-  const [err, setErr] = useState("");
-
-  async function save() {
-    setErr("");
-    // Validate all numeric fields
-    const checks = [
-      [form.taxRatePercent, "Tax Rate", 0, 60],
-      [form.bufferMonths, "Buffer Months", 1, 12],
-      [form.emergencyPct, "Emergency %", 0, 30],
-      [form.growthFundPct, "Growth Fund %", 0, 50],
-      [form.bufferBalance, "Buffer Balance", 0, Infinity],
-      [form.emergencyBalance, "Emergency Balance", 0, Infinity],
-      [form.taxReserveBalance, "Tax Reserve Balance", 0, Infinity],
-      [form.growthBalance, "Growth Balance", 0, Infinity],
-    ];
-    for (const [val, label, min, max] of checks) {
-      const n = Number(val);
-      if (val === "" || val == null || isNaN(n)) { setErr(`${label} must be a valid number`); return; }
-      if (n < min || n > max) { setErr(`${label} must be between ${min} and ${max === Infinity ? "∞" : max}`); return; }
+    if (L.momGrowth > 0) {
+      points.push(`This month revenue ${f(L.thisMonthVal)} — up ${L.momGrowth}% from last month (${f(L.lastMonthVal)})`);
+    } else if (L.momGrowth < 0) {
+      points.push(`This month revenue ${f(L.thisMonthVal)} — down ${abs(L.momGrowth)}% from last month (${f(L.lastMonthVal)})`);
+      actions.push("Revenue declining — review what changed in your sales activity this month");
     }
-    setSaving(true);
-    try {
-      const r = await fetch(`${API}/api/bi/config`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...auth() },
-        body: JSON.stringify(form),
+
+    if (collPct < 50) {
+      points.push(`Only ${collPct}% of total revenue collected — ${f(L.pendingBalance)} still uncollected`);
+      actions.push("Collection health is poor — prioritise recovering pending amounts before closing new deals");
+    } else {
+      points.push(`${collPct}% of revenue collected — ${f(L.totalCollected)} in the bank`);
+    }
+
+    if (IN.overdueCount > 0) {
+      points.push(`${IN.overdueCount} invoice${IN.overdueCount > 1 ? "s" : ""} overdue — ${f(IN.unpaidAmount)} at risk`);
+      actions.push(`Chase the ${IN.overdueCount} overdue invoice${IN.overdueCount > 1 ? "s" : ""} immediately`);
+    }
+
+    if (QT.negotiating > 0) {
+      points.push(`${QT.negotiating} quotation${QT.negotiating > 1 ? "s" : ""} currently under negotiation — ${f(QT.approvedVal)} approved value so far`);
+    }
+
+    sections.push({
+      id: "pulse", category: "Business Pulse", icon: <Activity size={16}/>,
+      verdict: L.momGrowth >= 0
+        ? `Business is ${L.momGrowth > 10 ? "growing" : "stable"} — ${f(L.thisMonthVal)} this month`
+        : `Revenue dipped ${abs(L.momGrowth)}% this month — needs attention`,
+      tone: L.momGrowth >= 0 && collPct >= 50 ? "good" : collPct < 30 ? "bad" : "warn",
+      highlights, points, actions,
+    });
+  }
+
+  // ── 2. CLIENTS & MONEY ───────────────────────────────────────────────────
+  {
+    const points = [], actions = [], rows = [];
+
+    // Closed leads with balance pending
+    const unpaidClients = closedLeads.filter(l => l.balance > 0).slice(0, 6);
+    if (unpaidClients.length > 0) {
+      points.push(`${unpaidClients.length} closed client${unpaidClients.length > 1 ? "s" : ""} still haven't paid full amount:`);
+      unpaidClients.forEach(l => {
+        rows.push({
+          label: name(l),
+          sub:   `Closed deal · ${f(l.balance)} still pending`,
+          tag:   l.balance > 50000 ? "High" : "Pending",
+          tagColor: l.balance > 50000 ? "rose" : "amber",
+          phone: l.phone,
+        });
+        if (l.balance > 100000) actions.push(`Call ${name(l)} today — ₹${(l.balance/1000).toFixed(0)}K outstanding`);
       });
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message || "Failed to save config");
-      onSave();
-      onClose();
-    } catch (e) { setErr(e.message); }
-    finally { setSaving(false); }
+    } else {
+      points.push("All closed clients have paid in full — excellent collection discipline");
+    }
+
+    // Overdue invoices
+    const overdue = unpaidInv.filter(i => i.isOverdue).slice(0, 5);
+    if (overdue.length > 0) {
+      points.push(`${overdue.length} overdue invoice${overdue.length > 1 ? "s" : ""}:`);
+      overdue.forEach(i => {
+        rows.push({
+          label: i.clientName || i.clientBusiness || "Unknown",
+          sub:   `${i.invoiceNumber} · ${f(i.totalAmount)} · ${i.daysOverdue}d overdue`,
+          tag:   i.daysOverdue > 30 ? "Critical" : "Overdue",
+          tagColor: i.daysOverdue > 30 ? "rose" : "amber",
+        });
+      });
+      actions.push(`Send payment reminders for all ${overdue.length} overdue invoices today`);
+    }
+
+    if (IN.total > 0) {
+      points.push(`Invoices: ${IN.total} total · ${IN.paid} paid · ${f(IN.paidAmount)} collected · ${f(IN.unpaidAmount)} pending`);
+    }
+
+    sections.push({
+      id: "clients", category: "Clients & Money", icon: <DollarSign size={16}/>,
+      verdict: unpaidClients.length === 0 && overdue.length === 0
+        ? "No outstanding client payments — all settled"
+        : `${unpaidClients.length + overdue.length} clients need payment follow-up`,
+      tone: unpaidClients.length + overdue.length === 0 ? "good" : overdue.filter(i => i.daysOverdue > 30).length > 0 ? "bad" : "warn",
+      points, actions, rows,
+    });
   }
 
-  function field(key, label, min, max, step = 1, prefix = "") {
-    return (
-      <div className="bi-cfg-field">
-        <label>{label}</label>
-        <div className="bi-cfg-input-wrap">
-          {prefix && <span className="bi-cfg-prefix">{prefix}</span>}
-          <input type="number" min={min} max={max} step={step}
-            value={form[key] ?? ""}
-            onChange={e => setForm(f => ({ ...f, [key]: Number(e.target.value) }))}
-          />
-        </div>
-      </div>
-    );
+  // ── 3. QUOTATIONS ────────────────────────────────────────────────────────
+  {
+    const points = [], actions = [], rows = [];
+
+    points.push(`${QT.total} quotations raised · ${QT.approved} approved · ${QT.rejected} rejected · ${QT.sent} awaiting response`);
+    if (QT.total > 0) points.push(`Quotation conversion rate: ${QT.convRate}% · Approved value: ${f(QT.approvedVal)}`);
+    if (QT.draft > 0) {
+      points.push(`${QT.draft} quotation${QT.draft > 1 ? "s are" : " is"} still in draft — not sent to client yet`);
+      actions.push(`Send the ${QT.draft} pending draft quotation${QT.draft > 1 ? "s" : ""} — every day of delay reduces win chances`);
+    }
+
+    if (pendingQuots.length > 0) {
+      points.push(`${pendingQuots.length} quotation${pendingQuots.length > 1 ? "s" : ""} sent but no response in 7+ days:`);
+      pendingQuots.slice(0, 5).forEach(q => {
+        rows.push({
+          label: q.clientName || q.clientCompany || "Unknown",
+          sub:   `${f(q.total)} · Sent ${q.daysSinceUpdate}d ago · ${q.branch}`,
+          tag:   q.daysSinceUpdate > 14 ? "Urgent" : "Follow up",
+          tagColor: q.daysSinceUpdate > 14 ? "rose" : "amber",
+        });
+        if (q.total > 50000) actions.push(`Follow up with ${q.clientName || q.clientCompany} — ${f(q.total)} deal going cold (${q.daysSinceUpdate}d silence)`);
+      });
+    }
+
+    if (QT.rejected > 0 && QT.total > 0) {
+      const rejRate = +pct(QT.rejected, QT.total);
+      if (rejRate > 30) {
+        points.push(`High rejection rate: ${rejRate}% of quotations rejected — pricing or proposal quality may need review`);
+        actions.push("Review your last 5 rejected quotations — find the common objection and fix your proposal template");
+      }
+    }
+
+    sections.push({
+      id: "quotations", category: "Quotations", icon: <FileText size={16}/>,
+      verdict: QT.sent > 0
+        ? `${QT.sent} quotation${QT.sent > 1 ? "s" : ""} awaiting client decision — ${f(QT.totalValue)} at stake`
+        : QT.approved > 0
+        ? `${QT.approved} quotations approved — ${f(QT.approvedVal)} won`
+        : "No active quotations",
+      tone: pendingQuots.length > 3 ? "warn" : QT.rejected > QT.approved ? "bad" : "good",
+      points, actions, rows,
+    });
   }
 
-  function fundField(key, label) {
-    return (
-      <div className="bi-cfg-field">
-        <label>{label}</label>
-        <div className="bi-cfg-input-wrap">
-          <span className="bi-cfg-prefix">₹</span>
-          <input type="number" min={0} step={1000}
-            value={form[key] ?? ""}
-            onChange={e => setForm(f => ({ ...f, [key]: Number(e.target.value) }))}
-          />
-        </div>
-      </div>
-    );
+  // ── 4. PIPELINE & LEADS ──────────────────────────────────────────────────
+  {
+    const points = [], actions = [], rows = [];
+
+    // Find biggest leaking stage
+    const activeStages = stageDistrib.filter(s => !["closed","won","lost","not interested"].some(c => s.stage?.toLowerCase().includes(c)));
+    if (activeStages.length > 0) {
+      const biggest = [...activeStages].sort((a, b) => b.count - a.count)[0];
+      points.push(`Most leads stuck at "${biggest.stage}" — ${biggest.count} leads, ${f(biggest.value)} in value`);
+    }
+
+    // Stale leads
+    if (staleLeads.length > 0) {
+      const staleVal = staleLeads.reduce((s, l) => s + (l.value || 0), 0);
+      points.push(`${staleLeads.length} leads untouched for 30+ days — ${f(staleVal)} sitting idle`);
+      staleLeads.slice(0, 4).forEach(l => {
+        rows.push({
+          label: name(l),
+          sub:   `${l.stage} · ${f(l.value)} · Silent ${l.daysSilent}d · ${l.repName || "Unassigned"}`,
+          tag:   l.daysSilent > 60 ? "Very Stale" : "Stale",
+          tagColor: l.daysSilent > 60 ? "rose" : "amber",
+          phone: l.phone,
+        });
+      });
+      if (staleVal > 200000) actions.push(`${f(staleVal)} locked in stale leads — assign someone to call each one this week`);
+    }
+
+    // Recent new leads
+    const newThis = recentLeads.filter(l => l.daysOld <= 3);
+    if (newThis.length > 0) {
+      points.push(`${newThis.length} new lead${newThis.length > 1 ? "s" : ""} in the last 3 days: ${newThis.map(l => name(l)).join(", ")}`);
+    }
+
+    // Lost leads analysis
+    if (lostLeads.length > 0) {
+      const lostVal = lostLeads.reduce((s, l) => s + (l.value || 0), 0);
+      points.push(`${lostLeads.length} deals lost recently — ${f(lostVal)} in revenue lost`);
+      const lostBySrc = {};
+      lostLeads.forEach(l => { lostBySrc[l.source || "Unknown"] = (lostBySrc[l.source || "Unknown"] || 0) + 1; });
+      const topLostSrc = Object.entries(lostBySrc).sort((a, b) => b[1] - a[1])[0];
+      if (topLostSrc) points.push(`Most losses from source: ${topLostSrc[0]} (${topLostSrc[1]} deals lost)`);
+    }
+
+    sections.push({
+      id: "pipeline", category: "Pipeline & Leads", icon: <Target size={16}/>,
+      verdict: staleLeads.length > 5
+        ? `Pipeline health is weak — ${staleLeads.length} stale leads need immediate action`
+        : `${L.total - L.closed - L.lost} active leads in pipeline · ${L.convRate}% converting`,
+      tone: staleLeads.length > 8 ? "bad" : staleLeads.length > 3 ? "warn" : "good",
+      points, actions, rows,
+    });
   }
 
+  // ── 5. ENQUIRIES ────────────────────────────────────────────────────────
+  {
+    const points = [], actions = [], rows = [];
+
+    points.push(`${EN.total} total enquiries · ${EN.converted} converted to leads · ${EN.uncontacted} never contacted`);
+    if (EN.total > 0) points.push(`Enquiry-to-lead conversion: ${EN.convRate}% · ${EN.thisMonth} new this month`);
+
+    if (EN.uncontacted > 0) {
+      points.push(`${EN.uncontacted} enquiries sitting with status "New" — nobody has called them yet`);
+      actions.push(`Call the ${EN.uncontacted} uncontacted enquiries today — first contact within 24h dramatically improves win rate`);
+    }
+
+    if (unconvEnq.length > 0) {
+      points.push(`${unconvEnq.length} enquiries 7+ days old and still not converted to a lead:`);
+      unconvEnq.slice(0, 5).forEach(e => {
+        rows.push({
+          label: e.name || e.company || "Unknown",
+          sub:   `${e.source} · ${(e.services || []).slice(0, 2).join(", ") || "No service"} · Waiting ${e.daysWaiting}d`,
+          tag:   e.daysWaiting > 14 ? "Cold" : "Pending",
+          tagColor: e.daysWaiting > 14 ? "rose" : "amber",
+          phone: e.phone,
+        });
+      });
+      actions.push(`Convert or close the ${unconvEnq.length} old enquiries — don't let them rot in the queue`);
+    }
+
+    // Top demanded services
+    if (enquiryBySvc.length > 0) {
+      const top3 = enquiryBySvc.slice(0, 3).map(s => `${s._id} (${s.count})`).join(", ");
+      points.push(`Most enquired services: ${top3}`);
+    }
+
+    sections.push({
+      id: "enquiries", category: "Enquiries", icon: <MessageSquare size={16}/>,
+      verdict: EN.uncontacted > 0
+        ? `${EN.uncontacted} enquiries never contacted — money being left on the table`
+        : unconvEnq.length > 0
+        ? `${unconvEnq.length} old enquiries not yet converted — follow up needed`
+        : `Enquiry pipeline looks clean · ${EN.convRate}% conversion rate`,
+      tone: EN.uncontacted > 3 ? "bad" : unconvEnq.length > 5 ? "warn" : "good",
+      points, actions, rows,
+    });
+  }
+
+  // ── 6. TEAM PERFORMANCE ──────────────────────────────────────────────────
+  {
+    const points = [], actions = [], rows = [];
+    const activeReps = repPerf.filter(r => r.total > 0);
+
+    if (activeReps.length === 0) {
+      points.push("No rep data — leads may not be assigned to team members");
+      actions.push("Start assigning leads to reps so you can track individual performance");
+    } else {
+      const sorted     = [...activeReps].sort((a, b) => b.revenue - a.revenue);
+      const top        = sorted[0];
+      const avgConv    = activeReps.reduce((s, r) => s + r.convRate, 0) / activeReps.length;
+      const topRevShare = pct(top.revenue, L.totalValue);
+
+      points.push(`${activeReps.length} active reps · Team conversion avg: ${avgConv.toFixed(1)}%`);
+      points.push(`Top performer: ${top.rep} — ${f(top.revenue)} revenue, ${top.convRate}% conversion, ${top.closed} deals closed`);
+
+      if (top.revenue > 0 && +topRevShare > 60) {
+        points.push(`Warning: ${top.rep} generates ${topRevShare}% of all revenue — dangerous single-point dependency`);
+        actions.push(`Cross-train other reps using ${top.rep}'s approach — don't let one person carry the whole team`);
+      }
+
+      activeReps.forEach(r => {
+        const verdict = r.convRate >= avgConv * 1.2 ? "Star" : r.convRate >= avgConv * 0.7 ? "Okay" : "Struggling";
+        const tagColor = verdict === "Star" ? "emerald" : verdict === "Okay" ? "blue" : "rose";
+        rows.push({
+          label: r.rep,
+          sub:   `${r.total} leads · ${r.closed} closed · ${r.convRate}% conv · ${f(r.revenue)} · ${r.stale} stale`,
+          tag:   verdict,
+          tagColor,
+        });
+        if (r.total >= 5 && r.convRate < avgConv * 0.5) {
+          points.push(`${r.rep} has ${r.total} leads but only ${r.convRate}% conversion — below half the team average`);
+          actions.push(`Review ${r.rep}'s calls and proposals — something is breaking at follow-up stage`);
+        }
+        if (r.stale >= 3) {
+          actions.push(`${r.rep} has ${r.stale} stale leads — they're not following up consistently`);
+        }
+      });
+    }
+
+    sections.push({
+      id: "team", category: "Team Performance", icon: <Users size={16}/>,
+      verdict: activeReps.length === 0
+        ? "No rep assignments found — start tracking team performance"
+        : (() => {
+            const zeroClosed = activeReps.filter(r => r.closed === 0 && r.total >= 5);
+            if (zeroClosed.length) return `${zeroClosed.map(r => r.rep).join(", ")} — leads assigned but zero deals closed`;
+            const top = [...activeReps].sort((a, b) => b.revenue - a.revenue)[0];
+            return `${top.rep} leading with ${f(top.revenue)} · Team avg ${(activeReps.reduce((s,r)=>s+r.convRate,0)/activeReps.length).toFixed(1)}% conversion`;
+          })(),
+      tone: activeReps.filter(r => r.closed === 0 && r.total >= 5).length > 0 ? "warn"
+          : activeReps.some(r => r.stale >= 5) ? "warn" : "good",
+      points, actions, rows,
+    });
+  }
+
+  // ── 7. SOURCES ──────────────────────────────────────────────────────────
+  {
+    const points = [], actions = [], rows = [];
+
+    if (sourcePerf.length === 0) {
+      points.push("No source data — record where each lead comes from");
+    } else {
+      const byConv   = [...sourcePerf].sort((a, b) => b.convRate - a.convRate);
+      const byRev    = [...sourcePerf].sort((a, b) => b.revenue - a.revenue);
+      const byVol    = [...sourcePerf].sort((a, b) => b.total - a.total);
+      const bestConv = byConv[0];
+      const bestRev  = byRev[0];
+      const mostVol  = byVol[0];
+      const avgVol   = sourcePerf.reduce((s, x) => s + x.total, 0) / sourcePerf.length;
+
+      if (bestConv) {
+        points.push(`Best converting source: ${bestConv.source} at ${bestConv.convRate}% — ${bestConv.closed} wins from ${bestConv.total} leads`);
+        if (bestConv.source !== mostVol?.source) {
+          actions.push(`${bestConv.source} converts best but isn't your highest volume — invest more there`);
+        }
+      }
+      if (bestRev && bestRev.source !== bestConv?.source) {
+        points.push(`Most revenue from: ${bestRev.source} — ${f(bestRev.revenue)}`);
+      }
+      if (mostVol && mostVol.convRate < 10 && mostVol.total > 10) {
+        points.push(`${mostVol.source} gives the most leads (${mostVol.total}) but only ${mostVol.convRate}% convert — low quality`);
+        actions.push(`Audit lead quality from ${mostVol.source} — high volume + low conversion = wasted time`);
+      }
+
+      // Hidden gems
+      const gems = sourcePerf.filter(s => s.convRate > 30 && s.total < avgVol && s.total > 0);
+      if (gems.length > 0) {
+        gems.forEach(g => {
+          points.push(`Hidden gem: ${g.source} converts at ${g.convRate}% but you only get ${g.total} leads from it`);
+          actions.push(`Scale up ${g.source} — it's converting at ${g.convRate}% and you're barely using it`);
+        });
+      }
+
+      sourcePerf.slice(0, 6).forEach(s => {
+        rows.push({
+          label: s.source,
+          sub:   `${s.total} leads · ${s.closed} closed · ${s.convRate}% conv · ${f(s.revenue)}`,
+          tag:   s.convRate >= 30 ? "Top" : s.convRate >= 15 ? "Good" : "Low",
+          tagColor: s.convRate >= 30 ? "emerald" : s.convRate >= 15 ? "blue" : "rose",
+        });
+      });
+    }
+
+    sections.push({
+      id: "sources", category: "Lead Sources", icon: <Zap size={16}/>,
+      verdict: sourcePerf.length === 0 ? "No source tracking — add sources to leads"
+        : `Best source: ${[...sourcePerf].sort((a,b)=>b.convRate-a.convRate)[0]?.source} at ${[...sourcePerf].sort((a,b)=>b.convRate-a.convRate)[0]?.convRate}% conversion`,
+      tone: sourcePerf.some(s => s.convRate > 25) ? "good" : "warn",
+      points, actions, rows,
+    });
+  }
+
+  return sections;
+}
+
+// ── Tag pill ────────────────────────────────────────────────────────────────
+function Tag({ label, color }) {
+  return <span className={`bi-tag bi-tag-${color}`}>{label}</span>;
+}
+
+// ── Row item ────────────────────────────────────────────────────────────────
+function Row({ row }) {
   return (
-    <div className="bi-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bi-modal">
-        <div className="bi-modal-header">
-          <span>Financial Configuration</span>
-          <button className="bi-modal-close" onClick={onClose}><X size={16}/></button>
-        </div>
-        <div className="bi-modal-body">
-          <div className="bi-cfg-section">
-            <div className="bi-cfg-section-title">Tax Settings</div>
-            {field("taxRatePercent", "Income Tax Rate (%)", 0, 60, 1, "%")}
-          </div>
-          <div className="bi-cfg-section">
-            <div className="bi-cfg-section-title">Reserve Fund Targets</div>
-            {field("bufferMonths",   "Operating Buffer (months of opex)",  1,  12, 1, "×")}
-            {field("emergencyPct",   "Emergency Fund (% of annual rev)",   0,  30, 1, "%")}
-            {field("growthFundPct",  "Growth Fund (% of net profit)",      0,  50, 1, "%")}
-          </div>
-          <div className="bi-cfg-section">
-            <div className="bi-cfg-section-title">Fund Current Balances</div>
-            {fundField("bufferBalance",    "Operating Buffer Balance")}
-            {fundField("emergencyBalance", "Emergency Fund Balance")}
-            {fundField("taxReserveBalance","Tax Reserve Balance")}
-            {fundField("growthBalance",    "Growth Fund Balance")}
-          </div>
-        </div>
-        {err && <div style={{color:"#ef4444",fontSize:13,padding:"0 20px 8px",fontWeight:500}}>{err}</div>}
-        <div className="bi-modal-footer">
-          <button className="bi-btn-cancel" onClick={onClose}>Cancel</button>
-          <button className="bi-btn-save" onClick={save} disabled={saving}>
-            <Save size={14}/> {saving ? "Saving…" : "Save"}
-          </button>
-        </div>
+    <div className="bi-row">
+      <div className="bi-row-info">
+        <span className="bi-row-label">{row.label}</span>
+        <span className="bi-row-sub">{row.sub}</span>
+      </div>
+      <div className="bi-row-right">
+        {row.tag && <Tag label={row.tag} color={row.tagColor || "amber"} />}
+        {row.phone && (
+          <a href={`tel:${row.phone}`} className="bi-call-btn" title="Call">
+            <Phone size={13} />
+          </a>
+        )}
       </div>
     </div>
   );
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Main Component
-// ══════════════════════════════════════════════════════════════════════════════
-const TABS = ["P&L Statement","Unit Economics","Reserve Funds","Scenario Planner","12-Month Trend"];
-
-export default function Analytics() {
-  const now = new Date();
-  const [year,  setYear]  = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [tab,   setTab]   = useState(0);
-  const [data,  setData]  = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [err,   setErr]   = useState("");
-  const [cfgOpen, setCfgOpen] = useState(false);
-  const [sending, setSending] = useState(false);
-  const [reportMsg, setReportMsg] = useState("");
-
-  const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-
-  const fetchAll = useCallback(async () => {
-    setLoading(true); setErr("");
-    try {
-      const r = await fetch(`${API}/api/bi/dashboard?year=${year}&month=${month}`, { headers: auth() });
-      const j = await r.json();
-      if (!j.success) throw new Error(j.message);
-      setData(j.data);
-    } catch (e) { setErr(e.message); }
-    finally { setLoading(false); }
-  }, [year, month]);
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
-
-  const sendReport = useCallback(async () => {
-    setSending(true); setReportMsg("");
-    try {
-      const r = await fetch(`${API}/api/bi/report/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...auth() },
-        body: JSON.stringify({ to: "nn.creations7@gmail.com" }),
-      });
-      const j = await r.json();
-      setReportMsg(j.success ? "Report sent!" : (j.message || "Failed"));
-    } catch { setReportMsg("Failed to send"); }
-    finally { setSending(false); setTimeout(() => setReportMsg(""), 4000); }
-  }, []);
-
-  if (loading) return (
-    <div className="bi-page">
-      <Sidebar/>
-      <div className="bi-main" style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 18 }}>
-        <ShimmerKpiGrid count={4} cols={4} />
-        <ShimmerKpiGrid count={4} cols={4} />
-        <ShimmerTable rows={6} cells={5} />
-      </div>
-    </div>
-  );
-  if (err) return (
-    <div className="bi-page">
-      <Sidebar/>
-      <div className="bi-main"><div className="bi-err">{err}</div></div>
-    </div>
-  );
-  if (!data) return null;
-
-  const { incomeStatement: IS, ytd, mom, target, unitEconomics: UE,
-          orderBreakdown: OB, dealBuckets = [], funds = [], fundSummary = {},
-          trendSeries = [], scenarios = [], pipelineValue = 0, pipelineCount = 0 } = data;
-
-  // ── Expense pie data ──────────────────────────────────────────────────────
-  const expPieData = Object.entries(IS.expByCat)
-    .filter(([,v]) => v > 0)
-    .map(([k, v], i) => ({ name: k.charAt(0).toUpperCase() + k.slice(1), value: v,
-      fill: [C.blue, C.purple, C.amber, C.green, C.red, C.teal][i % 6] }));
-
-  // ── Project profit waterfall data ────────────────────────────────────────
-  const waterfallData = [
-    { name: "Project Revenue",  value: OB.avgDealRevenue,       fill: C.green },
-    { name: "Service Costs",    value: -OB.fixedCostAllocation, fill: C.amber },
-    { name: "Net Profit/Project", value: OB.netProfitPerDeal,   fill: OB.netProfitPerDeal >= 0 ? C.blue : C.red },
-  ].filter(d => d.value !== 0);
-
-  // ── Reserve allocation from each deal ─────────────────────────────────────
-  const dealAllocData = [
-    { name: "Buffer", value: OB.bufferAlloc,   fill: C.blue   },
-    { name: "Emergency", value: OB.emergencyAlloc, fill: C.amber },
-    { name: "Tax",    value: OB.taxAlloc,      fill: C.purple },
-    { name: "Growth", value: OB.growthAlloc,   fill: C.green  },
-  ].filter(d => d.value > 0);
+// ── Intelligence card ───────────────────────────────────────────────────────
+function Card({ section }) {
+  const [open, setOpen] = useState(true);
+  const toneIcon = {
+    good: <CheckCircle size={15} className="tone-good" />,
+    warn: <AlertCircle  size={15} className="tone-warn" />,
+    bad:  <XCircle      size={15} className="tone-bad"  />,
+  }[section.tone];
 
   return (
-    <div className="bi-page">
-      <Sidebar/>
+    <div className={`bi-card tone-${section.tone}`}>
+      {/* Card header */}
+      <div className="bi-card-head" onClick={() => setOpen(o => !o)}>
+        <div className="bi-card-cat">
+          {section.icon}
+          <span>{section.category}</span>
+        </div>
+        <ChevronRight size={16} className={`bi-chevron ${open ? "open" : ""}`} />
+      </div>
+
+      {/* Verdict */}
+      <div className="bi-verdict">
+        {toneIcon}
+        <span>{section.verdict}</span>
+      </div>
+
+      {open && (
+        <>
+          {/* Highlight metrics */}
+          {section.highlights?.length > 0 && (
+            <div className="bi-highlights">
+              {section.highlights.map((h, i) => (
+                <div key={i} className="bi-hl-item">
+                  <span className="bi-hl-label">{h.label}</span>
+                  <span className={`bi-hl-val color-${h.color}`}>{h.value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Points */}
+          {section.points?.length > 0 && (
+            <ul className="bi-points">
+              {section.points.map((p, i) => (
+                <li key={i}><span className="bi-bullet">›</span>{p}</li>
+              ))}
+            </ul>
+          )}
+
+          {/* Named rows */}
+          {section.rows?.length > 0 && (
+            <div className="bi-rows">
+              {section.rows.map((r, i) => <Row key={i} row={r} />)}
+            </div>
+          )}
+
+          {/* Actions */}
+          {section.actions?.length > 0 && (
+            <div className="bi-actions">
+              <div className="bi-actions-title">What to do</div>
+              {section.actions.map((a, i) => (
+                <div key={i} className="bi-action">
+                  <ArrowRight size={12} />
+                  <span>{a}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── Main ────────────────────────────────────────────────────────────────────
+export default function BiReports() {
+  const [data,    setData]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(null);
+  const [ts,      setTs]      = useState(null);
+
+  const load = async () => {
+    setLoading(true); setError(null);
+    try {
+      const r = await fetch(`${API}/api/bi/intelligence`, { headers: auth() });
+      const j = await r.json();
+      if (j.success) { setData(j.data); setTs(new Date()); }
+      else setError(j.message || "Failed to load");
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const sections = data ? buildSections(data) : [];
+  const L  = data?.leads      || {};
+  const IN = data?.invoices    || {};
+  const QT = data?.quotations  || {};
+  const EN = data?.enquiries   || {};
+
+  return (
+    <div className="bi-layout">
+      <Sidebar />
       <div className="bi-main">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="bi-header">
           <div className="bi-header-left">
-            <h1 className="bi-title">Business Intelligence</h1>
-            <p className="bi-subtitle">Real P&amp;L · Unit Economics · Reserve Funds · Scenario Planning</p>
+            <div className="bi-header-icon"><Brain size={20} /></div>
+            <div>
+              <h1>Business Intelligence</h1>
+              <p>Real insights from your leads, invoices, quotations & enquiries</p>
+            </div>
           </div>
           <div className="bi-header-right">
-            <select className="bi-sel" value={month} onChange={e => setMonth(Number(e.target.value))}>
-              {MN.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
-            </select>
-            <select className="bi-sel" value={year} onChange={e => setYear(Number(e.target.value))}>
-              {[2023,2024,2025,2026].map(y => <option key={y}>{y}</option>)}
-            </select>
-            <button
-              className="bi-report-btn"
-              title="Send BI Report to nn.creations7@gmail.com"
-              onClick={sendReport}
-              disabled={sending}
-            >
-              {sending ? <RefreshCcw size={14} className="bi-spin"/> : <Send size={14}/>}
-              {sending ? "Sending…" : "Send Report"}
+            {ts && <span className="bi-ts">Updated {ts.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}</span>}
+            <button className="bi-refresh" onClick={load} disabled={loading}>
+              <RefreshCw size={13} className={loading ? "spinning" : ""} /> Refresh
             </button>
-            {reportMsg && <span className={`bi-report-msg ${reportMsg === "Report sent!" ? "ok" : "err"}`}><Mail size={12}/> {reportMsg}</span>}
-            <button className="bi-icon-btn" title="Configure" onClick={() => setCfgOpen(true)}><Settings size={16}/></button>
-            <button className="bi-icon-btn" title="Refresh"   onClick={fetchAll}><RefreshCcw size={16}/></button>
           </div>
         </div>
 
-        {/* ── Executive Summary Strip ── */}
-        <div className="bi-exec-strip">
-          <div className="bi-exec-pill">
-            <span className="bi-exec-label">Revenue</span>
-            <span className="bi-exec-val">{fmtINR(IS.revenue)}</span>
-            <Trend v={mom.revPct}/>
+        {/* Strip */}
+        {!loading && data && (
+          <div className="bi-strip">
+            {[
+              { label: "Total Leads",   val: L.total,          color: "" },
+              { label: "Deals Closed",  val: L.closed,         color: "indigo" },
+              { label: "Conversion",    val: L.convRate + "%",  color: L.convRate >= 20 ? "emerald" : "amber" },
+              { label: "Revenue",       val: f(L.totalValue),   color: "emerald" },
+              { label: "Collected",     val: f(L.totalCollected), color: "blue" },
+              { label: "Pending",       val: f(L.pendingBalance), color: "rose" },
+              { label: "Invoices Due",  val: IN.overdueCount || 0, color: IN.overdueCount > 0 ? "rose" : "" },
+              { label: "Quotations",    val: QT.sent + " sent", color: QT.sent > 0 ? "amber" : "" },
+              { label: "Enquiries",     val: EN.uncontacted + " uncontacted", color: EN.uncontacted > 0 ? "rose" : "" },
+            ].map((s, i) => (
+              <div key={i} className="bi-strip-item">
+                <span className="bi-strip-label">{s.label}</span>
+                <span className={`bi-strip-val ${s.color}`}>{s.val}</span>
+              </div>
+            ))}
           </div>
-          <div className="bi-exec-sep"/>
-          <div className="bi-exec-pill">
-            <span className="bi-exec-label">Operating Profit</span>
-            <span className="bi-exec-val" style={{color: IS.ebitda >= 0 ? C.green : C.red}}>{fmtINR(IS.ebitda)}</span>
-            <span className="bi-exec-badge">{IS.netMarginPct}%</span>
-          </div>
-          <div className="bi-exec-sep"/>
-          <div className="bi-exec-pill">
-            <span className="bi-exec-label">EBITDA</span>
-            <span className="bi-exec-val" style={{color: IS.ebitda >= 0 ? C.green : C.red}}>{fmtINR(IS.ebitda)}</span>
-          </div>
-          <div className="bi-exec-sep"/>
-          <div className="bi-exec-pill">
-            <span className="bi-exec-label">Net Profit</span>
-            <span className="bi-exec-val" style={{color: IS.netProfit >= 0 ? C.green : C.red}}>{fmtINR(IS.netProfit)}</span>
-            <span className="bi-exec-badge">{IS.netMarginPct}%</span>
-          </div>
-          <div className="bi-exec-sep"/>
-          <div className="bi-exec-pill">
-            <span className="bi-exec-label">Break-Even</span>
-            <span className="bi-exec-val">{UE.breakEvenDeals} deals</span>
-          </div>
-          <div className="bi-exec-sep"/>
-          <div className="bi-exec-pill">
-            <span className="bi-exec-label">Deals Closed</span>
-            <span className="bi-exec-val">{UE.closedCountMonth} this month</span>
-          </div>
-          <div className="bi-exec-sep"/>
-          <div className={`bi-exec-pill bi-pace-${target.paceStatus}`}>
-            <span className="bi-exec-label">vs Target</span>
-            <span className="bi-exec-val">{target.targetAchieved}%</span>
-            <span className="bi-exec-badge">{target.paceStatus === "on_track" ? "On Track" : target.paceStatus === "behind" ? "Behind" : "No Target"}</span>
-          </div>
-        </div>
+        )}
 
-        {/* ── Tabs ── */}
-        <div className="bi-tabs">
-          {TABS.map((t, i) => (
-            <button key={i} className={`bi-tab${tab === i ? " active" : ""}`} onClick={() => setTab(i)}>{t}</button>
-          ))}
-        </div>
-
+        {/* Body */}
         <div className="bi-body">
-
-          {/* ══════════════════════════ TAB 0: P&L Statement ══════════════════════ */}
-          {tab === 0 && (
-            <div className="bi-tab-content">
-              <div className="bi-row2">
-
-                {/* Income Statement */}
-                <div className="bi-card bi-is-card">
-                  <div className="bi-card-h">
-                    <span>Income Statement — {MN[month-1]} {year}</span>
-                    <span className="bi-card-h-sub">YTD column = Jan–{MN[month-1]} {year}</span>
-                  </div>
-                  <div className="bi-is-header">
-                    <span/>
-                    <span>This Month</span>
-                    <span>YTD</span>
-                  </div>
-                  <ISRow label="Revenue (Client Advances)"      amount={IS.revenue}       ytd={ytd.revenue}       bold />
-                  <div className="bi-is-spacer"/>
-                  <ISRow label="Service Operating Costs"        amount={-IS.opex}         ytd={-ytd.opex}         bold />
-                  {Object.entries(IS.expByCat).filter(([,v])=>v>0).map(([k,v]) => {
-                    const CAT_LABELS = {
-                      salary:"Employee Salaries", rent:"Office Rent",
-                      electricity:"Electricity", internet:"Internet / Software",
-                      maintenance:"Maintenance", other:"Other Expenses",
-                    };
-                    return (
-                      <ISRow key={k}
-                        label={CAT_LABELS[k] || (k.charAt(0).toUpperCase()+k.slice(1))}
-                        amount={-v} ytd={0} indent={1} />
-                    );
-                  })}
-                  <ISRow label="Operating Profit (EBITDA)"      amount={IS.ebitda}        ytd={ytd.ebitda}        bold borderTop green={IS.ebitda>=0} red={IS.ebitda<0} />
-                  <div className="bi-is-sub">Operating Margin: <strong>{IS.netMarginPct}%</strong></div>
-                  <div className="bi-is-spacer"/>
-                  <ISRow label={`Tax Provision (${data.config.taxRatePercent}%)`}
-                                                               amount={-IS.taxProvision} ytd={-ytd.taxProvision} indent={1} />
-                  <ISRow label="Net Profit"                    amount={IS.netProfit}     ytd={ytd.netProfit}     bold borderTop green={IS.netProfit>=0} red={IS.netProfit<0} />
-                  <div className="bi-is-sub">Net Margin: <strong>{IS.netMarginPct}%</strong></div>
-                </div>
-
-                {/* Expense breakdown pie + KPIs */}
-                <div className="bi-col-right">
-                  <div className="bi-kpi-grid">
-                    <KPI label="Gross Margin"   value={`${IS.grossMarginPct}%`}      color="green"  icon={TrendingUp} trend={null} sub="Revenue after direct costs"/>
-                    <KPI label="Net Margin"     value={`${IS.netMarginPct}%`}        color={IS.netMarginPct>=10?"green":IS.netMarginPct>=0?"amber":"red"} icon={DollarSign} sub="After tax &amp; all costs"/>
-                    <KPI label="vs Target"      value={`${target.targetAchieved}%`}  color={target.targetAchieved>=80?"green":target.targetAchieved>=50?"amber":"red"} icon={Target} sub={`${fmtFull(target.monthlyTarget)} target`}/>
-                    <KPI label="Pipeline"       value={fmtINR(pipelineValue)}        color="indigo" icon={Zap} sub={`${pipelineCount} open deals`}/>
-                  </div>
-
-                  {expPieData.length > 0 && (
-                    <div className="bi-card" style={{marginTop:16}}>
-                      <div className="bi-card-h"><span>Expense Breakdown</span></div>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                          <Pie data={expPieData} dataKey="value" nameKey="name"
-                            cx="50%" cy="50%" outerRadius={75} paddingAngle={3}>
-                            {expPieData.map((d,i) => <Cell key={i} fill={d.fill}/>)}
-                          </Pie>
-                          <Tooltip formatter={v => fmtFull(v)}/>
-                          <Legend wrapperStyle={{fontSize:11}}/>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="bi-exp-total">
-                        Total OpEx: <strong>{fmtFull(IS.opex)}</strong>
-                        {mom.opexPct != null && <Trend v={mom.opexPct}/>}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Profit distribution this month */}
-              {IS.netProfit > 0 && (
-                <div className="bi-card" style={{marginTop:16}}>
-                  <div className="bi-card-h"><span>This Month's Profit Distribution</span></div>
-                  <div className="bi-profit-dist">
-                    {[
-                      { label:"Buffer Fund",    amount: funds.find(f=>f.id==="buffer")?.monthlyContrib    || 0, color:C.blue   },
-                      { label:"Emergency Fund", amount: funds.find(f=>f.id==="emergency")?.monthlyContrib || 0, color:C.amber  },
-                      { label:"Tax Reserve",    amount: IS.taxProvision,                                         color:C.purple },
-                      { label:"Growth Fund",    amount: funds.find(f=>f.id==="growth")?.monthlyContrib    || 0, color:C.green  },
-                      { label:"Owner / Retained", amount: fundSummary.ownerTakeHome,                            color:C.teal   },
-                    ].map(item => (
-                      <div key={item.label} className="bi-dist-row">
-                        <div className="bi-dist-bar-wrap">
-                          <div className="bi-dist-bar"
-                            style={{ width:`${Math.max(2,Math.round(item.amount/IS.netProfit*100))}%`,
-                                     background:item.color }}/>
-                        </div>
-                        <span className="bi-dist-label">{item.label}</span>
-                        <span className="bi-dist-val">{fmtFull(item.amount)}</span>
-                        <span className="bi-dist-pct">
-                          {Math.round(item.amount/IS.netProfit*100)}%
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+          {loading && (
+            <div className="bi-state">
+              <Brain size={38} className="spinning-slow" />
+              <p>Reading your leads, invoices, quotations and enquiries…</p>
             </div>
           )}
-
-          {/* ══════════════════════════ TAB 1: Unit Economics ════════════════════ */}
-          {tab === 1 && (
-            <div className="bi-tab-content">
-              {/* Top KPIs */}
-              <div className="bi-kpi-grid4">
-                <KPI label="Avg Project Revenue"    value={fmtINR(UE.avgDealRev)}        color="blue"   icon={DollarSign} sub="Per closed project (YTD avg)"/>
-                <KPI label="Net Profit / Project"   value={fmtINR(OB.netProfitPerDeal)}  color={OB.netProfitPerDeal>=0?"green":"red"} icon={TrendingUp} sub="After all service costs"/>
-                <KPI label="Operating Margin"       value={`${IS.netMarginPct}%`}         color={IS.netMarginPct>=20?"green":IS.netMarginPct>=5?"amber":"red"} icon={Zap} sub="Net profit as % of revenue"/>
-                <KPI label="Break-Even Projects"    value={UE.breakEvenDeals}             color="amber"  icon={Target} sub={`Need ${UE.breakEvenDeals} projects/month to cover costs`}/>
-              </div>
-
-              <div className="bi-row2" style={{marginTop:16}}>
-                {/* Waterfall: profit per deal */}
-                <div className="bi-card">
-                  <div className="bi-card-h"><span>Profit Breakdown per Average Project</span></div>
-                  <ResponsiveContainer width="100%" height={260}>
-                    <BarChart data={waterfallData} barCategoryGap="25%">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
-                      <XAxis dataKey="name" tick={{fontSize:11,fill:"#64748b"}}/>
-                      <YAxis tickFormatter={v=>fmtINR(v)} tick={{fontSize:11,fill:"#64748b"}}/>
-                      <Tooltip content={<CT currency/>}/>
-                      <Bar dataKey="value" name="₹ Amount" radius={[4,4,0,0]}>
-                        {waterfallData.map((d,i) => <Cell key={i} fill={d.fill}/>)}
-                      </Bar>
-                      <ReferenceLine y={0} stroke="#cbd5e1"/>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <div className="bi-ue-note">
-                    Based on {UE.closedCountYTD} projects closed YTD · Service cost split: ₹{(UE.avgMonthlyOpex/1000).toFixed(1)}K/month ÷ closed projects
-                  </div>
-                </div>
-
-                {/* Break-even analysis */}
-                <div className="bi-card">
-                  <div className="bi-card-h"><span>Break-Even Analysis</span></div>
-                  <div className="bi-be-grid">
-                    <div className="bi-be-row">
-                      <span>Total Monthly Service Costs (Salary + Rent + Other)</span>
-                      <strong style={{color:C.red}}>{fmtFull(UE.avgMonthlyOpex)}</strong>
-                    </div>
-                    <div className="bi-be-row">
-                      <span>Avg Project Revenue</span>
-                      <strong>{fmtFull(UE.avgDealRev)}</strong>
-                    </div>
-                    <div className="bi-be-row bi-be-row-bold">
-                      <span>Break-Even Projects / Month</span>
-                      <strong style={{color:C.amber}}>{UE.breakEvenDeals}</strong>
-                    </div>
-                    <div className="bi-be-row bi-be-row-bold">
-                      <span>Break-Even Revenue / Month</span>
-                      <strong style={{color:C.amber}}>{fmtFull(UE.breakEvenRevenue)}</strong>
-                    </div>
-                    <div className="bi-be-divider"/>
-                    <div className="bi-be-row">
-                      <span>Projects Closed This Month</span>
-                      <strong style={{color: UE.closedCountMonth >= UE.breakEvenDeals ? C.green : C.red}}>
-                        {UE.closedCountMonth} / {UE.breakEvenDeals} needed
-                      </strong>
-                    </div>
-                    <div className="bi-be-row">
-                      <span>Profitability Status</span>
-                      <strong style={{color: UE.closedCountMonth >= UE.breakEvenDeals ? C.green : C.red}}>
-                        {UE.closedCountMonth >= UE.breakEvenDeals ? "Profitable this month" : `${UE.breakEvenDeals - UE.closedCountMonth} more projects needed`}
-                      </strong>
-                    </div>
-                  </div>
-
-                  {/* Reserve allocation per order */}
-                  {dealAllocData.length > 0 && (
-                    <>
-                      <div className="bi-card-h" style={{marginTop:16}}><span>Reserve Allocations per Deal</span></div>
-                      <div className="bi-be-grid">
-                        {[
-                          { label:"Buffer Fund", val: OB.bufferAlloc },
-                          { label:"Emergency Fund", val: OB.emergencyAlloc },
-                          { label:"Tax Reserve", val: OB.taxAlloc },
-                          { label:"Growth Fund", val: OB.growthAlloc },
-                        ].map(r => (
-                          <div key={r.label} className="bi-be-row">
-                            <span>{r.label}</span>
-                            <strong>{fmtFull(r.val)}</strong>
-                          </div>
-                        ))}
-                        <div className="bi-be-divider"/>
-                        <div className="bi-be-row bi-be-row-bold">
-                          <span>Net per Deal after reserves</span>
-                          <strong style={{color:C.green}}>
-                            {fmtFull(OB.netProfitPerDeal - OB.bufferAlloc - OB.emergencyAlloc - OB.taxAlloc - OB.growthAlloc)}
-                          </strong>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Deal size distribution */}
-              {dealBuckets.length > 0 && (
-                <div className="bi-card" style={{marginTop:16}}>
-                  <div className="bi-card-h"><span>Project Value Distribution (last 12 months)</span></div>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={dealBuckets} barCategoryGap="25%">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
-                      <XAxis dataKey="range" tick={{fontSize:11,fill:"#64748b"}}/>
-                      <YAxis yAxisId="l" tick={{fontSize:11,fill:"#64748b"}}/>
-                      <YAxis yAxisId="r" orientation="right" tickFormatter={v=>fmtINR(v)} tick={{fontSize:11,fill:"#64748b"}}/>
-                      <Tooltip content={<CT/>}/>
-                      <Bar yAxisId="l" dataKey="count" name="# Deals" fill={C.indigo} radius={[3,3,0,0]}/>
-                      <Bar yAxisId="r" dataKey="total" name="₹ Total" fill={C.teal}   radius={[3,3,0,0]}/>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+          {error && (
+            <div className="bi-state error">
+              <AlertTriangle size={32} />
+              <p>{error}</p>
+              <button onClick={load}>Retry</button>
             </div>
           )}
-
-          {/* ══════════════════════════ TAB 2: Reserve Funds ═════════════════════ */}
-          {tab === 2 && (
-            <div className="bi-tab-content">
-              {/* Summary bar */}
-              <div className="bi-fund-summary">
-                <div className="bi-fund-sum-item">
-                  <div className="bi-fund-sum-label">Total Reserved</div>
-                  <div className="bi-fund-sum-val">{fmtFull(fundSummary.totalBalance)}</div>
-                </div>
-                <div className="bi-fund-sum-sep"/>
-                <div className="bi-fund-sum-item">
-                  <div className="bi-fund-sum-label">Total Target</div>
-                  <div className="bi-fund-sum-val">{fmtFull(fundSummary.totalTarget)}</div>
-                </div>
-                <div className="bi-fund-sum-sep"/>
-                <div className="bi-fund-sum-item">
-                  <div className="bi-fund-sum-label">Monthly Contribution</div>
-                  <div className="bi-fund-sum-val">{fmtFull(fundSummary.totalMonthlyContrib)}</div>
-                  <div className="bi-fund-sum-sub">from this month's profit</div>
-                </div>
-                <div className="bi-fund-sum-sep"/>
-                <div className="bi-fund-sum-item">
-                  <div className="bi-fund-sum-label">Owner Take-Home</div>
-                  <div className="bi-fund-sum-val" style={{color:C.green}}>{fmtFull(fundSummary.ownerTakeHome)}</div>
-                  <div className="bi-fund-sum-sub">after all allocations</div>
-                </div>
-              </div>
-
-              {/* Fund cards */}
-              <div className="bi-fund-grid">
-                {funds.map(f => <FundCard key={f.id} fund={f}/>)}
-              </div>
-
-              {/* Explainer */}
-              <div className="bi-card bi-explainer">
-                <div className="bi-card-h"><span>Why These Funds?</span></div>
-                <div className="bi-explainer-grid">
-                  <div className="bi-exp-item">
-                    <Shield size={18} color={C.blue}/>
-                    <div>
-                      <strong>Operating Buffer</strong>
-                      <p>Covers rent, salaries, utilities for {data.config.bufferMonths} months if revenue drops. Prevents emergency borrowing at high interest.</p>
-                    </div>
-                  </div>
-                  <div className="bi-exp-item">
-                    <AlertTriangle size={18} color={C.amber}/>
-                    <div>
-                      <strong>Emergency / Accident Fund</strong>
-                      <p>Equipment breakdown, server crash, legal dispute, fire/theft. Do NOT touch for regular expenses. Replenish after use.</p>
-                    </div>
-                  </div>
-                  <div className="bi-exp-item">
-                    <Receipt size={18} color={C.purple}/>
-                    <div>
-                      <strong>Tax Reserve</strong>
-                      <p>Advance tax is due quarterly. Build this from day 1. Missing advance tax deadlines attracts 1% per month interest under Section 234C.</p>
-                    </div>
-                  </div>
-                  <div className="bi-exp-item">
-                    <TrendingUp size={18} color={C.green}/>
-                    <div>
-                      <strong>Growth / Investment Fund</strong>
-                      <p>Hire talent, upgrade equipment, run marketing campaigns. Dedicated fund prevents raiding operating cash for growth.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          {!loading && !error && sections.length === 0 && (
+            <div className="bi-state">
+              <Brain size={38} />
+              <p>No data found. Add leads and enquiries to start seeing intelligence.</p>
             </div>
           )}
-
-          {/* ══════════════════════════ TAB 3: Scenario Planner ═════════════════ */}
-          {tab === 3 && (
-            <div className="bi-tab-content">
-              {scenarios.length === 0 && (
-                <div style={{color:"#64748b",textAlign:"center",padding:40}}>No scenario data available.</div>
-              )}
-              <div className="bi-scenario-grid">
-                {scenarios.map((sc, si) => {
-                  const colors = [C.red, C.blue, C.green];
-                  const labels = ["Conservative (-20%)", "Base Case", "Optimistic (+25%)"];
-                  const totalProfit = sc.totalProfit;
-                  return (
-                    <div key={sc.name} className={`bi-sc-card bi-sc-${sc.name}`}>
-                      <div className="bi-sc-header" style={{borderColor: colors[si]}}>
-                        <span className="bi-sc-label">{labels[si]}</span>
-                        <span className="bi-sc-growth">×{sc.growthFactor.toFixed(2)}</span>
-                      </div>
-                      <div className="bi-sc-kpis">
-                        <div className="bi-sc-kpi">
-                          <div className="bi-sc-kpi-label">3-Month Revenue</div>
-                          <div className="bi-sc-kpi-val" style={{color:colors[si]}}>{fmtINR(sc.totalRev)}</div>
-                        </div>
-                        <div className="bi-sc-kpi">
-                          <div className="bi-sc-kpi-label">3-Month Net Profit</div>
-                          <div className="bi-sc-kpi-val" style={{color: totalProfit>=0 ? C.green : C.red}}>{fmtINR(totalProfit)}</div>
-                        </div>
-                      </div>
-                      <table className="bi-sc-table">
-                        <thead>
-                          <tr><th>Month</th><th>Revenue</th><th>EBITDA</th><th>Net</th></tr>
-                        </thead>
-                        <tbody>
-                          {sc.months.map((m, mi) => (
-                            <tr key={mi}>
-                              <td>{m.label}</td>
-                              <td>{fmtINR(m.revenue)}</td>
-                              <td style={{color: m.ebitda>=0?C.green:C.red}}>{fmtINR(m.ebitda)}</td>
-                              <td style={{color: m.netProfit>=0?C.green:C.red}}>{fmtINR(m.netProfit)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Scenario comparison chart */}
-              {scenarios.length >= 3 && scenarios[0].months?.length > 0 && (
-              <div className="bi-card" style={{marginTop:16}}>
-                <div className="bi-card-h"><span>3-Month Net Profit — Scenario Comparison</span></div>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart
-                    data={scenarios[0].months.map((_, mi) => ({
-                      label: scenarios[0].months[mi].label,
-                      Conservative: scenarios[0].months[mi].netProfit,
-                      Base:         scenarios[1].months[mi].netProfit,
-                      Optimistic:   scenarios[2].months[mi].netProfit,
-                    }))}
-                    barCategoryGap="20%"
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
-                    <XAxis dataKey="label" tick={{fontSize:11,fill:"#64748b"}}/>
-                    <YAxis tickFormatter={v=>fmtINR(v)} tick={{fontSize:11,fill:"#64748b"}}/>
-                    <Tooltip content={<CT currency/>}/>
-                    <Legend wrapperStyle={{fontSize:11}}/>
-                    <ReferenceLine y={0} stroke="#cbd5e1"/>
-                    <Bar dataKey="Conservative" fill={C.red}   radius={[3,3,0,0]}/>
-                    <Bar dataKey="Base"         fill={C.blue}  radius={[3,3,0,0]}/>
-                    <Bar dataKey="Optimistic"   fill={C.green} radius={[3,3,0,0]}/>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              )}
-
-              <div className="bi-sc-note">
-                <Info size={14}/> Scenarios use your last 12-month average + linear trend. COGS, tax rate, and opex come from your Financial Configuration. Update them via <button className="bi-link" onClick={()=>setCfgOpen(true)}>Settings</button>.
-              </div>
+          {!loading && sections.length > 0 && (
+            <div className="bi-grid">
+              {sections.map(s => <Card key={s.id} section={s} />)}
             </div>
           )}
-
-          {/* ══════════════════════════ TAB 4: 12-Month Trend ════════════════════ */}
-          {tab === 4 && (
-            <div className="bi-tab-content">
-              {trendSeries.length === 0 && (
-                <div style={{color:"#64748b",textAlign:"center",padding:40}}>No trend data available for the selected period.</div>
-              )}
-              {/* Revenue + Gross Profit + Net Profit area chart */}
-              {trendSeries.length > 0 && <div className="bi-card">
-                <div className="bi-card-h"><span>Revenue · Gross Profit · Net Profit (12 Months)</span></div>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={trendSeries}>
-                    <defs>
-                      <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor={C.blue}  stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor={C.blue}  stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="gGP" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor={C.green} stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor={C.green} stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
-                    <XAxis dataKey="label" tick={{fontSize:11,fill:"#64748b"}}/>
-                    <YAxis tickFormatter={v=>fmtINR(v)} tick={{fontSize:11,fill:"#64748b"}}/>
-                    <Tooltip content={<CT currency/>}/>
-                    <Legend wrapperStyle={{fontSize:11}}/>
-                    <Area type="monotone" dataKey="revenue"     name="Revenue ₹"       stroke={C.blue}   fill="url(#gRev)" strokeWidth={2}/>
-                    <Area type="monotone" dataKey="grossProfit" name="Gross Profit ₹"  stroke={C.green}  fill="url(#gGP)"  strokeWidth={2}/>
-                    <Line type="monotone" dataKey="netProfit"   name="Net Profit ₹"    stroke={C.amber}  strokeWidth={2} dot={{r:3}}/>
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>}
-
-              {/* OpEx trend */}
-              {trendSeries.length > 0 && <div className="bi-card" style={{marginTop:16}}>
-                <div className="bi-card-h"><span>EBITDA vs Operating Expenses (12 Months)</span></div>
-                <ResponsiveContainer width="100%" height={240}>
-                  <ComposedChart data={trendSeries}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0"/>
-                    <XAxis dataKey="label" tick={{fontSize:11,fill:"#64748b"}}/>
-                    <YAxis tickFormatter={v=>fmtINR(v)} tick={{fontSize:11,fill:"#64748b"}}/>
-                    <Tooltip content={<CT currency/>}/>
-                    <Legend wrapperStyle={{fontSize:11}}/>
-                    <Bar  dataKey="opex"   name="OpEx ₹"   fill={C.red}   radius={[3,3,0,0]} opacity={0.7}/>
-                    <Line dataKey="ebitda" name="EBITDA ₹" stroke={C.amber} strokeWidth={2} dot={{r:3}}/>
-                    <ReferenceLine y={0} stroke="#cbd5e1"/>
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>}
-
-              {/* Monthly table */}
-              {trendSeries.length > 0 && <div className="bi-card" style={{marginTop:16}}>
-                <div className="bi-card-h"><span>Monthly Financial Summary</span></div>
-                <div className="bi-trend-table-wrap">
-                  <table className="bi-trend-table">
-                    <thead>
-                      <tr>
-                        <th>Month</th>
-                        <th>Revenue</th>
-                        <th>COGS</th>
-                        <th>Gross Profit</th>
-                        <th>OpEx</th>
-                        <th>EBITDA</th>
-                        <th>Net Profit</th>
-                        <th>Margin</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {trendSeries.map((t, i) => {
-                        const margin = t.revenue > 0 ? Math.round(t.netProfit/t.revenue*100) : 0;
-                        return (
-                          <tr key={i}>
-                            <td>{t.label} {t.year}</td>
-                            <td>{fmtINR(t.revenue)}</td>
-                            <td style={{color:C.red}}>{fmtINR(t.cogs)}</td>
-                            <td style={{color: t.grossProfit>=0?C.green:C.red}}>{fmtINR(t.grossProfit)}</td>
-                            <td style={{color:C.amber}}>{fmtINR(t.opex)}</td>
-                            <td style={{color: t.ebitda>=0?C.green:C.red}}>{fmtINR(t.ebitda)}</td>
-                            <td style={{color: t.netProfit>=0?C.green:C.red}}>{fmtINR(t.netProfit)}</td>
-                            <td><span className={`bi-margin-badge ${pctColor(Math.max(0,margin))}`}>{margin}%</span></td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>}
-            </div>
-          )}
-
         </div>
       </div>
-
-      {cfgOpen && (
-        <ConfigModal cfg={data.config} onClose={() => setCfgOpen(false)} onSave={fetchAll}/>
-      )}
     </div>
   );
 }

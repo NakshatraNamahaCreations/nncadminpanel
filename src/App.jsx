@@ -16,11 +16,14 @@ import TodaysPlanPage from "./pages/MasterAdmin/TodaysPlanPage";
 import UserManagement from "./pages/UserManagement/UserManagement";
 import ExpenseTracker from "./pages/ExpenseTracker/ExpenseTracker";
 import PnLPage        from "./pages/PnL/PnLPage";
+import GstReport      from "./pages/GstReport/GstReport";
 import AccountingPage from "./pages/Accounting/AccountingPage";
 import EnquiriesPage  from "./pages/Enquiries/EnquiriesPage";
 import QuotationPage  from "./pages/Quotation/QuotationPage";
 import AttendancePage from "./pages/Attendance/AttendancePage";
 import FundsPage      from "./pages/Funds/FundsPage";
+import OwnerDesk        from "./pages/OwnerDesk/OwnerDesk";
+import CredentialVault  from "./pages/CredentialVault/CredentialVault";
 
 function isAuthed() {
   try {
@@ -43,7 +46,7 @@ function ProtectedRoute({ children }) {
 
 function PublicRoute({ children }) {
   try {
-    return isAuthed() ? <Navigate to="/todays-plan" replace /> : children;
+    return isAuthed() ? <Navigate to="/owner-desk" replace /> : children;
   } catch (error) {
     console.error("PublicRoute error:", error);
     return children;
@@ -59,6 +62,24 @@ export default function App() {
           <PublicRoute>
             <LoginScreen />
           </PublicRoute>
+        }
+      />
+
+      <Route
+        path="/owner-desk"
+        element={
+          <ProtectedRoute>
+            <OwnerDesk />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/credentials"
+        element={
+          <ProtectedRoute>
+            <CredentialVault />
+          </ProtectedRoute>
         }
       />
 
@@ -184,6 +205,15 @@ export default function App() {
         element={
           <ProtectedRoute>
             <PnLPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/gst-report"
+        element={
+          <ProtectedRoute>
+            <GstReport />
           </ProtectedRoute>
         }
       />

@@ -58,6 +58,7 @@ const EMPTY_FORM = {
   name: "", phone: "", email: "", company: "", services: [],
   source: "Walk-In", budgetMin: "", budgetMax: "", requirements: "",
   branch: "Bangalore", assignedTo: "", status: "new", followUpDate: "",
+  gstApplicable: false,
 };
 
 function getStatusClass(status) {
@@ -1291,6 +1292,33 @@ export default function EnquiriesPage() {
                       <div className="enq-field" style={{ flex: 1 }}>
                         <label className="enq-label">Max (₹)</label>
                         <input className="enq-input" type="number" value={formData.budgetMax} onChange={e => setField("budgetMax", e.target.value)} placeholder="0" />
+                      </div>
+                    </div>
+                    <div className="enq-field">
+                      <label className="enq-label">GST Applicable</label>
+                      <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                        <button
+                          type="button"
+                          onClick={() => setField("gstApplicable", true)}
+                          style={{
+                            flex: 1, padding: "8px 0", borderRadius: 8, border: "1.5px solid",
+                            borderColor: formData.gstApplicable ? "#2563eb" : "#d1d5db",
+                            background: formData.gstApplicable ? "#eff6ff" : "#fff",
+                            color: formData.gstApplicable ? "#2563eb" : "#6b7280",
+                            fontWeight: 600, fontSize: 13, cursor: "pointer",
+                          }}
+                        >With GST</button>
+                        <button
+                          type="button"
+                          onClick={() => setField("gstApplicable", false)}
+                          style={{
+                            flex: 1, padding: "8px 0", borderRadius: 8, border: "1.5px solid",
+                            borderColor: !formData.gstApplicable ? "#2563eb" : "#d1d5db",
+                            background: !formData.gstApplicable ? "#eff6ff" : "#fff",
+                            color: !formData.gstApplicable ? "#2563eb" : "#6b7280",
+                            fontWeight: 600, fontSize: 13, cursor: "pointer",
+                          }}
+                        >Without GST</button>
                       </div>
                     </div>
                     <div className="enq-field">

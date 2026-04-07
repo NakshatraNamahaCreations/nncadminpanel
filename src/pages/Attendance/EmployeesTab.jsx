@@ -9,6 +9,12 @@ const EMPTY_FORM = {
   employeeId: "", name: "", email: "", phone: "", branch: "Bangalore",
   department: "", designation: "", shiftStart: "09:30", shiftEnd: "18:30",
   gracePeriodMin: 15, monthlySalary: "", joinedDate: "",
+  employmentType: "permanent",
+  // Salary structure
+  basicPct: 40, hraPct: 40, daPct: 10,
+  pfApplicable: true, pfFixed: "",
+  esiApplicable: false, esiFixed: "",
+  ptApplicable: true, ptFixed: "",
 };
 
 function authHeader() {
@@ -80,6 +86,16 @@ export default function EmployeesTab({ branch }) {
       gracePeriodMin: emp.gracePeriodMin ?? 15,
       monthlySalary: emp.monthlySalary ?? "",
       joinedDate: emp.joinedDate ? emp.joinedDate.split("T")[0] : "",
+      employmentType: emp.employmentType || "permanent",
+      basicPct: emp.basicPct ?? 40,
+      hraPct:   emp.hraPct   ?? 40,
+      daPct:    emp.daPct    ?? 10,
+      pfApplicable:  emp.pfApplicable  ?? true,
+      pfFixed:       emp.pfFixed       || "",
+      esiApplicable: emp.esiApplicable ?? false,
+      esiFixed:      emp.esiFixed      || "",
+      ptApplicable:  emp.ptApplicable  ?? true,
+      ptFixed:       emp.ptFixed       || "",
     });
     setEditOpen(true);
   };
@@ -224,6 +240,9 @@ export default function EmployeesTab({ branch }) {
                 <span className={emp.isActive !== false ? "att-status-active" : "att-status-inactive"}>
                   {emp.isActive !== false ? "Active" : "Inactive"}
                 </span>
+                <span className={`att-emp-type-badge ${emp.employmentType === "probationary" ? "probationary" : "permanent"}`}>
+                  {emp.employmentType === "probationary" ? "Probationary" : "Permanent"}
+                </span>
                 <div className="att-emp-actions">
                   <button className="att-btn-ghost" onClick={() => openEdit(emp)}>
                     <Edit2 size={13} /> Edit
@@ -300,7 +319,109 @@ export default function EmployeesTab({ branch }) {
                   <label className="att-label">Joined Date</label>
                   <input className="att-input" type="date" value={form.joinedDate} onChange={e => setField("joinedDate", e.target.value)} />
                 </div>
+                <div className="att-field">
+                  <label className="att-label">Employment Type</label>
+                  <select className="att-input" value={form.employmentType} onChange={e => setField("employmentType", e.target.value)}>
+                    <option value="permanent">Permanent (1.5 days paid leave/month)</option>
+                    <option value="probationary">Probationary (all leave deducted)</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Salary Structure */}
+              <div className="att-section-divider">Salary Structure</div>
+              <div className="att-form-grid">
+                <div className="att-field">
+                  <label className="att-label">Basic % of Gross</label>
+                  <input className="att-input" type="number" min={0} max={100} value={form.basicPct} onChange={e => setField("basicPct", Number(e.target.value))} />
+                </div>
+                <div className="att-field">
+                  <label className="att-label">HRA % of Basic</label>
+                  <input className="att-input" type="number" min={0} max={100} value={form.hraPct} onChange={e => setField("hraPct", Number(e.target.value))} />
+                </div>
+                <div className="att-field">
+                  <label className="att-label">DA % of Basic</label>
+                  <input className="att-input" type="number" min={0} max={100} value={form.daPct} onChange={e => setField("daPct", Number(e.target.value))} />
+                </div>
+              </div>
+
+              {/* Statutory deductions */}
+              <div className="att-section-divider">Statutory Deductions</div>
+              <div className="att-stat-grid">
+                {/* PF */}
+                <div className="att-stat-row">
+                  <label className="att-stat-toggle">
+                    <input type="checkbox" checked={!!form.pfApplicable} onChange={e => setField("pfApplicable", e.target.checked)} />
+                    <span>PF Applicable</span>
+                  </label>
+                  {form.pfApplicable && (
+                    <div className="att-stat-input-wrap">
+                      <input className="att-input" type="number" min={0} placeholder="Auto (12% of Basic, max ₹1800)" value={form.pfFixed} onChange={e => setField("pfFixed", e.target.value)} />
+                      <span className="att-stat-hint">Leave 0 for auto (12% of Basic, max ₹1800)</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* ESI */}
+                <div className="att-stat-row">
+                  <label className="att-stat-toggle">
+                    <input type="checkbox" checked={!!form.esiApplicable} onChange={e => setField("esiApplicable", e.target.checked)} />
+                    <span>ESI Applicable</span>
+                  </label>
+                  {form.esiApplicable && (
+                    <div className="att-stat-input-wrap">
+                      <input className="att-input" type="number" min={0} placeholder="Auto (0.75% of Gross, if ≤₹21000)" value={form.esiFixed} onChange={e => setField("esiFixed", e.target.value)} />
+                      <span className="att-stat-hint">Leave 0 for auto (0.75% of Gross if salary ≤ ₹21,000)</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* PT */}
+                <div className="att-stat-row">
+                  <label className="att-stat-toggle">
+                    <input type="checkbox" checked={!!form.ptApplicable} onChange={e => setField("ptApplicable", e.target.checked)} />
+                    <span>Professional Tax (PT) Applicable</span>
+                  </label>
+                  {form.ptApplicable && (
+                    <div className="att-stat-input-wrap">
+                      <input className="att-input" type="number" min={0} placeholder="Auto (₹200 if Gross > ₹15000)" value={form.ptFixed} onChange={e => setField("ptFixed", e.target.value)} />
+                      <span className="att-stat-hint">Leave 0 for auto (₹200 if gross &gt; ₹15,000 — Karnataka)</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Live preview */}
+              {form.monthlySalary > 0 && (
+                <div className="att-sal-preview">
+                  <div className="att-sal-preview-title">Salary Preview (on ₹{Number(form.monthlySalary).toLocaleString("en-IN")} gross)</div>
+                  <div className="att-sal-preview-grid">
+                    {(() => {
+                      const gross = Number(form.monthlySalary) || 0;
+                      const basic = Math.round(gross * (Number(form.basicPct) || 40) / 100);
+                      const hra   = Math.round(basic * (Number(form.hraPct)   || 40) / 100);
+                      const da    = Math.round(basic * (Number(form.daPct)    || 10) / 100);
+                      const special = Math.max(0, gross - basic - hra - da);
+                      const pf  = form.pfApplicable  ? (Number(form.pfFixed)  || Math.min(Math.round(basic * 0.12), 1800)) : 0;
+                      const esi = form.esiApplicable ? (Number(form.esiFixed) || (gross <= 21000 ? Math.round(gross * 0.0075) : 0)) : 0;
+                      const pt  = form.ptApplicable  ? (Number(form.ptFixed)  || (gross > 15000 ? 200 : 0)) : 0;
+                      const net = gross - pf - esi - pt;
+                      return (
+                        <>
+                          <div className="att-sal-item earn"><span>Basic</span><span>₹{basic.toLocaleString("en-IN")}</span></div>
+                          <div className="att-sal-item earn"><span>HRA</span><span>₹{hra.toLocaleString("en-IN")}</span></div>
+                          <div className="att-sal-item earn"><span>DA</span><span>₹{da.toLocaleString("en-IN")}</span></div>
+                          <div className="att-sal-item earn"><span>Special Allowance</span><span>₹{special.toLocaleString("en-IN")}</span></div>
+                          {pf  > 0 && <div className="att-sal-item ded"><span>PF (Employee)</span><span>- ₹{pf.toLocaleString("en-IN")}</span></div>}
+                          {esi > 0 && <div className="att-sal-item ded"><span>ESI</span><span>- ₹{esi.toLocaleString("en-IN")}</span></div>}
+                          {pt  > 0 && <div className="att-sal-item ded"><span>Prof. Tax</span><span>- ₹{pt.toLocaleString("en-IN")}</span></div>}
+                          <div className="att-sal-item net"><span>Net Salary</span><span>₹{net.toLocaleString("en-IN")}</span></div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="att-modal-foot">
               <button className="att-btn-sec" onClick={closeModal}>Cancel</button>

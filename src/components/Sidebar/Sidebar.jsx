@@ -1,8 +1,7 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  KanbanSquare,
   Users,
   CalendarDays,
   FileText,
@@ -22,6 +21,8 @@ import {
   X,
   Grid3X3,
   ReceiptText,
+  Briefcase,
+  ShieldCheck,
 } from "lucide-react";
 import nncLogo from "../../assets/nnclogo.png";
 import "./Sidebar.css";
@@ -88,14 +89,15 @@ export default function Sidebar() {
     {
       title: "Overview",
       items: [
-        { label: "Today's Plan", path: "/todays-plan", moduleKey: "todays-plan", icon: <ClipboardList size={15} /> },
-        { label: "Dashboard",    path: "/dashboard",   moduleKey: "dashboard",   icon: <LayoutDashboard size={15} /> },
+        { label: "Owner's Desk",      path: "/owner-desk",  moduleKey: "owner-desk",        icon: <Briefcase size={15} /> },
+        { label: "Credentials Vault", path: "/credentials", moduleKey: "credentials-vault", icon: <ShieldCheck size={15} /> },
+        { label: "Today's Plan",  path: "/todays-plan", moduleKey: "todays-plan", icon: <ClipboardList size={15} /> },
+        { label: "Dashboard",     path: "/dashboard",   moduleKey: "dashboard",   icon: <LayoutDashboard size={15} /> },
       ],
     },
     {
       title: "Sales",
       items: [
-        { label: "Pipeline",  path: "/pipeline",  moduleKey: "pipeline",  icon: <KanbanSquare size={15} /> },
         { label: "All Leads", path: "/leads",     moduleKey: "all-leads", icon: <Users size={15} /> },
         { label: "Enquiries",  path: "/enquiries",   moduleKey: "enquiries",   icon: <MessageSquare size={15} /> },
         { label: "Quotations", path: "/quotations",  moduleKey: "quotations",  icon: <ReceiptText size={15} /> },
@@ -117,6 +119,7 @@ export default function Sidebar() {
         { label: "Payment Tracker", path: "/payment-tracker",moduleKey: "payment-tracker",icon: <CreditCard size={15} /> },
         { label: "Expense Tracker", path: "/expense-tracker",moduleKey: "expense-tracker",icon: <Wallet size={15} /> },
         { label: "P&L Report",      path: "/pnl",            moduleKey: "pnl",            icon: <TrendingUp size={15} /> },
+        { label: "GST Report",      path: "/gst-report",     moduleKey: "gst-report",     icon: <ReceiptText size={15} /> },
         { label: "Reserve Funds",   path: "/funds",          moduleKey: "funds",          icon: <PiggyBank size={15} /> },
         { label: "Accounting",      path: "/accounting",     moduleKey: "accounting",     icon: <BookOpen size={15} /> },
         { label: "Settings",        path: "/settings",       moduleKey: "settings",       icon: <Settings size={15} /> },

@@ -579,3 +579,111 @@
 @media (max-width: 768px) {
   .att-main { padding-bottom: 68px; }
 }
+
+/* ── Salary Summary Strip ──────────────────────────────────── */
+.att-sal-summary-strip {
+  display: flex; flex-wrap: wrap; gap: 0;
+  border-bottom: 2px solid #e2e8f0; background: #f8fafc;
+  padding: 12px 16px; align-items: center;
+}
+.att-sal-sum-item {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 18px; border-right: 1.5px solid #e2e8f0;
+}
+.att-sal-sum-item:last-child { border-right: none; }
+.att-sal-sum-label { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; }
+.att-sal-sum-val { font-size: 15px; font-weight: 800; }
+.att-sal-sum-val.blue  { color: #1d4ed8; }
+.att-sal-sum-val.red   { color: #dc2626; }
+.att-sal-sum-val.green { color: #059669; }
+.att-sal-sum-val.amber { color: #d97706; }
+.att-sal-sum-val.teal  { color: #0891b2; }
+.att-sal-sum-divider   { width: 1.5px; height: 40px; background: #cbd5e1; margin: 0 8px; }
+
+/* ── Salary Structure Form Elements ────────────────────────── */
+.att-section-divider {
+  border: none; border-top: 1.5px dashed #e2e8f0;
+  margin: 18px 0 14px;
+}
+.att-stat-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.att-stat-row {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.att-stat-toggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: #374151; cursor: pointer;
+  padding: 8px 0;
+}
+.att-stat-toggle input[type="checkbox"] { width: 15px; height: 15px; accent-color: #059669; cursor: pointer; }
+.att-stat-hint {
+  font-size: 11px; color: #94a3b8; margin-left: 23px; margin-top: 2px;
+}
+.att-stat-input-wrap {
+  display: flex; align-items: center; gap: 6px; margin-left: 23px; margin-top: 4px;
+}
+.att-stat-input-wrap input {
+  width: 110px; padding: 5px 8px; border-radius: 7px;
+  border: 1.5px solid #e2e8f0; font-size: 12px; color: #0f172a; outline: none;
+}
+.att-stat-input-wrap input:focus { border-color: #059669; }
+.att-stat-input-wrap span { font-size: 11px; color: #64748b; }
+
+/* ── Salary Live Preview ─────────────────────────────────── */
+.att-sal-preview {
+  background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 10px;
+  padding: 14px 16px; margin-top: 14px;
+}
+.att-sal-preview-title {
+  font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase;
+  letter-spacing: .5px; margin-bottom: 10px;
+}
+.att-sal-preview-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.att-sal-item {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; padding: 4px 8px; border-radius: 6px; background: #fff;
+  border: 1px solid #e2e8f0;
+}
+.att-sal-item.earn { border-left: 3px solid #059669; }
+.att-sal-item.ded  { border-left: 3px solid #dc2626; }
+.att-sal-item.net  {
+  grid-column: 1/-1; background: #dcfce7; border: 1.5px solid #059669;
+  font-weight: 800; font-size: 14px; padding: 8px 12px; margin-top: 4px;
+}
+.att-sal-item .sal-lbl { color: #64748b; font-size: 11px; }
+.att-sal-item .sal-val { font-weight: 700; color: #0f172a; }
+.att-sal-item.earn .sal-val { color: #059669; }
+.att-sal-item.ded  .sal-val { color: #dc2626; }
+.att-sal-item.net  .sal-val { color: #059669; font-size: 15px; }
+
+/* Monthly working hours badge in daily tab */
+.att-monthly-hrs {
+  font-size: 10px; font-weight: 700; color: #475569;
+  background: #f1f5f9; border: 1px solid #e2e8f0;
+  padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+}
+
+/* Section divider with label */
+.att-section-divider {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;
+  letter-spacing: .5px; margin: 18px 0 12px;
+}
+.att-section-divider::before,
+.att-section-divider::after {
+  content: ""; flex: 1; height: 1px; background: #e2e8f0;
+}
+
+/* Employment type badge */
+.att-emp-type-badge {
+  font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+}
+.att-emp-type-badge.permanent   { background: #d1fae5; color: #065f46; }
+.att-emp-type-badge.probationary { background: #fef3c7; color: #92400e; }
+
+/* Extra salary summary color variants */
+.att-sal-sum-val.orange { color: #ea580c; }
+.att-sal-sum-val.purple { color: #7c3aed; }

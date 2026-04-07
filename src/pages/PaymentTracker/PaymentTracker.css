@@ -94,8 +94,9 @@
 .ptTable tbody td {
   padding:10px 8px; border-bottom:1px solid #f1f5f9; font-size:12px;
   color:#334155; vertical-align:middle; white-space:nowrap;
-  overflow:hidden; text-overflow:ellipsis;
+  overflow:visible;
 }
+.ptTable tbody td:not(:last-child) { overflow:hidden; text-overflow:ellipsis; }
 
 /* column widths */
 .ptTable th:nth-child(1),  .ptTable td:nth-child(1)  { width:14%; }
@@ -109,7 +110,7 @@
 .ptTable th:nth-child(9),  .ptTable td:nth-child(9)  { width:8%;  }
 .ptTable th:nth-child(10), .ptTable td:nth-child(10) { width:8%;  }
 .ptTable th:nth-child(11), .ptTable td:nth-child(11) { width:7%;  }
-.ptTable th:nth-child(12), .ptTable td:nth-child(12) { width:7%;  }
+.ptTable th:nth-child(12), .ptTable td:nth-child(12) { width:13%; min-width:150px; }
 
 .ptRow { cursor:pointer; transition:background 0.15s; }
 .ptRow:hover td { background:#f8fbff; }
@@ -174,3 +175,89 @@
   .ptBody       { padding:12px 12px 68px; }
   .ptMain       { overflow-x: hidden; }
 }
+
+/* ── Pagination ── */
+.ptPagination {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:14px; padding:0 4px;
+}
+.ptPagInfo { font-size:12px; color:#6b7280; font-weight:600; }
+.ptPagButtons { display:flex; align-items:center; gap:4px; }
+.ptPagBtn {
+  min-width:32px; height:32px; padding:0 8px; border:1.5px solid #e5e7eb;
+  border-radius:8px; background:#fff; font-size:12px; font-weight:700;
+  color:#374151; cursor:pointer; transition:.15s; display:inline-flex;
+  align-items:center; justify-content:center;
+}
+.ptPagBtn:hover:not(:disabled):not(.active) { border-color:#93c5fd; color:#2563eb; background:#eff6ff; }
+.ptPagBtn:disabled { opacity:.4; cursor:not-allowed; }
+.ptPagBtn.active { background:#2563eb; border-color:#2563eb; color:#fff; }
+.ptPagEllipsis { font-size:13px; color:#9ca3af; padding:0 4px; }
+
+/* ── Record Payment button ── */
+.ptRecordPayBtn {
+  height:26px; padding:0 9px; border:1px solid #bbf7d0; background:#f0fdf4;
+  border-radius:7px; font-size:11px; font-weight:700; color:#16a34a;
+  display:inline-flex; align-items:center; gap:4px; cursor:pointer;
+  transition:.15s; margin-left:6px;
+}
+.ptRecordPayBtn:hover { background:#dcfce7; border-color:#4ade80; }
+
+/* ── Record Payment Modal ── */
+.ptModalOverlay {
+  position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:1000;
+  display:flex; align-items:center; justify-content:center; padding:16px;
+  backdrop-filter:blur(2px);
+}
+.ptModalBox {
+  background:#fff; border-radius:16px; width:100%; max-width:440px;
+  box-shadow:0 20px 60px rgba(15,23,42,.2); overflow:hidden;
+}
+.ptModalHeader {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  padding:20px 20px 14px; border-bottom:1.5px solid #f1f5f9;
+}
+.ptModalTitle { font-size:16px; font-weight:800; color:#111827; }
+.ptModalSub   { font-size:12px; color:#6b7280; margin-top:3px; }
+.ptModalClose {
+  background:none; border:none; cursor:pointer; color:#9ca3af; padding:2px;
+  border-radius:6px; display:flex; align-items:center;
+}
+.ptModalClose:hover { color:#374151; background:#f3f4f6; }
+
+.ptModalBody { padding:18px 20px; display:flex; flex-direction:column; gap:14px; }
+
+.ptPayProgress { margin-bottom:4px; }
+.ptPayProgressBar {
+  height:8px; background:#e5e7eb; border-radius:99px; overflow:hidden; margin-bottom:6px;
+}
+.ptPayProgressFill {
+  height:100%; background:linear-gradient(90deg,#22c55e,#4ade80); border-radius:99px;
+  transition:width .4s ease;
+}
+.ptPayProgressLabel { font-size:11px; color:#6b7280; font-weight:600; }
+
+.ptModalField { display:flex; flex-direction:column; gap:5px; }
+.ptModalField label { font-size:12px; font-weight:700; color:#374151; }
+.ptModalField input {
+  padding:10px 12px; border:1.5px solid #d1d5db; border-radius:9px;
+  font-size:14px; color:#111827; outline:none; transition:.15s;
+}
+.ptModalField input:focus { border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,.1); }
+.ptPayHint { font-size:11px; color:#2563eb; font-weight:600; margin-top:2px; }
+
+.ptModalFooter {
+  display:flex; justify-content:flex-end; gap:10px;
+  padding:14px 20px; border-top:1.5px solid #f1f5f9;
+}
+.ptModalCancelBtn {
+  padding:9px 18px; border:1.5px solid #e5e7eb; background:#fff; border-radius:9px;
+  font-size:13px; font-weight:700; color:#6b7280; cursor:pointer;
+}
+.ptModalCancelBtn:hover { background:#f9fafb; }
+.ptModalSaveBtn {
+  padding:9px 22px; border:none; background:#2563eb; border-radius:9px;
+  font-size:13px; font-weight:700; color:#fff; cursor:pointer; transition:.15s;
+}
+.ptModalSaveBtn:hover:not(:disabled) { background:#1d4ed8; }
+.ptModalSaveBtn:disabled { opacity:.6; cursor:not-allowed; }

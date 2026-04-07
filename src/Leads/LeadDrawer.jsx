@@ -66,6 +66,8 @@ const EMPTY_EDIT_FORM = {
   rep: "",
   projectCompleted: false,
   projectCompletionDate: "",
+  gstApplicable: false,
+  gstRate: 18,
 };
 
 const EmptyState = ({ title, sub }) => {
@@ -495,6 +497,8 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
         projectCompletionDate: lead.projectCompletionDate
           ? new Date(lead.projectCompletionDate).toISOString().slice(0, 10)
           : "",
+        gstApplicable: Boolean(lead.gstApplicable),
+        gstRate: lead.gstRate || 18,
       });
 
       setEditOpen(true);
@@ -573,6 +577,8 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
         rep: editForm.rep,
         projectCompleted: editForm.projectCompleted,
         projectCompletionDate: editForm.projectCompletionDate || null,
+        gstApplicable: editForm.gstApplicable,
+        gstRate: Number(editForm.gstRate || 18),
       };
 
       const res = await fetch(`${apiBase}/api/leads/${editForm._id}`, {
@@ -741,6 +747,7 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
                     setDocTag={setDocTag}
                     uploadDoc={uploadDoc}
                     apiBase={apiBase}
+                    onDocDeleted={(updatedDocs) => setLead(prev => ({ ...prev, documents: updatedDocs }))}
                   />
                 )}
                 {activeTab === "Notes" && (
@@ -907,6 +914,32 @@ export default function LeadDrawer({ open, leadId, apiBase, onClose, onLeadUpdat
                   />
                 </div>
 
+                <div className="ldFormGroup">
+                  <label>GST Applicable</label>
+                  <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                    <button type="button"
+                      onClick={() => setEditForm(p => ({ ...p, gstApplicable: true }))}
+                      style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "1.5px solid", borderColor: editForm.gstApplicable ? "#2563eb" : "#d1d5db", background: editForm.gstApplicable ? "#eff6ff" : "#fff", color: editForm.gstApplicable ? "#2563eb" : "#6b7280", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                      With GST
+                    </button>
+                    <button type="button"
+                      onClick={() => setEditForm(p => ({ ...p, gstApplicable: false }))}
+                      style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "1.5px solid", borderColor: !editForm.gstApplicable ? "#2563eb" : "#d1d5db", background: !editForm.gstApplicable ? "#eff6ff" : "#fff", color: !editForm.gstApplicable ? "#2563eb" : "#6b7280", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+                      Without GST
+                    </button>
+                  </div>
+                </div>
+                {editForm.gstApplicable && (
+                  <div className="ldFormGroup">
+                    <label>GST Rate (%)</label>
+                    <select name="gstRate" value={editForm.gstRate} onChange={handleEditChange}>
+                      <option value={5}>5%</option>
+                      <option value={12}>12%</option>
+                      <option value={18}>18%</option>
+                      <option value={28}>28%</option>
+                    </select>
+                  </div>
+                )}
                 <div className="ldFormGroup">
                   <label>Agreed Timeline (days)</label>
                   <input
@@ -1559,8 +1592,28 @@ function HistoryTab({ lead }) {
   );
 }
 
-function DocsTab({ lead, uploading, docTag, setDocTag, uploadDoc, apiBase }) {
+function DocsTab({ lead, uploading, docTag, setDocTag, uploadDoc, apiBase, onDocDeleted }) {
   const docs = lead.documents || [];
+  const [deletingId, setDeletingId] = useState(null);
+
+  const handleDelete = async (e, doc, idx) => {
+    e.preventDefault(); e.stopPropagation();
+    const label = doc.name || doc.originalName || `Document ${idx + 1}`;
+    if (!window.confirm(`Delete "${label}"?`)) return;
+    setDeletingId(idx);
+    try {
+      const token = localStorage.getItem("nnc_token");
+      const res = await fetch(`${apiBase}/api/leads/${lead._id}/docs/index/${idx}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || "Failed to delete");
+      toast.success("Document deleted");
+      if (onDocDeleted) onDocDeleted(json.data);
+    } catch (err) { toast.error(err.message || "Failed to delete"); }
+    finally { setDeletingId(null); }
+  };
 
   return (
     <div className="ldTabStack">
@@ -1589,30 +1642,43 @@ function DocsTab({ lead, uploading, docTag, setDocTag, uploadDoc, apiBase }) {
 
         {docs.length ? (
           <div className="ldList">
-            {docs.map((d, idx) => (
-              <a
-                key={idx}
-                className="docCard"
-                href={`${apiBase}${d.url}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <div className="docLeft">
-                  <div className="docIcon">📄</div>
-                  <div>
-                    <div className="docName">{d.name || d.originalName}</div>
-                    <div className="docMeta">
-                      {d.tag || "-"} • {d.size ? `${Math.round(d.size / 1024)} KB` : "0 KB"} •{" "}
-                      {d.uploadedAt ? formatDate(d.uploadedAt) : "-"}
+            {docs.map((d, idx) => {
+              const isDeleting = deletingId === idx;
+              return (
+                <div key={idx} className="docCard" style={{display:"flex",alignItems:"center",gap:8}}>
+                  <a
+                    href={`${apiBase}${d.url || d.fileUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{flex:1,display:"flex",alignItems:"center",gap:10,textDecoration:"none"}}
+                  >
+                    <div className="docLeft">
+                      <div className="docIcon">📄</div>
+                      <div>
+                        <div className="docName">{d.name || d.originalName}</div>
+                        <div className="docMeta">
+                          {d.tag || "-"} • {d.size ? `${Math.round(d.size / 1024)} KB` : "0 KB"} •{" "}
+                          {d.uploadedAt ? formatDate(d.uploadedAt) : "-"}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                    <span className={`docTag ${String(d.tag || "").toLowerCase().replace(/\s+/g, "-")}`}>
+                      {d.tag}
+                    </span>
+                  </a>
+                  <button
+                    onClick={(e) => handleDelete(e, d, idx)}
+                    disabled={isDeleting}
+                    style={{flexShrink:0,background:"#fee2e2",border:"none",borderRadius:8,
+                      width:30,height:30,display:"flex",alignItems:"center",justifyContent:"center",
+                      cursor:"pointer",color:"#dc2626",fontSize:14,opacity:isDeleting?0.5:1}}
+                    title="Delete document"
+                  >
+                    {isDeleting ? "…" : "🗑"}
+                  </button>
                 </div>
-
-                <span className={`docTag ${String(d.tag || "").toLowerCase().replace(/\s+/g, "-")}`}>
-                  {d.tag}
-                </span>
-              </a>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <EmptyState title="No documents uploaded" sub="Upload invoices, quotations or client files." />

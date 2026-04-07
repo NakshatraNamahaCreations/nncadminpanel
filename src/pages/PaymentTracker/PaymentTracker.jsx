@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import LeadDrawer from "../../Leads/LeadDrawer";
-import { Download, Eye, Search, X, RefreshCcw } from "lucide-react";
+import { Download, Eye, Search, X, RefreshCcw, PlusCircle } from "lucide-react";
+import { toast } from "../../utils/toast";
 import "./PaymentTracker.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
@@ -46,6 +47,12 @@ export default function PaymentTracker() {
   const [filters, setFilters] = useState({
     branch: "All", stage: "All", payStatus: "All", rep: "All", q: "",
   });
+
+  // ── Record Payment modal ──
+  const [payModal, setPayModal]   = useState(null); // { id, name, value, advanceReceived }
+  const [payForm,  setPayForm]    = useState({ amount: "", date: new Date().toISOString().slice(0,10), note: "" });
+  const [paySaving, setPaySaving] = useState(false);
+  const amtRef = useRef(null);
 
   const fetchLeads = async () => {
     try {
@@ -99,11 +106,18 @@ export default function PaymentTracker() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchLeads(); }, [filters.branch, filters.stage, filters.rep, filters.q]);
 
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+
   const filtered = useMemo(() => {
+    setPage(1);
     if (filters.payStatus === "All") return rows;
     const target = filters.payStatus.toLowerCase();
     return rows.filter((r) => STATUS_LABEL[r.payStatus]?.toLowerCase() === target);
   }, [rows, filters.payStatus]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const totals = useMemo(() => ({
     agreed:    filtered.reduce((a, b) => a + b.value, 0),
@@ -129,6 +143,39 @@ export default function PaymentTracker() {
       a.download = `payments-${new Date().toISOString().slice(0, 10)}.csv`;
       a.click();
     } finally { setExporting(false); }
+  };
+
+  const openPayModal = (e, row) => {
+    e.stopPropagation();
+    setPayForm({ amount: "", date: new Date().toISOString().slice(0,10), note: "" });
+    setPayModal(row);
+    setTimeout(() => amtRef.current?.focus(), 80);
+  };
+
+  const handlePaySave = async () => {
+    const amt = Number(payForm.amount);
+    if (!amt || amt <= 0) { toast.warning("Enter a valid payment amount"); return; }
+    try {
+      setPaySaving(true);
+      const newAdvance = payModal.advanceReceived + amt;
+      const res = await fetch(`${API_BASE}/api/leads/${payModal.id}`, {
+        method: "PUT",
+        headers: { ...auth(), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          advanceReceived:    newAdvance,
+          advanceReceivedDate: payForm.date || new Date().toISOString().slice(0,10),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed");
+      toast.success(`₹${amt.toLocaleString("en-IN")} recorded for ${payModal.name}`);
+      setPayModal(null);
+      fetchLeads();
+    } catch (e) {
+      toast.error(e?.message || "Failed to save payment");
+    } finally {
+      setPaySaving(false);
+    }
   };
 
   return (
@@ -228,7 +275,7 @@ export default function PaymentTracker() {
                   {!loading && filtered.length === 0 && (
                     <tr><td colSpan={12} className="ptEmpty">No records found.</td></tr>
                   )}
-                  {filtered.map((r) => (
+                  {paginated.map((r) => (
                     <tr key={r.id} className="ptRow" onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
                       <td>
                         <div className="ptLeadName">{r.name}</div>
@@ -256,10 +303,14 @@ export default function PaymentTracker() {
                           {r.projectCompleted ? "✓ Done" : "Active"}
                         </span>
                       </td>
-                      <td onClick={(e) => e.stopPropagation()}>
+                      <td onClick={(e) => e.stopPropagation()} style={{ whiteSpace: "nowrap" }}>
                         <button type="button" className="ptViewBtn"
                           onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
                           <Eye size={13} /> View
+                        </button>
+                        <button type="button" className="ptRecordPayBtn"
+                          onClick={(e) => openPayModal(e, r)}>
+                          <PlusCircle size={13} /> Payment
                         </button>
                       </td>
                     </tr>
@@ -268,6 +319,33 @@ export default function PaymentTracker() {
               </table>
             </div>
           </div>
+
+          {/* ── Pagination ── */}
+          {totalPages > 1 && (
+            <div className="ptPagination">
+              <span className="ptPagInfo">
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <div className="ptPagButtons">
+                <button className="ptPagBtn" disabled={page === 1} onClick={() => setPage(1)}>«</button>
+                <button className="ptPagBtn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹</button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push("…");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === "…"
+                      ? <span key={`ellipsis-${i}`} className="ptPagEllipsis">…</span>
+                      : <button key={p} className={`ptPagBtn ${p === page ? "active" : ""}`} onClick={() => setPage(p)}>{p}</button>
+                  )}
+                <button className="ptPagBtn" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>›</button>
+                <button className="ptPagBtn" disabled={page === totalPages} onClick={() => setPage(totalPages)}>»</button>
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
@@ -279,6 +357,75 @@ export default function PaymentTracker() {
         onClose={() => { setDrawerOpen(false); setSelectedId(null); }}
         onLeadUpdated={fetchLeads}
       />
+
+      {/* ── Record Payment Modal ── */}
+      {payModal && (
+        <div className="ptModalOverlay" onClick={() => setPayModal(null)}>
+          <div className="ptModalBox" onClick={(e) => e.stopPropagation()}>
+            <div className="ptModalHeader">
+              <div>
+                <div className="ptModalTitle">Record Payment</div>
+                <div className="ptModalSub">{payModal.name} · Current advance: {money(payModal.advanceReceived)}</div>
+              </div>
+              <button className="ptModalClose" onClick={() => setPayModal(null)}><X size={16} /></button>
+            </div>
+
+            <div className="ptModalBody">
+              {/* Progress bar */}
+              {payModal.value > 0 && (
+                <div className="ptPayProgress">
+                  <div className="ptPayProgressBar">
+                    <div
+                      className="ptPayProgressFill"
+                      style={{ width: `${Math.min(100, (payModal.advanceReceived / payModal.value) * 100)}%` }}
+                    />
+                  </div>
+                  <div className="ptPayProgressLabel">
+                    {money(payModal.advanceReceived)} of {money(payModal.value)} received
+                    · Remaining: {money(payModal.remaining)}
+                  </div>
+                </div>
+              )}
+
+              <div className="ptModalField">
+                <label>Payment Amount (₹) <span style={{color:"#ef4444"}}>*</span></label>
+                <input
+                  ref={amtRef}
+                  type="number"
+                  min="1"
+                  placeholder="Enter amount received today"
+                  value={payForm.amount}
+                  onChange={(e) => setPayForm((p) => ({ ...p, amount: e.target.value }))}
+                  onKeyDown={(e) => e.key === "Enter" && handlePaySave()}
+                />
+                {payModal.value > 0 && Number(payForm.amount) > 0 && (
+                  <div className="ptPayHint">
+                    New total: {money(payModal.advanceReceived + Number(payForm.amount))}
+                    {payModal.advanceReceived + Number(payForm.amount) >= payModal.value
+                      ? " · ✅ Fully Paid!" : ` · Remaining: ${money(Math.max(0, payModal.value - payModal.advanceReceived - Number(payForm.amount)))}`}
+                  </div>
+                )}
+              </div>
+
+              <div className="ptModalField">
+                <label>Payment Date</label>
+                <input
+                  type="date"
+                  value={payForm.date}
+                  onChange={(e) => setPayForm((p) => ({ ...p, date: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="ptModalFooter">
+              <button className="ptModalCancelBtn" onClick={() => setPayModal(null)}>Cancel</button>
+              <button className="ptModalSaveBtn" onClick={handlePaySave} disabled={paySaving}>
+                {paySaving ? "Saving…" : "Save Payment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -235,6 +235,7 @@ export default function DailyTab({ branch }) {
           {filtered.map(rec => {
             const emp   = rec.employee || {};
             const att   = rec.attendance || {};
+            const mh    = rec.monthlyHours || { totalHours: 0, daysWorked: 0 };
             const empId = emp._id;
             const curStatus = att.status || "absent";
             const isSaving  = !!saving[empId];
@@ -318,6 +319,10 @@ export default function DailyTab({ branch }) {
                   {att.lateMinutes > 0 && (
                     <span className="att-late-tag">{att.lateMinutes}m late</span>
                   )}
+                  {/* Monthly hours this month */}
+                  <span className="att-monthly-hrs" title={`${mh.daysWorked} days with recorded hours this month`}>
+                    {Math.floor(mh.totalHours)}h {Math.round((mh.totalHours % 1) * 60)}m / mo
+                  </span>
                 </div>
 
                 {/* Saving spinner */}

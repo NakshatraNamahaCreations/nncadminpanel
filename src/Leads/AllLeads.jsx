@@ -59,6 +59,7 @@ const EMPTY_EDIT_FORM = {
   stage: "Lead Capture", priority: "Hot", value: "", days: "0d", rep: "",
   advanceReceived: "", advanceReceivedDate: "", agreedTimeline: "",
   onboardedDate: "", projectCompleted: false, projectCompletionDate: "",
+  gstApplicable: false, gstRate: 18,
 };
 
 /* Format a Date/ISO string → "YYYY-MM-DD" for <input type="date"> */
@@ -297,6 +298,8 @@ export default function AllLeads() {
         onboardedDate:           toDateInput(l.onboardedDate),
         projectCompleted:        !!l.projectCompleted,
         projectCompletionDate:   toDateInput(l.projectCompletionDate),
+        gstApplicable:           !!l.gstApplicable,
+        gstRate:                 l.gstRate || 18,
       });
     } catch (e) { toast.error(e?.message || "Failed to load lead"); setEditOpen(false); }
     finally { setEditLoading(false); }
@@ -332,6 +335,8 @@ export default function AllLeads() {
           onboardedDate:         editForm.onboardedDate || null,
           projectCompleted:      editForm.projectCompleted,
           projectCompletionDate: editForm.projectCompletionDate || null,
+          gstApplicable:         editForm.gstApplicable,
+          gstRate:               Number(editForm.gstRate || 18),
         }),
       });
       const json = await res.json();
@@ -563,6 +568,24 @@ export default function AllLeads() {
                     <input type="checkbox" id="alProjDone" checked={editForm.projectCompleted} onChange={e => setEditForm(p => ({ ...p, projectCompleted: e.target.checked }))} style={{width:16,height:16,accentColor:"#2563eb",cursor:"pointer"}}/>
                     <label htmlFor="alProjDone" style={{marginBottom:0,cursor:"pointer",textTransform:"none",fontSize:"13px",fontWeight:700,color:"#374151",letterSpacing:0}}>Project Completed</label>
                   </div>
+                  <div className="fg full">
+                    <label>GST Applicable</label>
+                    <div style={{display:"flex",gap:10,marginTop:4}}>
+                      <button type="button" onClick={() => setEditForm(p => ({...p, gstApplicable: true}))} style={{flex:1,padding:"8px 0",borderRadius:8,border:"1.5px solid",borderColor:editForm.gstApplicable?"#2563eb":"#d1d5db",background:editForm.gstApplicable?"#eff6ff":"#fff",color:editForm.gstApplicable?"#2563eb":"#6b7280",fontWeight:600,fontSize:13,cursor:"pointer"}}>With GST</button>
+                      <button type="button" onClick={() => setEditForm(p => ({...p, gstApplicable: false}))} style={{flex:1,padding:"8px 0",borderRadius:8,border:"1.5px solid",borderColor:!editForm.gstApplicable?"#2563eb":"#d1d5db",background:!editForm.gstApplicable?"#eff6ff":"#fff",color:!editForm.gstApplicable?"#2563eb":"#6b7280",fontWeight:600,fontSize:13,cursor:"pointer"}}>Without GST</button>
+                    </div>
+                  </div>
+                  {editForm.gstApplicable && (
+                    <div className="fg">
+                      <label>GST Rate (%)</label>
+                      <select value={editForm.gstRate} onChange={e => setEditForm(p => ({...p, gstRate: Number(e.target.value)}))}>
+                        <option value={5}>5%</option>
+                        <option value={12}>12%</option>
+                        <option value={18}>18%</option>
+                        <option value={28}>28%</option>
+                      </select>
+                    </div>
+                  )}
                   <div className="fg full"><label>Requirements</label><textarea value={editForm.requirements} onChange={e => setEditForm(p => ({ ...p, requirements: e.target.value }))} rows={3}/></div>
                 </div>
                 <div className="alModalFooter">

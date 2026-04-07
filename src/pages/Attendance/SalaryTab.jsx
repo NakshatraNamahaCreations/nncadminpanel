@@ -92,7 +92,11 @@ export default function SalaryTab({ branch }) {
 
   const markPaid = async (id) => {
     try {
-      const res  = await fetch(`${API}/api/attendance/salary/${id}/paid`, { method: "PATCH", headers: authHeader() });
+      const res  = await fetch(`${API}/api/attendance/salary/${id}/paid`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({}),
+      });
       const json = await res.json();
       if (!res.ok || !json.success) {
         toast.error(json.message || "Failed to update");
@@ -174,6 +178,73 @@ export default function SalaryTab({ branch }) {
           <span className="att-card-title">Salary — {MONTH_NAMES[month - 1]} {year}</span>
           <span style={{ fontSize: 12, color: "#94a3b8" }}>{salaryRecords.length} records</span>
         </div>
+
+        {/* Summary strip */}
+        {!loading && salaryRecords.length > 0 && (() => {
+          const totalGross       = salaryRecords.reduce((s, r) => s + (r.grossSalary || 0), 0);
+          const totalPFEmployee  = salaryRecords.reduce((s, r) => s + (r.pfEmployee || 0), 0);
+          const totalPFEmployer  = salaryRecords.reduce((s, r) => s + (r.pfEmployer || 0), 0);
+          const totalESI         = salaryRecords.reduce((s, r) => s + (r.esi || 0), 0);
+          const totalPT          = salaryRecords.reduce((s, r) => s + (r.professionalTax || 0), 0);
+          const totalDeduct      = salaryRecords.reduce((s, r) => s + (r.totalDeduction || 0), 0);
+          const totalNet         = salaryRecords.reduce((s, r) => s + (r.netSalary || 0), 0);
+          const pendingNet       = salaryRecords.filter(r => r.status !== "paid").reduce((s, r) => s + (r.netSalary || 0), 0);
+          const paidNet          = salaryRecords.filter(r => r.status === "paid").reduce((s, r) => s + (r.netSalary || 0), 0);
+          // Total PF liability = employee + employer (company must remit both)
+          const totalPFLiability = totalPFEmployee + totalPFEmployer;
+          return (
+            <div className="att-sal-summary-strip">
+              <div className="att-sal-sum-item">
+                <span className="att-sal-sum-label">Gross Payroll</span>
+                <span className="att-sal-sum-val blue">{fmtINR(totalGross)}</span>
+              </div>
+              <div className="att-sal-sum-divider" />
+              {/* PF block */}
+              <div className="att-sal-sum-item">
+                <span className="att-sal-sum-label">PF — Employee (deducted)</span>
+                <span className="att-sal-sum-val red">{fmtINR(totalPFEmployee)}</span>
+              </div>
+              <div className="att-sal-sum-item">
+                <span className="att-sal-sum-label">PF — Employer (company pays)</span>
+                <span className="att-sal-sum-val orange">{fmtINR(totalPFEmployer)}</span>
+              </div>
+              <div className="att-sal-sum-item">
+                <span className="att-sal-sum-label">Total PF Remittance</span>
+                <span className="att-sal-sum-val purple">{fmtINR(totalPFLiability)}</span>
+              </div>
+              <div className="att-sal-sum-divider" />
+              {totalESI > 0 && (
+                <div className="att-sal-sum-item">
+                  <span className="att-sal-sum-label">ESI (Employee)</span>
+                  <span className="att-sal-sum-val red">{fmtINR(totalESI)}</span>
+                </div>
+              )}
+              {totalPT > 0 && (
+                <div className="att-sal-sum-item">
+                  <span className="att-sal-sum-label">Professional Tax</span>
+                  <span className="att-sal-sum-val red">{fmtINR(totalPT)}</span>
+                </div>
+              )}
+              <div className="att-sal-sum-item">
+                <span className="att-sal-sum-label">Total Deductions</span>
+                <span className="att-sal-sum-val red">{fmtINR(totalDeduct)}</span>
+              </div>
+              <div className="att-sal-sum-divider" />
+              <div className="att-sal-sum-item">
+                <span className="att-sal-sum-label">Net Amount to Pay</span>
+                <span className="att-sal-sum-val green">{fmtINR(totalNet)}</span>
+              </div>
+              <div className="att-sal-sum-item">
+                <span className="att-sal-sum-label">Pending</span>
+                <span className="att-sal-sum-val amber">{fmtINR(pendingNet)}</span>
+              </div>
+              <div className="att-sal-sum-item">
+                <span className="att-sal-sum-label">Paid</span>
+                <span className="att-sal-sum-val teal">{fmtINR(paidNet)}</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {loading ? (
           <div className="att-loading"><RefreshCcw size={26} className="att-spin" /></div>
@@ -304,6 +375,7 @@ function SlipModal({ record, month, year, onClose, onDownload }) {
   const excessLeave    = Number(record.excessLeaveDays)    || 0;
   const leaveEntitle   = Number(record.monthlyLeaveEntitlement) || 1.5;
   const pfEmployee     = Number(record.pfEmployee)         || 0;
+  const esiAmount      = Number(record.esi)                || 0;
   const professionalTx = Number(record.professionalTax)    || 0;
   const totalDeduct    = Number(record.totalDeduction)     || 0;
   const net            = Number(record.netSalary)          || 0;
@@ -459,20 +531,36 @@ function SlipModal({ record, month, year, onClose, onDownload }) {
                 </tr>
               )}
               {/* Statutory */}
-              <tr>
-                <td>PF Employee Contribution (12% of Basic)</td>
-                <td style={{ textAlign: "right", color: "#dc2626" }}>- {fmtINR(pfEmployee)}</td>
-              </tr>
-              {professionalTx > 0 && (
-                <tr>
-                  <td>Professional Tax</td>
-                  <td style={{ textAlign: "right", color: "#dc2626" }}>- {fmtINR(professionalTx)}</td>
+              {pfEmployee > 0 && (
+                <tr style={{ background: "#fff5f5" }}>
+                  <td>
+                    PF — Employee Contribution (12% of Basic)
+                    <span style={{ fontSize: 10, color: "#94a3b8", marginLeft: 6 }}>deducted from salary</span>
+                  </td>
+                  <td style={{ textAlign: "right", color: "#dc2626", fontWeight: 700 }}>- {fmtINR(pfEmployee)}</td>
                 </tr>
               )}
-              <tr style={{ background: "#f8fafc" }}>
-                <td style={{ fontSize: 11, color: "#94a3b8" }}>Employer PF Contribution (12% of Basic) — not deducted</td>
-                <td style={{ textAlign: "right", fontSize: 11, color: "#94a3b8" }}>{fmtINR(Number(record.pfEmployer) || 0)}</td>
-              </tr>
+              {(Number(record.pfEmployer) || 0) > 0 && (
+                <tr style={{ background: "#fffbeb" }}>
+                  <td>
+                    PF — Employer Contribution (12% of Basic)
+                    <span style={{ fontSize: 10, color: "#94a3b8", marginLeft: 6 }}>paid by company</span>
+                  </td>
+                  <td style={{ textAlign: "right", color: "#d97706", fontWeight: 700 }}>{fmtINR(Number(record.pfEmployer) || 0)}</td>
+                </tr>
+              )}
+              {esiAmount > 0 && (
+                <tr style={{ background: "#fff5f5" }}>
+                  <td>ESI Employee Contribution (0.75% of Gross)</td>
+                  <td style={{ textAlign: "right", color: "#dc2626", fontWeight: 700 }}>- {fmtINR(esiAmount)}</td>
+                </tr>
+              )}
+              {professionalTx > 0 && (
+                <tr style={{ background: "#fff5f5" }}>
+                  <td>Professional Tax</td>
+                  <td style={{ textAlign: "right", color: "#dc2626", fontWeight: 700 }}>- {fmtINR(professionalTx)}</td>
+                </tr>
+              )}
               <tr className="total-row">
                 <td style={{ fontWeight: 800 }}>Total Deductions</td>
                 <td style={{ textAlign: "right", color: "#dc2626", fontWeight: 800 }}>- {fmtINR(totalDeduct)}</td>

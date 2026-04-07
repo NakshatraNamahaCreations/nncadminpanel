@@ -2,21 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "../utils/toast";
 import {
-  RefreshCcw, AlertTriangle, Phone, Mail, TrendingUp,
-  Building2, Lightbulb, FileText, Users, Bell,
-  Target, ChevronDown, ChevronRight, X, Check,
-  CalendarDays, TrendingDown,
+  RefreshCcw, TrendingUp, Target, Check, X,
+  Phone, AlertTriangle, Building2, Users,
+  CreditCard, Flame, Zap, Trophy, ArrowRight,
+  TrendingDown, ChevronRight, Bell,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar/Sidebar";
 import LeadDrawer from "../Leads/LeadDrawer";
-import { ShimmerKpiGrid, ShimmerTable } from "../components/ui/Shimmer";
 import "./Dashboard.css";
 
 const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
+function auth() { const t = localStorage.getItem("nnc_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
 
-const fmt = (n) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n || 0));
-
+const fmtINR = (n) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(n || 0));
 const fmtShort = (n) => {
   const v = Number(n || 0);
   if (v >= 10000000) return `₹${(v / 10000000).toFixed(2)}Cr`;
@@ -25,788 +23,448 @@ const fmtShort = (n) => {
   return `₹${v.toLocaleString("en-IN")}`;
 };
 
-const today = new Date().toLocaleDateString("en-IN", {
-  weekday: "long", day: "numeric", month: "long", year: "numeric",
-});
+const todayStr = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const monthStr  = new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" });
 
-const SALES_PERIODS = [
-  { key: "all",    label: "All Time" },
-  { key: "today",  label: "Today" },
-  { key: "week",   label: "This Week" },
-  { key: "month",  label: "This Month" },
-  { key: "year",   label: "This Year" },
-  { key: "custom", label: "Custom" },
+const PERIODS = [
+  { key: "today", label: "Today" },
+  { key: "week",  label: "This Week" },
+  { key: "month", label: "This Month" },
+  { key: "year",  label: "This Year" },
+  { key: "all",   label: "All Time" },
 ];
 
-const FUNNEL_STEPS = [
-  { label: "Enquiries", key: "enquiries", color: "#3b82f6",  width: 100 },
-  { label: "Reachable", key: "reachable", color: "#6366f1",  width: 84  },
-  { label: "Qualified", key: "qualified", color: "#f59e0b",  width: 66  },
-  { label: "Proposal",  key: "proposal",  color: "#8b5cf6",  width: 50  },
-  { label: "Closed",    key: "closed",    color: "#10b981",  width: 36  },
+const FUNNEL = [
+  { label: "Enquiries", key: "enquiries", color: "#3b82f6" },
+  { label: "Reachable", key: "reachable", color: "#6366f1" },
+  { label: "Qualified", key: "qualified", color: "#f59e0b" },
+  { label: "Proposal",  key: "proposal",  color: "#8b5cf6" },
+  { label: "Closed",    key: "closed",    color: "#10b981" },
 ];
 
 export default function Dashboard() {
-  const [dashboard, setDashboard] = useState(null);
-  const [loading, setLoading]     = useState(true);
+  const navigate = useNavigate();
+  const [dash,       setDash]       = useState(null);
+  const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError]         = useState("");
-  const [sendingEmail, setSendingEmail] = useState("");
-  const [drawerLeadId, setDrawerLeadId] = useState(null);
-  const [drawerOpen, setDrawerOpen]     = useState(false);
+  const [period,     setPeriod]     = useState("month");
+  const [salesData,  setSalesData]  = useState(null);
+  const [salesLoad,  setSalesLoad]  = useState(false);
+  const [target,     setTarget]     = useState(null);
+  const [tModal,     setTModal]     = useState(false);
+  const [tForm,      setTForm]      = useState({ targetDeals: "", targetRevenue: "", notes: "" });
+  const [tSaving,    setTSaving]    = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerId,   setDrawerId]   = useState(null);
 
-  /* ── Sales overview ── */
-  const [salesPeriod, setSalesPeriod]   = useState("month");
-  const [salesFrom, setSalesFrom]       = useState("");
-  const [salesTo, setSalesTo]           = useState("");
-  const [salesData, setSalesData]       = useState(null);
-  const [salesLoading, setSalesLoading] = useState(false);
-
-  /* ── Monthly target ── */
-  const [target, setTarget]             = useState(null);
-  const [targetModalOpen, setTargetModalOpen] = useState(false);
-  const [targetForm, setTargetForm]     = useState({ targetDeals: "", targetRevenue: "", notes: "" });
-  const [targetSaving, setTargetSaving] = useState(false);
-
-  const fetchDashboard = useCallback(async (isRefresh = false) => {
+  const fetchDash = useCallback(async (ref = false) => {
     try {
-      setError("");
-      if (isRefresh) setRefreshing(true); else setLoading(true);
-      const token = localStorage.getItem("nnc_token");
-      const res  = await fetch(`${API_BASE}/api/dashboard/summary`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      if (ref) setRefreshing(true); else setLoading(true);
+      const res  = await fetch(`${API_BASE}/api/dashboard/summary`, { headers: auth() });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed");
-      setDashboard(json?.data || null);
-    } catch (err) {
-      setError(err?.message || "Unable to load dashboard");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+      setDash(json?.data || null);
+    } catch (e) { toast.error(e?.message || "Failed to load dashboard"); }
+    finally { setLoading(false); setRefreshing(false); }
   }, []);
 
-  const fetchSales = useCallback(async (period, from, to) => {
-    setSalesLoading(true);
+  const fetchSales = useCallback(async (p) => {
+    setSalesLoad(true);
     try {
-      let url = `${API_BASE}/api/dashboard/sales?period=${period}`;
-      if (period === "custom" && from && to) url += `&from=${from}&to=${to}`;
-      const token = localStorage.getItem("nnc_token");
-      const res  = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res  = await fetch(`${API_BASE}/api/dashboard/sales?period=${p}`, { headers: auth() });
       const json = await res.json();
-      if (!res.ok || !json?.success) throw new Error(json?.message || "Failed");
+      if (!res.ok || !json?.success) throw new Error(json?.message);
       setSalesData(json?.data || null);
-    } catch (e) {
-      toast.error(e?.message || "Failed to fetch sales data");
-    } finally {
-      setSalesLoading(false);
-    }
+    } catch {} finally { setSalesLoad(false); }
   }, []);
 
   const fetchTarget = useCallback(async () => {
     try {
       const now = new Date();
-      const token = localStorage.getItem("nnc_token");
-      const res  = await fetch(`${API_BASE}/api/dashboard/target?year=${now.getFullYear()}&month=${now.getMonth() + 1}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res  = await fetch(`${API_BASE}/api/dashboard/target?year=${now.getFullYear()}&month=${now.getMonth()+1}`, { headers: auth() });
       const json = await res.json();
       if (json?.success && json?.data) setTarget(json.data);
-    } catch (_) {}
+    } catch {}
   }, []);
 
-  useEffect(() => { fetchDashboard(); fetchTarget(); }, [fetchDashboard, fetchTarget]);
-  useEffect(() => {
-    if (salesPeriod !== "custom") fetchSales(salesPeriod);
-  }, [salesPeriod, fetchSales]);
+  useEffect(() => { fetchDash(); fetchTarget(); }, [fetchDash, fetchTarget]);
+  useEffect(() => { fetchSales(period); }, [period, fetchSales]);
 
-  const handleSendFollowup = async (leadId, followupNumber) => {
-    setSendingEmail(leadId);
-    try {
-      const token = localStorage.getItem("nnc_token");
-      const res  = await fetch(`${API_BASE}/api/leads/${leadId}/send-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ type: "followup", followupNumber }),
-      });
-      const json = await res.json();
-      if (!res.ok || !json?.success) throw new Error(json?.message);
-      toast.success(`Follow-up ${followupNumber}/3 email sent!`);
-      fetchDashboard(true);
-    } catch (e) {
-      toast.error(e?.message || "Failed to send email");
-    } finally {
-      setSendingEmail("");
-    }
-  };
+  const openLead = (id) => { setDrawerId(id); setDrawerOpen(true); };
 
-  const handleSaveTarget = async () => {
-    setTargetSaving(true);
+  const saveTarget = async () => {
+    setTSaving(true);
     try {
       const now = new Date();
-      const token = localStorage.getItem("nnc_token");
       const res  = await fetch(`${API_BASE}/api/dashboard/target`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          year:  now.getFullYear(),
-          month: now.getMonth() + 1,
-          targetDeals:   Number(targetForm.targetDeals)   || 0,
-          targetRevenue: Number(targetForm.targetRevenue) || 0,
-          notes: targetForm.notes,
-        }),
+        method: "POST", headers: { ...auth(), "Content-Type": "application/json" },
+        body: JSON.stringify({ year: now.getFullYear(), month: now.getMonth()+1, targetDeals: Number(tForm.targetDeals)||0, targetRevenue: Number(tForm.targetRevenue)||0, notes: tForm.notes }),
       });
       const json = await res.json();
       if (!res.ok || !json?.success) throw new Error(json?.message || "Failed");
-      setTarget(json.data);
-      setTargetModalOpen(false);
-      toast.success("Monthly target saved!");
-    } catch (e) {
-      toast.error(e?.message || "Failed to save target");
-    } finally {
-      setTargetSaving(false);
-    }
+      setTarget(json.data); setTModal(false); toast.success("Target saved!");
+    } catch (e) { toast.error(e?.message || "Failed"); } finally { setTSaving(false); }
   };
 
-  const navigate = useNavigate();
+  const summary        = dash?.summary             || {};
+  const funnel         = dash?.funnel              || {};
+  const paymentHealth  = dash?.paymentHealth       || {};
+  const projectStats   = dash?.projectStats        || {};
+  const paymentAlerts  = dash?.paymentAlerts       || [];
+  const followupQueue  = dash?.followupQueue       || [];
+  const todayFollowups = dash?.todayFollowups      || [];
+  const branchPerf     = dash?.branchPerformance   || [];
+  const approvalWatch  = dash?.approvalWatchlist   || [];
+  const overdueCount   = dash?.overdueCount        || 0;
 
-  const openLead = (leadId) => {
-    setDrawerLeadId(leadId);
-    setDrawerOpen(true);
-  };
+  const dealsProgress   = target?.targetDeals   > 0 ? Math.min(100, Math.round(((salesData?.closedDeals||0)/target.targetDeals)*100))   : 0;
+  const revenueProgress = target?.targetRevenue > 0 ? Math.min(100, Math.round(((salesData?.revenue||0)/target.targetRevenue)*100)) : 0;
 
-  const summary   = dashboard?.summary        || {};
-  const funnel    = dashboard?.funnel         || {};
-  const projectStats  = dashboard?.projectStats   || {};
-  const paymentHealth = dashboard?.paymentHealth  || {};
-  const approvalWatchlist = dashboard?.approvalWatchlist || [];
-  const followupQueue     = dashboard?.followupQueue     || [];
-  const paymentAlerts     = dashboard?.paymentAlerts     || [];
-  const todayFollowups    = dashboard?.todayFollowups    || [];
-  const branchPerf        = dashboard?.branchPerformance || [];
-  const insight           = dashboard?.insight           || "";
-  const overdueCount      = dashboard?.overdueCount      || 0;
+  const convRate = salesData?.enquiries > 0 ? Math.round((salesData.closedDeals/salesData.enquiries)*100) : 0;
 
-  /* funnel conversion rates */
-  const funnelConvRates = useMemo(() => {
-    const enq = funnel.enquiries || 0;
-    const pct = (v) => enq > 0 ? Math.round((v / enq) * 100) : 0;
-    return {
-      reachable: pct(funnel.reachable || 0),
-      qualified: pct(funnel.qualified || 0),
-      proposal:  pct(funnel.proposal  || 0),
-      closed:    pct(funnel.closed    || 0),
-    };
-  }, [funnel]);
+  // Motivation message
+  const motivationMsg = useMemo(() => {
+    if (revenueProgress >= 100) return { text: "🎉 Target crushed! You're on fire!", color: "#10b981" };
+    if (revenueProgress >= 75)  return { text: "💪 Almost there — one strong push!", color: "#f59e0b" };
+    if (revenueProgress >= 50)  return { text: "🔥 Halfway — keep the momentum going!", color: "#f59e0b" };
+    if (revenueProgress >= 25)  return { text: "⚡ Good start — pick up the pace!", color: "#6366f1" };
+    if (revenueProgress > 0)    return { text: "🚀 Just getting started — chase it!", color: "#6366f1" };
+    return { text: "🎯 Set a target and dominate this month!", color: "#6b7280" };
+  }, [revenueProgress]);
 
-  /* target progress */
-  const dealsProgress    = target?.targetDeals   > 0 ? Math.min(100, Math.round(((salesData?.closedDeals || 0) / target.targetDeals)   * 100)) : 0;
-  const revenueProgress  = target?.targetRevenue > 0 ? Math.min(100, Math.round(((salesData?.revenue    || 0) / target.targetRevenue)  * 100)) : 0;
-
-  const currentMonthLabel = new Date().toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+  if (loading) return (
+    <div className="db-layout">
+      <Sidebar />
+      <div className="db-main" style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ textAlign:"center", color:"#6b7280" }}>
+          <RefreshCcw size={28} className="db-spin" color="#6366f1" />
+          <div style={{ marginTop:10, fontWeight:600 }}>Loading dashboard…</div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="db-layout">
-      <Sidebar active="Dashboard" />
-
+      <Sidebar />
       <div className="db-main">
-        {/* ── Hero band ── */}
-        <div className="db-hero">
-          <div className="db-hero-left">
-            <div className="db-hero-eyebrow">Business Command Center</div>
-            <h1 className="db-hero-title">Dashboard</h1>
-            <p className="db-hero-date">{today}</p>
-            <div className="db-hero-pills">
-              <span className="db-pill"><span className="db-pill-dot blue"/>{projectStats.inDevelopment || 0} In Development</span>
-              <span className="db-pill"><span className="db-pill-dot orange"/>{projectStats.pendingApproval || 0} Pending Approval</span>
-              <span className="db-pill"><span className="db-pill-dot red"/>{projectStats.overdue || 0} Overdue</span>
-              <span className="db-pill"><span className="db-pill-dot yellow"/>{paymentHealth.partialCount || 0} Partial Payments</span>
-            </div>
+
+        {/* ── Header ── */}
+        <div className="db-header">
+          <div>
+            <div className="db-header-title">Good {new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening"} 👋</div>
+            <div className="db-header-date">{todayStr}</div>
           </div>
-          <div className="db-hero-right">
-            <button className="db-refresh-btn" onClick={() => fetchDashboard(true)} disabled={refreshing} type="button">
-              <RefreshCcw size={14} className={refreshing ? "db-spin" : ""}/>
-              {refreshing ? "Refreshing..." : "Refresh"}
+          <div className="db-header-right">
+            {target && (
+              <div className="db-motivation-pill">
+                {motivationMsg.text}
+              </div>
+            )}
+            <button className="db-refresh-btn" onClick={() => { fetchDash(true); fetchSales(period); }} disabled={refreshing}>
+              <RefreshCcw size={14} className={refreshing ? "db-spin" : ""} />
+              {refreshing ? "Refreshing…" : "Refresh"}
             </button>
           </div>
         </div>
 
-        <div className="db-body">
-          {error && <div className="db-error"><AlertTriangle size={16}/> {error}</div>}
+        <div className="db-content">
 
-          {loading ? (
-            <div className="db-body">
-              <ShimmerKpiGrid count={4} cols={4} />
-              <div style={{ marginTop: 18 }}>
-                <ShimmerKpiGrid count={4} cols={4} />
+        {/* ── Top KPI Strip ── */}
+        <div className="db-kpi-strip">
+          <KpiCard icon={<Users size={18}/>}       label="Total Leads"       value={summary.totalLeads || 0}             color="blue"   onClick={() => navigate("/leads")} />
+          <KpiCard icon={<Flame size={18}/>}        label="Active Pipeline"   value={summary.activeLeads || 0}            color="orange" onClick={() => navigate("/leads")} />
+          <KpiCard icon={<Trophy size={18}/>}       label="Deals Closed"      value={salesData?.closedDeals || 0}         color="green"  onClick={() => navigate("/leads")} loading={salesLoad} />
+          <KpiCard icon={<TrendingUp size={18}/>}   label="Revenue"           value={fmtShort(salesData?.revenue)}        color="purple" onClick={() => navigate("/analytics")} loading={salesLoad} />
+          <KpiCard icon={<CreditCard size={18}/>}   label="Collected"         value={fmtShort(paymentHealth.advanceCollected)} color="teal" onClick={() => navigate("/payment-tracker")} />
+          <KpiCard icon={<AlertTriangle size={18}/>} label="Balance Pending"  value={fmtShort(paymentHealth.balancePending)}  color="red"  onClick={() => navigate("/payment-tracker")} />
+        </div>
+
+        {/* ── Period tabs + Target ── */}
+        <div className="db-sales-bar">
+          <div className="db-period-tabs">
+            {PERIODS.map(p => (
+              <button key={p.key} className={`db-period-tab ${period===p.key?"active":""}`} onClick={() => setPeriod(p.key)}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <button className="db-target-btn" onClick={() => { setTForm({ targetDeals: target?.targetDeals||"", targetRevenue: target?.targetRevenue||"", notes: target?.notes||"" }); setTModal(true); }}>
+            <Target size={13}/> {target ? "Edit Target" : "Set Target"}
+          </button>
+        </div>
+
+        {/* ── Target Progress ── */}
+        {target && period === "month" && (
+          <div className="db-target-row">
+            <TargetBar label="Deals Closed" current={salesData?.closedDeals||0} target={target.targetDeals} pct={dealsProgress} color="#10b981" suffix="deals" />
+            <TargetBar label="Revenue"      current={fmtShort(salesData?.revenue)} target={fmtShort(target.targetRevenue)} pct={revenueProgress} color="#6366f1" suffix="" />
+          </div>
+        )}
+
+        {/* ── Main Body ── */}
+        <div className="db-body-grid">
+
+          {/* LEFT — Sales + Funnel + Payments */}
+          <div className="db-col-left">
+
+            {/* Sales mini cards */}
+            <div className="db-sales-mini">
+              <SalesMini label="Enquiries"  value={salesData?.enquiries||0}   icon="💬" color="#3b82f6" loading={salesLoad} />
+              <SalesMini label="New Leads"  value={salesData?.newLeads||0}     icon="👥" color="#6366f1" loading={salesLoad} />
+              <SalesMini label="Deals Won"  value={salesData?.closedDeals||0}  icon="🤝" color="#10b981" loading={salesLoad} />
+              <SalesMini label="Conv. Rate" value={`${convRate}%`}             icon="📊" color="#f59e0b" loading={salesLoad} />
+            </div>
+
+            {/* Sales Funnel */}
+            <div className="db-card">
+              <div className="db-card-head">
+                <span className="db-card-title"><Zap size={14} color="#f59e0b"/> Sales Funnel</span>
+                <span className="db-badge blue">{funnel.enquiries||0} total</span>
               </div>
-              <div style={{ marginTop: 18 }}>
-                <ShimmerTable rows={6} cells={5} />
+              <div className="db-funnel">
+                {FUNNEL.map((step, i) => {
+                  const val  = funnel[step.key] || 0;
+                  const max  = funnel.enquiries  || 1;
+                  const pct  = Math.round((val / max) * 100);
+                  const prev = i > 0 ? (funnel[FUNNEL[i-1].key] || 0) : val;
+                  const drop = i > 0 && prev > 0 ? Math.round((1 - val/prev)*100) : 0;
+                  return (
+                    <div key={step.key} className="db-funnel-row">
+                      <div className="db-funnel-label">{step.label}</div>
+                      <div className="db-funnel-track">
+                        <div className="db-funnel-fill" style={{ width:`${pct}%`, background: step.color }} />
+                      </div>
+                      <div className="db-funnel-val">{val}</div>
+                      {drop > 0 && <div className="db-funnel-drop"><TrendingDown size={10}/>{drop}%</div>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <>
-              {/* ── Sales Overview ── */}
-              <div className="db-sales-overview">
-                <div className="db-so-header">
-                  <div className="db-so-title">
-                    <TrendingUp size={16} color="#3b82f6"/>
-                    Sales Overview
-                  </div>
-                  <div className="db-so-tabs">
-                    {SALES_PERIODS.map(p => (
-                      <button
-                        key={p.key}
-                        type="button"
-                        className={`db-so-tab${salesPeriod === p.key ? " active" : ""}`}
-                        onClick={() => setSalesPeriod(p.key)}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
-                {salesPeriod === "custom" && (
-                  <div className="db-so-custom">
-                    <label className="db-so-custom-label">From</label>
-                    <input type="date" className="db-so-date" value={salesFrom} onChange={e => setSalesFrom(e.target.value)}/>
-                    <label className="db-so-custom-label">To</label>
-                    <input type="date" className="db-so-date" value={salesTo}   onChange={e => setSalesTo(e.target.value)}/>
-                    <button
-                      type="button"
-                      className="db-so-apply"
-                      onClick={() => salesFrom && salesTo && fetchSales("custom", salesFrom, salesTo)}
-                      disabled={!salesFrom || !salesTo || salesLoading}
-                    >
-                      {salesLoading ? "Loading…" : "Apply"}
+            {/* Payment Alerts */}
+            <div className="db-card">
+              <div className="db-card-head">
+                <span className="db-card-title"><Bell size={14} color="#ef4444"/> Pending Collections</span>
+                <div style={{display:"flex",gap:6}}>
+                  <span className="db-badge red">{paymentAlerts.filter(p=>p.isNotPaid).length} not paid</span>
+                  <span className="db-badge orange">{paymentAlerts.filter(p=>!p.isNotPaid).length} partial</span>
+                </div>
+              </div>
+              {paymentAlerts.length === 0 ? (
+                <div className="db-empty-state">✅ All advances collected!</div>
+              ) : (
+                <div className="db-list">
+                  {paymentAlerts.slice(0,8).map(item => (
+                    <div key={String(item.leadId)} className="db-list-row" onClick={() => openLead(item.leadId)}>
+                      <div className="db-list-dot" style={{background: item.isNotPaid ? "#ef4444" : "#f59e0b"}} />
+                      <div className="db-list-info">
+                        <div className="db-list-name">{item.name}</div>
+                        <div className="db-list-sub">{item.business || item.repName || "—"} · {item.stage}</div>
+                        <div className="db-pay-bar-wrap">
+                          <div className="db-pay-bar-track">
+                            <div className="db-pay-bar-fill" style={{width:`${item.advancePct||0}%`}} />
+                          </div>
+                          <span className="db-pay-pct">{item.advancePct||0}% paid</span>
+                        </div>
+                      </div>
+                      <div className="db-list-right">
+                        <div className="db-list-amt" style={{color: item.isNotPaid?"#ef4444":"#f59e0b"}}>
+                          {fmtShort(item.isNotPaid ? item.totalValue : item.remaining)}
+                        </div>
+                        <ChevronRight size={13} color="#d1d5db" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* RIGHT — Follow-ups + Branch + Projects */}
+          <div className="db-col-right">
+
+            {/* Today's Follow-ups */}
+            <div className="db-card">
+              <div className="db-card-head">
+                <span className="db-card-title"><Flame size={14} color="#ef4444"/> Today's Follow-ups</span>
+                {overdueCount > 0 && <span className="db-badge red">{overdueCount} overdue</span>}
+              </div>
+              {todayFollowups.length === 0 ? (
+                <div className="db-empty-state">No follow-ups due today 🎉</div>
+              ) : (
+                <div className="db-list">
+                  {todayFollowups.slice(0,6).map((item, i) => (
+                    <div key={i} className="db-list-row" onClick={() => item.leadId && openLead(item.leadId)} style={{cursor:"pointer"}}>
+                      <div className="db-list-dot" style={{background: String(item.priority).toLowerCase()==="hot" ? "#ef4444" : "#f59e0b"}} />
+                      <div className="db-list-info">
+                        <div className="db-list-name">{item.leadName}</div>
+                        <div className="db-list-sub">{item.title} · Day {item.dayIndex||1}</div>
+                      </div>
+                      <span className="db-badge" style={{background: String(item.priority).toLowerCase()==="hot"?"#fef2f2":"#fffbeb", color: String(item.priority).toLowerCase()==="hot"?"#dc2626":"#b45309"}}>
+                        {item.priority}
+                      </span>
+                    </div>
+                  ))}
+                  {todayFollowups.length > 6 && (
+                    <button className="db-see-more" onClick={() => navigate("/todays-plan")}>
+                      +{todayFollowups.length-6} more <ArrowRight size={12}/>
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
+            </div>
 
-                <div className="db-so-cards">
-                  <div className="db-so-card teal" onClick={() => navigate("/enquiries")} style={{ cursor:"pointer" }}>
-                    <div className="db-so-card-icon">💬</div>
-                    <div className="db-so-card-val">{salesLoading ? "—" : (salesData?.enquiries ?? "—")}</div>
-                    <div className="db-so-card-label">Enquiries</div>
-                    <div className="db-so-card-sub">{salesData?.period || "—"}</div>
-                  </div>
-                  <div className="db-so-card blue" onClick={() => navigate("/leads")} style={{ cursor:"pointer" }}>
-                    <div className="db-so-card-icon">👥</div>
-                    <div className="db-so-card-val">{salesLoading ? "—" : (salesData?.newLeads ?? "—")}</div>
-                    <div className="db-so-card-label">New Leads</div>
-                    <div className="db-so-card-sub">{salesData?.period || "—"}</div>
-                  </div>
-                  <div className="db-so-card green" onClick={() => navigate("/leads?stage=Closed")} style={{ cursor:"pointer" }}>
-                    <div className="db-so-card-icon">🤝</div>
-                    <div className="db-so-card-val">{salesLoading ? "—" : (salesData?.closedDeals ?? "—")}</div>
-                    <div className="db-so-card-label">Deals Closed</div>
-                    <div className="db-so-card-sub">
-                      {target?.targetDeals > 0
-                        ? `${dealsProgress}% of ${target.targetDeals} target`
-                        : "No target set"}
-                    </div>
-                  </div>
-                  <div className="db-so-card violet" onClick={() => navigate("/analytics")} style={{ cursor:"pointer" }}>
-                    <div className="db-so-card-icon">💰</div>
-                    <div className="db-so-card-val">{salesLoading ? "—" : fmtShort(salesData?.revenue)}</div>
-                    <div className="db-so-card-label">Revenue Generated</div>
-                    <div className="db-so-card-sub">
-                      {target?.targetRevenue > 0
-                        ? `${revenueProgress}% of ${fmtShort(target.targetRevenue)} target`
-                        : "No target set"}
-                    </div>
-                  </div>
-                  <div className="db-so-card orange" onClick={() => navigate("/analytics")} style={{ cursor:"pointer" }}>
-                    <div className="db-so-card-icon">📊</div>
-                    <div className="db-so-card-val">
-                      {salesLoading || !salesData ? "—"
-                        : salesData.enquiries > 0
-                          ? `${Math.round((salesData.closedDeals / salesData.enquiries) * 100)}%`
-                          : "0%"}
-                    </div>
-                    <div className="db-so-card-label">Conversion Rate</div>
-                    <div className="db-so-card-sub">enquiries → closed</div>
-                  </div>
+            {/* Approval Watchlist */}
+            {approvalWatch.length > 0 && (
+              <div className="db-card">
+                <div className="db-card-head">
+                  <span className="db-card-title">⏳ Awaiting Approval</span>
+                  <span className="db-badge orange">{approvalWatch.length}</span>
                 </div>
-
-                {/* Target progress bars (only visible when target set & month selected) */}
-                {target && (salesPeriod === "month") && (
-                  <div className="db-so-target-row">
-                    <div className="db-so-target-item">
-                      <div className="db-so-target-meta">
-                        <span className="db-so-target-lbl">Deals Target — {currentMonthLabel}</span>
-                        <span className="db-so-target-num">
-                          {salesData?.closedDeals || 0} / {target.targetDeals}
-                          <span className={`db-so-target-pct${dealsProgress >= 100 ? " done" : ""}`}> ({dealsProgress}%)</span>
-                        </span>
+                <div className="db-list">
+                  {approvalWatch.slice(0,5).map(item => (
+                    <div key={String(item.leadId)} className="db-list-row" onClick={() => openLead(item.leadId)}>
+                      <div className="db-list-dot" style={{background: item.daysWaiting>=7?"#ef4444": item.daysWaiting>=3?"#f59e0b":"#10b981"}} />
+                      <div className="db-list-info">
+                        <div className="db-list-name">{item.name}</div>
+                        <div className="db-list-sub">{item.business || "—"}</div>
                       </div>
-                      <div className="db-so-prog-bg">
-                        <div
-                          className="db-so-prog-fill green"
-                          style={{ width: `${dealsProgress}%` }}
-                        />
+                      <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:3}}>
+                        <span className="db-badge" style={{background:"#fef2f2",color:"#dc2626"}}>{item.daysWaiting}d</span>
+                        {item.phone && <a href={`tel:${item.phone}`} className="db-call-link" onClick={e=>e.stopPropagation()}><Phone size={11}/></a>}
                       </div>
                     </div>
-                    <div className="db-so-target-item">
-                      <div className="db-so-target-meta">
-                        <span className="db-so-target-lbl">Revenue Target — {currentMonthLabel}</span>
-                        <span className="db-so-target-num">
-                          {fmtShort(salesData?.revenue)} / {fmtShort(target.targetRevenue)}
-                          <span className={`db-so-target-pct${revenueProgress >= 100 ? " done" : ""}`}> ({revenueProgress}%)</span>
-                        </span>
-                      </div>
-                      <div className="db-so-prog-bg">
-                        <div
-                          className="db-so-prog-fill violet"
-                          style={{ width: `${revenueProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* ── Revenue health ── */}
-              <div className="db-rev-grid">
-                <div className="db-rev-card blue" onClick={() => navigate("/leads")} style={{ cursor:"pointer" }}>
-                  <div className="db-rev-icon">💰</div>
-                  <div className="db-rev-label">Total Agreed Value</div>
-                  <div className="db-rev-value">{fmtShort(paymentHealth.totalAgreed)}</div>
-                  <div className="db-rev-sub">across all active projects</div>
-                </div>
-                <div className="db-rev-card green" onClick={() => navigate("/payment-tracker")} style={{ cursor:"pointer" }}>
-                  <div className="db-rev-icon">✅</div>
-                  <div className="db-rev-label">Advance Collected</div>
-                  <div className="db-rev-value">{fmtShort(paymentHealth.advanceCollected)}</div>
-                  <div className="db-rev-sub">{paymentHealth.fullyPaidCount || 0} fully paid clients</div>
-                </div>
-                <div className="db-rev-card red" onClick={() => navigate("/payment-tracker")} style={{ cursor:"pointer" }}>
-                  <div className="db-rev-icon">⏳</div>
-                  <div className="db-rev-label">Balance Pending</div>
-                  <div className="db-rev-value">{fmtShort(paymentHealth.balancePending)}</div>
-                  <div className="db-rev-sub">{paymentHealth.partialCount || 0} partial · {paymentHealth.unpaidCount || 0} unpaid</div>
-                </div>
-                <div className="db-rev-card violet" onClick={() => navigate("/payment-tracker")} style={{ cursor:"pointer" }}>
-                  <div className="db-rev-icon">📅</div>
-                  <div className="db-rev-label">Collected This Month</div>
-                  <div className="db-rev-value">{fmtShort(paymentHealth.thisMonthCollected)}</div>
-                  <div className="db-rev-sub">{fmt(summary.thisMonthRevenue || 0)} revenue</div>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* ── Project pipeline strip ── */}
-              <div className="db-proj-strip">
-                <div className="db-proj-mini indev" onClick={() => navigate("/leads?stage=Closed")}>
-                  <div className="db-proj-mini-num">{projectStats.inDevelopment || 0}</div>
-                  <div className="db-proj-mini-lbl">In Development</div>
-                </div>
-                <div className="db-proj-mini pending" onClick={() => navigate("/leads?stage=Closed")}>
-                  <div className="db-proj-mini-num">{projectStats.pendingApproval || 0}</div>
-                  <div className="db-proj-mini-lbl">Pending Approval</div>
-                </div>
-                <div className="db-proj-mini overdue" onClick={() => navigate("/leads?stage=Closed")}>
-                  <div className="db-proj-mini-num">{projectStats.overdue || 0}</div>
-                  <div className="db-proj-mini-lbl">Overdue Projects</div>
-                </div>
-                <div className="db-proj-mini onhold" onClick={() => navigate("/leads?stage=Closed")}>
-                  <div className="db-proj-mini-num">{projectStats.onHold || 0}</div>
-                  <div className="db-proj-mini-lbl">On Hold / Restarted</div>
-                </div>
-                <div className="db-proj-mini done" onClick={() => navigate("/leads?stage=Closed")}>
-                  <div className="db-proj-mini-num">{projectStats.completed || 0}</div>
-                  <div className="db-proj-mini-lbl">Completed</div>
-                </div>
+            {/* Branch Performance */}
+            <div className="db-card">
+              <div className="db-card-head">
+                <span className="db-card-title"><Building2 size={14} color="#6366f1"/> Branch Performance</span>
               </div>
-
-              {/* ── Main grid ── */}
-              <div className="db-grid">
-
-                {/* LEFT column */}
-                <div className="db-col">
-
-                  {/* Approval Watchlist */}
-                  <div className="db-card">
-                    <div className="db-card-head">
-                      <h3>Awaiting Client Approval</h3>
-                      <span className="db-card-badge orange">{approvalWatchlist.length} clients</span>
-                    </div>
-                    {approvalWatchlist.length === 0 ? (
-                      <div className="db-empty">All projects approved — great work!</div>
-                    ) : (
-                      <div className="db-watch-list">
-                        {approvalWatchlist.map(item => (
-                          <div key={String(item.leadId)} className="db-watch-row" onClick={() => openLead(item.leadId)} style={{ cursor: "pointer" }}>
-                            <div>
-                              <div className="db-watch-name">{item.name}</div>
-                              <div className="db-watch-biz">{item.business || item.repName || "—"}</div>
-                            </div>
-                            <div className={`db-watch-days ${item.daysWaiting >= 7 ? "urgent" : item.daysWaiting >= 3 ? "warn" : "ok"}`}>
-                              {item.daysWaiting}d waiting
-                            </div>
-                            <span className={`db-watch-status ${item.approvalStatus}`}>
-                              {item.approvalStatus === "on_hold" ? "On Hold" : item.approvalStatus === "restarted" ? "Restarted" : "Pending"}
-                            </span>
-                            <div className="db-watch-actions" onClick={e => e.stopPropagation()}>
-                              {item.phone && (
-                                <button className="db-icon-btn phone" title="Call" onClick={() => { window.location.href = `tel:${item.phone}`; }}>
-                                  <Phone size={12}/>
-                                </button>
-                              )}
-                              {item.email && (
-                                <button className="db-icon-btn mail" title="Send follow-up email"
-                                  onClick={() => handleSendFollowup(item.leadId, Math.min((item.emailLogsCount || 0) + 1, 3))}
-                                  disabled={sendingEmail === String(item.leadId)}>
-                                  <Mail size={12}/>
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Follow-up Queue */}
-                  <div className="db-card">
-                    <div className="db-card-head">
-                      <h3>Auto Follow-up Queue</h3>
-                      <span className="db-card-badge red">8+ days · no update</span>
-                    </div>
-                    {followupQueue.length === 0 ? (
-                      <div className="db-empty">No clients in follow-up queue.</div>
-                    ) : (
-                      <div className="db-fq-list">
-                        {followupQueue.map(item => (
-                          <div key={String(item.leadId)} className="db-fq-row">
-                            <div onClick={() => openLead(item.leadId)} style={{ cursor: "pointer" }}>
-                              <div className="db-fq-name">{item.name}</div>
-                              <div className="db-fq-biz">{item.business || item.repName || "—"}</div>
-                            </div>
-                            <div className="db-fq-days">{item.daysSinceStart}<br/><span>days</span></div>
-                            {item.followupsSent < 3 ? (
-                              <button className="db-fq-send-btn" disabled={sendingEmail === String(item.leadId)}
-                                onClick={() => handleSendFollowup(item.leadId, item.nextFollowup)}>
-                                {sendingEmail === String(item.leadId) ? "Sending..." : `Send F/U ${item.nextFollowup}/3`}
-                              </button>
-                            ) : (
-                              <div className="db-fq-sent">All 3 sent</div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Branch performance */}
-                  <div className="db-card">
-                    <div className="db-card-head">
-                      <h3>Branch Performance</h3>
-                      <TrendingUp size={15} color="#64748b"/>
-                    </div>
-                    <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                      {branchPerf.length === 0 ? (
-                        <div className="db-empty">No branch data.</div>
-                      ) : branchPerf.map((b, i) => (
-                        <div key={i} style={{ display:"flex", flexDirection:"column", gap:"5px" }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                            <div style={{ display:"flex", gap:"8px", alignItems:"center" }}>
-                              <div style={{ width:28, height:28, borderRadius:8, background:"#f8fafc", border:"1px solid #e5e7eb", display:"flex", alignItems:"center", justifyContent:"center", color:"#2563eb" }}>
-                                <Building2 size={13}/>
-                              </div>
-                              <div>
-                                <div style={{ fontSize:13, fontWeight:800, color:"#111827" }}>{b.name}</div>
-                                <div style={{ fontSize:11, color:"#64748b" }}>{b.leads} leads · {b.closed} closed</div>
-                              </div>
-                            </div>
-                            <div style={{ fontSize:13, fontWeight:800, color:"#1d4ed8" }}>{fmtShort(b.revenue)}</div>
-                          </div>
-                          <div style={{ height:5, background:"#e5e7eb", borderRadius:999, overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${b.rate || 0}%`, background:"linear-gradient(90deg,#3b82f6,#10b981)", borderRadius:999 }}/>
-                          </div>
-                          <div style={{ fontSize:10, color:"#94a3b8", fontWeight:700 }}>Close rate {b.rate || 0}%</div>
+              {branchPerf.length === 0 ? (
+                <div className="db-empty-state">No branch data</div>
+              ) : (
+                <div className="db-list" style={{gap:14}}>
+                  {branchPerf.map((b,i) => (
+                    <div key={i} style={{display:"flex",flexDirection:"column",gap:5,padding:"0 14px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                        <div>
+                          <div style={{fontSize:13,fontWeight:700,color:"#111827"}}>{b.name}</div>
+                          <div style={{fontSize:11,color:"#6b7280"}}>{b.leads} leads · {b.closed} closed</div>
                         </div>
-                      ))}
-                      {insight && (
-                        <div style={{ marginTop:8, padding:"10px 12px", background:"#eff6ff", border:"1px solid #dbeafe", borderRadius:10 }}>
-                          <div style={{ fontSize:10, fontWeight:800, color:"#2563eb", textTransform:"uppercase", letterSpacing:".5px", display:"flex", gap:5, alignItems:"center", marginBottom:4 }}>
-                            <Lightbulb size={11}/> Insight
-                          </div>
-                          <p style={{ margin:0, fontSize:12, color:"#334155", lineHeight:1.5 }}>{insight}</p>
-                        </div>
-                      )}
+                        <div style={{fontSize:14,fontWeight:800,color:"#6366f1"}}>{fmtShort(b.revenue)}</div>
+                      </div>
+                      <div style={{height:6,background:"#f1f5f9",borderRadius:99,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:`${b.rate||0}%`,background:"linear-gradient(90deg,#6366f1,#10b981)",borderRadius:99,transition:"width .4s"}} />
+                      </div>
+                      <div style={{fontSize:10,color:"#9ca3af",fontWeight:700}}>{b.rate||0}% close rate</div>
                     </div>
-                  </div>
+                  ))}
                 </div>
+              )}
+            </div>
 
-                {/* RIGHT column */}
-                <div className="db-col">
-
-                  {/* Today's follow-ups */}
-                  <div className="db-card">
-                    <div className="db-card-head">
-                      <h3>Today's Follow-ups</h3>
-                      {overdueCount > 0 && <span className="db-card-badge red">{overdueCount} overdue</span>}
-                    </div>
-                    {todayFollowups.length === 0 ? (
-                      <div className="db-empty">No follow-ups due today.</div>
-                    ) : (
-                      <div className="db-followup-list">
-                        {todayFollowups.map((item, i) => (
-                          <div key={i} className="db-followup-item">
-                            <div className="db-followup-top">
-                              <div className="db-followup-name">{item.leadName}</div>
-                              <span className={`db-followup-badge ${String(item.priority).toLowerCase() === "hot" ? "hot" : "warm"}`}>
-                                {item.priority}
-                              </span>
-                            </div>
-                            <div className="db-followup-title">{item.title}</div>
-                            <div className="db-followup-meta">
-                              <span><Phone size={10}/> {item.branch || "—"}</span>
-                              <span>Day {item.dayIndex || 1}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Payment alerts — split by committed-not-paid vs partial */}
-                  <div className="db-card">
-                    <div className="db-card-head">
-                      <h3>Advance Collection Status</h3>
-                      <div style={{ display:"flex", gap:6 }}>
-                        <span className="db-card-badge red">{paymentAlerts.filter(p => p.isNotPaid).length} not paid</span>
-                        <span className="db-card-badge orange">{paymentAlerts.filter(p => !p.isNotPaid).length} partial</span>
-                      </div>
-                    </div>
-
-                    {paymentAlerts.length === 0 ? (
-                      <div className="db-empty">All advances collected!</div>
-                    ) : (
-                      <div className="db-pay-list">
-
-                        {/* ── Committed but ZERO advance ── */}
-                        {paymentAlerts.filter(p => p.isNotPaid).length > 0 && (
-                          <div className="db-pay-section-hd red">
-                            <AlertTriangle size={11}/> Committed — No Advance Paid
-                          </div>
-                        )}
-                        {paymentAlerts.filter(p => p.isNotPaid).map(item => (
-                          <div key={String(item.leadId)} className="db-pay-row not-paid" onClick={() => openLead(item.leadId)}>
-                            <div className="db-pay-info">
-                              <div className="db-pay-name">{item.name}</div>
-                              <div className="db-pay-biz">{item.business || item.repName || "—"}</div>
-                              <div className="db-pay-meta-row">
-                                <span className="db-pay-stage">{item.stage}</span>
-                                {item.daysSinceLead != null && (
-                                  <span className={`db-pay-age ${item.daysSinceLead >= 30 ? "old" : item.daysSinceLead >= 14 ? "warn" : ""}`}>
-                                    {item.daysSinceLead}d as lead
-                                  </span>
-                                )}
-                              </div>
-                              <div className="db-pay-bar">
-                                <div className="db-pay-fill" style={{ width: "0%" }}/>
-                              </div>
-                            </div>
-                            <div className="db-pay-right">
-                              <div className="db-pay-rem red">{fmtShort(item.totalValue)}</div>
-                              <div className="db-pay-pct">0% paid</div>
-                            </div>
-                          </div>
-                        ))}
-
-                        {/* ── Partially paid ── */}
-                        {paymentAlerts.filter(p => !p.isNotPaid).length > 0 && (
-                          <div className="db-pay-section-hd orange">
-                            Partial Payments
-                          </div>
-                        )}
-                        {paymentAlerts.filter(p => !p.isNotPaid).map(item => (
-                          <div key={String(item.leadId)} className="db-pay-row" onClick={() => openLead(item.leadId)}>
-                            <div className="db-pay-info">
-                              <div className="db-pay-name">{item.name}</div>
-                              <div className="db-pay-biz">{item.business || item.repName || "—"}</div>
-                              <div className="db-pay-meta-row">
-                                <span className="db-pay-stage">{item.stage}</span>
-                                {item.daysSinceLead != null && (
-                                  <span className={`db-pay-age ${item.daysSinceLead >= 30 ? "old" : item.daysSinceLead >= 14 ? "warn" : ""}`}>
-                                    {item.daysSinceLead}d as lead
-                                  </span>
-                                )}
-                              </div>
-                              <div className="db-pay-bar">
-                                <div className="db-pay-fill" style={{ width: `${item.advancePct}%` }}/>
-                              </div>
-                            </div>
-                            <div className="db-pay-right">
-                              <div className="db-pay-rem">−{fmtShort(item.remaining)}</div>
-                              <div className="db-pay-pct">{item.advancePct}% paid</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Sales Funnel — redesigned */}
-                  <div className="db-card">
-                    <div className="db-card-head">
-                      <h3>Sales Funnel</h3>
-                      <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                        <span className="db-card-badge blue">{funnel.enquiries || 0} total leads</span>
-                        <button
-                          type="button"
-                          className="db-target-btn"
-                          onClick={() => {
-                            setTargetForm({
-                              targetDeals:   target?.targetDeals   || "",
-                              targetRevenue: target?.targetRevenue || "",
-                              notes:         target?.notes         || "",
-                            });
-                            setTargetModalOpen(true);
-                          }}
-                        >
-                          <Target size={12}/>
-                          {target ? "Edit Target" : "Set Target"}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Funnel visualization */}
-                    <div className="db-funnel-v2">
-                      {FUNNEL_STEPS.map((step, i) => {
-                        const val  = funnel[step.key] || 0;
-                        const prev = i === 0 ? val : (funnel[FUNNEL_STEPS[i-1].key] || 0);
-                        const dropPct = prev > 0 ? Math.round((1 - val / prev) * 100) : 0;
-                        return (
-                          <div key={step.key} className="db-funnel-step">
-                            <div
-                              className="db-funnel-bar"
-                              style={{
-                                width: `${step.width}%`,
-                                background: step.color,
-                              }}
-                            >
-                              <span className="db-funnel-bar-label">{step.label}</span>
-                              <span className="db-funnel-bar-val">{val}</span>
-                            </div>
-                            {i > 0 && dropPct > 0 && (
-                              <div className="db-funnel-drop">
-                                <TrendingDown size={10}/> {dropPct}% drop
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Conversion summary */}
-                    <div className="db-funnel-rates">
-                      {[
-                        { label: "Reachable",  pct: funnelConvRates.reachable, color: "#6366f1" },
-                        { label: "Qualified",  pct: funnelConvRates.qualified,  color: "#f59e0b" },
-                        { label: "Closed",     pct: funnelConvRates.closed,     color: "#10b981" },
-                      ].map(r => (
-                        <div key={r.label} className="db-funnel-rate-pill" style={{ borderColor: r.color + "44", color: r.color }}>
-                          <span style={{ fontWeight:800 }}>{r.pct}%</span> {r.label}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Quick stats */}
-                  <div className="db-card">
-                    <div className="db-quick-row">
-                      <div className="db-quick-item">
-                        <div className="db-quick-icon blue"><FileText size={16}/></div>
-                        <div className="db-quick-val">{summary.totalDocuments || 0}</div>
-                        <div className="db-quick-label">Documents</div>
-                      </div>
-                      <div className="db-quick-item">
-                        <div className="db-quick-icon green"><Users size={16}/></div>
-                        <div className="db-quick-val">{summary.totalReps || 0}</div>
-                        <div className="db-quick-label">Active Reps</div>
-                      </div>
-                      <div className="db-quick-item">
-                        <div className="db-quick-icon purple"><Bell size={16}/></div>
-                        <div className="db-quick-val">{summary.conversionRate || 0}%</div>
-                        <div className="db-quick-label">Close Rate</div>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
+            {/* Project Status */}
+            <div className="db-card">
+              <div className="db-card-head">
+                <span className="db-card-title">🚀 Project Status</span>
               </div>
-            </>
-          )}
+              <div className="db-proj-grid">
+                <ProjStat label="In Dev"    value={projectStats.inDevelopment||0}  color="#3b82f6" />
+                <ProjStat label="Pending"   value={projectStats.pendingApproval||0} color="#f59e0b" />
+                <ProjStat label="Overdue"   value={projectStats.overdue||0}         color="#ef4444" />
+                <ProjStat label="Completed" value={projectStats.completed||0}       color="#10b981" />
+              </div>
+            </div>
+
+          </div>
         </div>
+
+        </div>{/* end db-content */}
       </div>
 
-      {/* Lead Drawer */}
-      <LeadDrawer
-        open={drawerOpen}
-        leadId={drawerLeadId}
-        apiBase={API_BASE}
-        onClose={() => { setDrawerOpen(false); setDrawerLeadId(null); }}
-        onLeadUpdated={() => fetchDashboard(true)}
+      <LeadDrawer open={drawerOpen} leadId={drawerId} apiBase={API_BASE}
+        onClose={() => { setDrawerOpen(false); setDrawerId(null); }}
+        onLeadUpdated={() => fetchDash(true)}
       />
 
-      {/* ── Set Target Modal ── */}
-      {targetModalOpen && (
-        <div className="db-target-overlay" onClick={() => setTargetModalOpen(false)}>
-          <div className="db-target-modal" onClick={e => e.stopPropagation()}>
-            <div className="db-target-modal-head">
+      {/* Target Modal */}
+      {tModal && (
+        <div className="db-overlay" onClick={() => setTModal(false)}>
+          <div className="db-modal" onClick={e => e.stopPropagation()}>
+            <div className="db-modal-head">
               <div>
-                <div className="db-target-modal-title">
-                  <Target size={16} color="#3b82f6"/> Monthly Target
-                </div>
-                <div className="db-target-modal-sub">{currentMonthLabel}</div>
+                <div style={{fontSize:15,fontWeight:800,color:"#111827",display:"flex",gap:8,alignItems:"center"}}><Target size={15} color="#6366f1"/> Monthly Target</div>
+                <div style={{fontSize:12,color:"#6b7280",marginTop:2}}>{monthStr}</div>
               </div>
-              <button type="button" className="db-target-close" onClick={() => setTargetModalOpen(false)}>
-                <X size={16}/>
-              </button>
+              <button className="db-modal-close" onClick={() => setTModal(false)}><X size={16}/></button>
             </div>
-            <div className="db-target-modal-body">
-              <label className="db-target-label">Deals to Close (count)</label>
-              <input
-                type="number"
-                className="db-target-input"
-                placeholder="e.g. 10"
-                min="0"
-                value={targetForm.targetDeals}
-                onChange={e => setTargetForm(f => ({ ...f, targetDeals: e.target.value }))}
-              />
-              <label className="db-target-label">Revenue Target (₹)</label>
-              <input
-                type="number"
-                className="db-target-input"
-                placeholder="e.g. 500000"
-                min="0"
-                value={targetForm.targetRevenue}
-                onChange={e => setTargetForm(f => ({ ...f, targetRevenue: e.target.value }))}
-              />
-              <label className="db-target-label">Notes (optional)</label>
-              <input
-                type="text"
-                className="db-target-input"
-                placeholder="e.g. Q1 push — focus on enterprise"
-                value={targetForm.notes}
-                onChange={e => setTargetForm(f => ({ ...f, notes: e.target.value }))}
-              />
+            <div className="db-modal-body">
+              <label>Deals to Close</label>
+              <input type="number" placeholder="e.g. 10" value={tForm.targetDeals} onChange={e=>setTForm(f=>({...f,targetDeals:e.target.value}))} />
+              <label>Revenue Target (₹)</label>
+              <input type="number" placeholder="e.g. 500000" value={tForm.targetRevenue} onChange={e=>setTForm(f=>({...f,targetRevenue:e.target.value}))} />
+              <label>Notes (optional)</label>
+              <input type="text" placeholder="e.g. Q2 push" value={tForm.notes} onChange={e=>setTForm(f=>({...f,notes:e.target.value}))} />
             </div>
-            <div className="db-target-modal-foot">
-              <button type="button" className="db-target-cancel" onClick={() => setTargetModalOpen(false)}>Cancel</button>
-              <button type="button" className="db-target-save" onClick={handleSaveTarget} disabled={targetSaving}>
-                <Check size={13}/> {targetSaving ? "Saving…" : "Save Target"}
-              </button>
+            <div className="db-modal-foot">
+              <button className="db-btn-cancel" onClick={() => setTModal(false)}>Cancel</button>
+              <button className="db-btn-save" onClick={saveTarget} disabled={tSaving}><Check size={13}/> {tSaving?"Saving…":"Save Target"}</button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Sub-components ── */
+function KpiCard({ icon, label, value, color, onClick, loading }) {
+  return (
+    <button className={`db-kpi-card db-kpi-${color}`} onClick={onClick}>
+      <div className="db-kpi-icon">{icon}</div>
+      <div className="db-kpi-val">{loading ? "—" : value}</div>
+      <div className="db-kpi-label">{label}</div>
+    </button>
+  );
+}
+
+function SalesMini({ label, value, icon, color, loading }) {
+  return (
+    <div className="db-sales-mini-card" style={{"--c": color}}>
+      <div className="db-sm-icon">{icon}</div>
+      <div className="db-sm-val" style={{color}}>{loading ? "—" : value}</div>
+      <div className="db-sm-label">{label}</div>
+    </div>
+  );
+}
+
+function TargetBar({ label, current, target, pct, color, suffix }) {
+  return (
+    <div className="db-tbar">
+      <div className="db-tbar-top">
+        <span className="db-tbar-label">{label} — {monthStr}</span>
+        <span className="db-tbar-val">{current}{suffix ? ` ${suffix}` : ""} / {target}{suffix ? ` ${suffix}` : ""} <span style={{color, fontWeight:800}}>({pct}%)</span></span>
+      </div>
+      <div className="db-tbar-track">
+        <div className="db-tbar-fill" style={{width:`${pct}%`, background: color}} />
+        {pct >= 100 && <div className="db-tbar-done">🎉 Done!</div>}
+      </div>
+    </div>
+  );
+}
+
+function ProjStat({ label, value, color }) {
+  return (
+    <div className="db-proj-stat">
+      <div className="db-proj-val" style={{color}}>{value}</div>
+      <div className="db-proj-label">{label}</div>
     </div>
   );
 }
