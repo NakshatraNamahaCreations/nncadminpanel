@@ -385,10 +385,85 @@
 /* ════════════════════════════
    RESPONSIVE
 ════════════════════════════ */
+
+/* ── Tablet (≤1024px) ── */
+@media(max-width:1024px){
+  .od-header { padding:22px 24px; }
+  .od-body { grid-template-columns:1fr; }
+  .od-diary {
+    border-left:none;
+    border-top:1px solid #f1f5f9;
+  }
+  .od-progress-bar { width:110px; }
+  .od-score-explain { display:none; }
+}
+
+/* ── Mobile (≤768px) ── */
 @media(max-width:768px){
-  .od-header { padding:18px 16px; }
-  .od-urgency { font-size:18px; }
-  .od-tasks-head, .od-task { padding-left:16px; padding-right:16px; }
-  .od-group-header { padding-left:16px; }
-  .od-task-sub { max-width:200px; }
+  /* Header */
+  .od-header {
+    padding:16px;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:16px;
+  }
+  .od-urgency { font-size:17px; max-width:100%; }
+  .od-header-right {
+    width:100%;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .od-header-actions { align-items:flex-start; width:100%; }
+  .od-progress-bar { width:100%; max-width:180px; }
+  .od-refresh { width:100%; justify-content:center; }
+
+  /* Financial strip — scrollable row */
+  .od-fin-strip { gap:0; }
+  .od-fin-card  { min-width:130px; padding:12px 16px; }
+  .od-fin-value { font-size:14px; }
+
+  /* Body */
+  .od-body { grid-template-columns:1fr; padding-bottom:68px; }
+
+  /* Task list */
+  .od-tasks-head { padding-left:16px; padding-right:16px; }
+  .od-task       { padding:12px 16px; gap:10px; }
+  .od-group-header { padding-left:16px; padding-right:16px; }
+  .od-task-sub   { max-width:160px; }
+  .od-task-acts  { gap:5px; }
+  .od-view-btn   { padding:5px 9px; font-size:10px; }
+
+  /* Diary */
+  .od-diary-card { padding:16px; }
+  .od-diary-ta   { font-size:14px; }
+  .od-diary-btn  { width:100%; justify-content:center; margin-left:0; }
+
+  /* Payment form */
+  .od-pay-form { padding:12px 16px; }
+  .od-pay-row  { grid-template-columns:1fr; }
+  .od-pay-input { font-size:14px; }
+  .od-pay-save-btn { width:100%; justify-content:center; }
+  .od-pay-entry { padding:10px 16px; }
+
+  /* Main layout needs bottom padding for mobile nav */
+  .od-main { padding-bottom:0; }
+  .od-layout { padding-bottom:0; }
+}
+
+/* ── Small Phone (≤480px) ── */
+@media(max-width:480px){
+  .od-header { padding:14px 12px; }
+  .od-urgency { font-size:15px; }
+  .od-greeting { font-size:11px; }
+  .od-fin-card { min-width:110px; padding:10px 12px; }
+  .od-fin-value { font-size:13px; }
+  .od-task   { padding:10px 12px; }
+  .od-tasks-head { padding-left:12px; padding-right:12px; }
+  .od-group-header { padding-left:12px; padding-right:12px; }
+  .od-task-sub { max-width:120px; }
+  .od-diary-card { padding:12px; }
+  .od-pay-entry { padding:10px 12px; }
+  /* Ensure bottom nav bar space on small phones */
+  .od-body { padding-bottom:68px; }
 }

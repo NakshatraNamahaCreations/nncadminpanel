@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, RefreshCcw, Search, Edit2, UserX, Clock, Briefcase, Phone, Mail, X } from "lucide-react";
+import { Plus, RefreshCcw, Search, Edit2, UserX, Clock, Briefcase, Phone, Mail, X, TrendingUp, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "../../utils/toast";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -8,10 +8,10 @@ const BRANCHES = ["Bangalore", "Mysore", "Mumbai"];
 const EMPTY_FORM = {
   employeeId: "", name: "", email: "", phone: "", branch: "Bangalore",
   department: "", designation: "", shiftStart: "09:30", shiftEnd: "18:30",
-  gracePeriodMin: 15, monthlySalary: "", joinedDate: "",
+  gracePeriodMin: 15, monthlySalary: "", joinedDate: "", dateOfBirth: "",
   employmentType: "permanent",
   // Salary structure
-  basicPct: 40, hraPct: 40, daPct: 10,
+  basicAmt: 0, hraAmt: 0, daAmt: 0,
   pfApplicable: true, pfFixed: "",
   esiApplicable: false, esiFixed: "",
   ptApplicable: true, ptFixed: "",
@@ -48,6 +48,10 @@ export default function EmployeesTab({ branch }) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [search, setSearch] = useState("");
   const [filterBranch, setFilterBranch] = useState(branch || "");
+  const [hikeOpen, setHikeOpen] = useState(null); // empId with hike form open
+  const [hikeHistoryOpen, setHikeHistoryOpen] = useState({}); // { [empId]: bool }
+  const [hikeForm, setHikeForm] = useState({ salary: "", effectiveDate: "", hikePct: "", remarks: "" });
+  const [hikeSaving, setHikeSaving] = useState(false);
 
   const fetchEmployees = useCallback(async () => {
     setLoading(true);
@@ -85,11 +89,12 @@ export default function EmployeesTab({ branch }) {
       shiftEnd: emp.shiftEnd || "18:30",
       gracePeriodMin: emp.gracePeriodMin ?? 15,
       monthlySalary: emp.monthlySalary ?? "",
-      joinedDate: emp.joinedDate ? emp.joinedDate.split("T")[0] : "",
+      joinedDate:   emp.joinedDate   ? emp.joinedDate.split("T")[0]   : "",
+      dateOfBirth:  emp.dateOfBirth  ? emp.dateOfBirth.split("T")[0]  : "",
       employmentType: emp.employmentType || "permanent",
-      basicPct: emp.basicPct ?? 40,
-      hraPct:   emp.hraPct   ?? 40,
-      daPct:    emp.daPct    ?? 10,
+      basicAmt: emp.basicAmt ?? 0,
+      hraAmt:   emp.hraAmt   ?? 0,
+      daAmt:    emp.daAmt    ?? 0,
       pfApplicable:  emp.pfApplicable  ?? true,
       pfFixed:       emp.pfFixed       || "",
       esiApplicable: emp.esiApplicable ?? false,
@@ -145,6 +150,25 @@ export default function EmployeesTab({ branch }) {
       toast.success("Employee deactivated");
       fetchEmployees();
     } catch { toast.error("Failed to deactivate"); }
+  };
+
+  const addHike = async (empId) => {
+    if (!hikeForm.salary || !hikeForm.effectiveDate) return toast.error("New salary and effective date are required");
+    setHikeSaving(true);
+    try {
+      const res  = await fetch(`${API}/api/attendance/employees/${empId}/salary-hike`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({ salary: Number(hikeForm.salary), effectiveDate: hikeForm.effectiveDate, hikePct: hikeForm.hikePct ? Number(hikeForm.hikePct) : null, remarks: hikeForm.remarks }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) { toast.error(json.message || "Failed to save hike"); return; }
+      toast.success("Salary hike recorded!");
+      setHikeOpen(null);
+      setHikeForm({ salary: "", effectiveDate: "", hikePct: "", remarks: "" });
+      fetchEmployees();
+    } catch { toast.error("Failed to save hike"); }
+    finally { setHikeSaving(false); }
   };
 
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -231,10 +255,140 @@ export default function EmployeesTab({ branch }) {
                   <Clock size={12} />
                   <span>{emp.shiftStart || "09:30"} – {emp.shiftEnd || "18:30"} (Grace: {emp.gracePeriodMin || 15} min)</span>
                 </div>
-                {emp.monthlySalary && (
-                  <div className="att-emp-salary">{fmtSalary(emp.monthlySalary)} / month</div>
-                )}
+                {emp.monthlySalary ? (
+                  <div>
+                    <div className="att-emp-salary">{fmtSalary(emp.monthlySalary)} / month
+                      {emp.salaryHistory?.length > 1 && (
+                        <span style={{ fontSize: 11, color: "#059669", marginLeft: 6 }}>
+                          ({emp.salaryHistory[emp.salaryHistory.length - 1].hikePct != null
+                            ? `+${emp.salaryHistory[emp.salaryHistory.length - 1].hikePct}% hike`
+                            : "revised"})
+                        </span>
+                      )}
+                    </div>
+                    {/* Starting salary */}
+                    {emp.salaryHistory?.length > 0 && (
+                      <div style={{ fontSize: 11, color: "#94a3b8" }}>
+                        Starting: {fmtSalary(emp.salaryHistory[0].salary)} · {emp.salaryHistory.length - 1} hike{emp.salaryHistory.length !== 2 ? "s" : ""}
+                        {emp.salaryHistory.length > 1 && (
+                          <button
+                            style={{ marginLeft: 6, fontSize: 11, color: "#6366f1", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline" }}
+                            onClick={() => setHikeHistoryOpen(h => ({ ...h, [emp._id]: !h[emp._id] }))}
+                          >
+                            {hikeHistoryOpen[emp._id] ? "hide" : "view history"}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {/* History table */}
+                    {hikeHistoryOpen[emp._id] && emp.salaryHistory?.length > 0 && (
+                      <div style={{ marginTop: 6, border: "1px solid #e2e8f0", borderRadius: 8, overflow: "hidden" }}>
+                        <table style={{ width: "100%", fontSize: 11, borderCollapse: "collapse" }}>
+                          <thead>
+                            <tr style={{ background: "#f8fafc" }}>
+                              <th style={{ padding: "5px 8px", textAlign: "left", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #e2e8f0" }}>Date</th>
+                              <th style={{ padding: "5px 8px", textAlign: "right", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #e2e8f0" }}>Salary</th>
+                              <th style={{ padding: "5px 8px", textAlign: "right", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #e2e8f0" }}>Hike %</th>
+                              <th style={{ padding: "5px 8px", textAlign: "left", color: "#64748b", fontWeight: 700, borderBottom: "1px solid #e2e8f0" }}>Remarks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {emp.salaryHistory.map((h, i) => (
+                              <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#f8fafc" }}>
+                                <td style={{ padding: "5px 8px", color: "#475569" }}>{new Date(h.effectiveDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</td>
+                                <td style={{ padding: "5px 8px", textAlign: "right", fontWeight: 700, color: "#0f172a" }}>{fmtSalary(h.salary)}</td>
+                                <td style={{ padding: "5px 8px", textAlign: "right", color: h.hikePct != null ? "#059669" : "#94a3b8", fontWeight: 600 }}>
+                                  {i === 0 ? "Starting" : h.hikePct != null ? `+${h.hikePct}%` : "—"}
+                                </td>
+                                <td style={{ padding: "5px 8px", color: "#64748b" }}>{h.remarks || "—"}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+                {emp.joinedDate && (() => {
+                  const joined   = new Date(emp.joinedDate);
+                  const daysWorking = Math.floor((Date.now() - joined.getTime()) / 86400000);
+                  const yrs = Math.floor(daysWorking / 365);
+                  const mos = Math.floor((daysWorking % 365) / 30);
+                  const tenure = yrs > 0
+                    ? `${yrs}y ${mos}m`
+                    : mos > 0 ? `${mos} month${mos > 1 ? "s" : ""}`
+                    : `${daysWorking} day${daysWorking !== 1 ? "s" : ""}`;
+                  const probationDone = emp.employmentType === "probationary" && daysWorking >= 180;
+                  return (
+                    <div style={{ marginTop: 4 }}>
+                      <div className="att-emp-info-row">
+                        <span style={{ fontSize: 11, color: "#64748b" }}>
+                          📅 Joined {joined.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                          &nbsp;·&nbsp;<strong style={{ color: "#0f172a" }}>{tenure}</strong>
+                        </span>
+                      </div>
+                      {probationDone && (
+                        <div className="att-probation-alert">
+                          🎉 Probation complete — eligible for permanent
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                {emp.dateOfBirth && (() => {
+                  const dob     = new Date(emp.dateOfBirth);
+                  const today   = new Date();
+                  const isBday  = dob.getDate() === today.getDate() && dob.getMonth() === today.getMonth();
+                  const age     = today.getFullYear() - dob.getFullYear() - (
+                    today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate()) ? 1 : 0
+                  );
+                  return (
+                    <div style={{ marginTop: 4 }}>
+                      {isBday
+                        ? <div className="att-birthday-alert">🎂 Today is {emp.name?.split(" ")[0]}'s Birthday! ({age} years)</div>
+                        : <div className="att-emp-info-row"><span style={{ fontSize: 11, color: "#64748b" }}>🎂 DOB: {dob.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })} · Age {age}</span></div>
+                      }
+                    </div>
+                  );
+                })()}
               </div>
+
+              {/* Hike form */}
+              {hikeOpen === emp._id && (
+                <div style={{ padding: "10px 14px", borderTop: "1px solid #e8edf5", background: "#f8fafc" }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#475569", marginBottom: 8 }}>Record Salary Hike</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <div>
+                      <label style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 3 }}>New Salary (₹) *</label>
+                      <input className="att-input" type="number" min={0} placeholder="e.g. 35000" value={hikeForm.salary}
+                        onChange={e => setHikeForm(f => ({ ...f, salary: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 3 }}>Effective Date *</label>
+                      <input className="att-input" type="date" value={hikeForm.effectiveDate}
+                        onChange={e => setHikeForm(f => ({ ...f, effectiveDate: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 3 }}>Hike % (auto if blank)</label>
+                      <input className="att-input" type="number" min={0} placeholder="auto-calculated" value={hikeForm.hikePct}
+                        onChange={e => setHikeForm(f => ({ ...f, hikePct: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: 11, color: "#64748b", display: "block", marginBottom: 3 }}>Remarks</label>
+                      <input className="att-input" placeholder="Optional note" value={hikeForm.remarks}
+                        onChange={e => setHikeForm(f => ({ ...f, remarks: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                    <button className="att-btn-prim" style={{ fontSize: 12, height: 30, padding: "0 14px" }} onClick={() => addHike(emp._id)} disabled={hikeSaving}>
+                      {hikeSaving ? "Saving…" : "Save Hike"}
+                    </button>
+                    <button className="att-btn-sec" style={{ fontSize: 12, height: 30, padding: "0 14px" }} onClick={() => { setHikeOpen(null); setHikeForm({ salary: "", effectiveDate: "", hikePct: "", remarks: "" }); }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="att-emp-card-footer">
                 <span className={emp.isActive !== false ? "att-status-active" : "att-status-inactive"}>
@@ -244,6 +398,11 @@ export default function EmployeesTab({ branch }) {
                   {emp.employmentType === "probationary" ? "Probationary" : "Permanent"}
                 </span>
                 <div className="att-emp-actions">
+                  {emp.isActive !== false && (
+                    <button className="att-btn-ghost" style={{ color: "#059669" }} onClick={() => { setHikeOpen(emp._id); setHikeForm({ salary: "", effectiveDate: new Date().toISOString().split("T")[0], hikePct: "", remarks: "" }); }}>
+                      <TrendingUp size={13} /> Hike
+                    </button>
+                  )}
                   <button className="att-btn-ghost" onClick={() => openEdit(emp)}>
                     <Edit2 size={13} /> Edit
                   </button>
@@ -293,7 +452,19 @@ export default function EmployeesTab({ branch }) {
                 </div>
                 <div className="att-field">
                   <label className="att-label">Department</label>
-                  <input className="att-input" placeholder="Department" value={form.department} onChange={e => setField("department", e.target.value)} />
+                  <select className="att-input" value={form.department} onChange={e => setField("department", e.target.value)}>
+                    <option value="">Select Department</option>
+                    <option value="Owner">Owner</option>
+                    <option value="Management">Management</option>
+                    <option value="Development">Development</option>
+                    <option value="Design">Design</option>
+                    <option value="Maintenance">Maintenance</option>
+                    <option value="Operations">Operations</option>
+                    <option value="Sales">Sales</option>
+                    <option value="HR">HR</option>
+                    <option value="Accounts">Accounts</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
                 <div className="att-field">
                   <label className="att-label">Designation</label>
@@ -320,6 +491,10 @@ export default function EmployeesTab({ branch }) {
                   <input className="att-input" type="date" value={form.joinedDate} onChange={e => setField("joinedDate", e.target.value)} />
                 </div>
                 <div className="att-field">
+                  <label className="att-label">Date of Birth</label>
+                  <input className="att-input" type="date" value={form.dateOfBirth} onChange={e => setField("dateOfBirth", e.target.value)} />
+                </div>
+                <div className="att-field">
                   <label className="att-label">Employment Type</label>
                   <select className="att-input" value={form.employmentType} onChange={e => setField("employmentType", e.target.value)}>
                     <option value="permanent">Permanent (1.5 days paid leave/month)</option>
@@ -332,16 +507,16 @@ export default function EmployeesTab({ branch }) {
               <div className="att-section-divider">Salary Structure</div>
               <div className="att-form-grid">
                 <div className="att-field">
-                  <label className="att-label">Basic % of Gross</label>
-                  <input className="att-input" type="number" min={0} max={100} value={form.basicPct} onChange={e => setField("basicPct", Number(e.target.value))} />
+                  <label className="att-label">Basic (₹)</label>
+                  <input className="att-input" type="number" min={0} placeholder="e.g. 18000" value={form.basicAmt || ""} onChange={e => setField("basicAmt", Number(e.target.value))} />
                 </div>
                 <div className="att-field">
-                  <label className="att-label">HRA % of Basic</label>
-                  <input className="att-input" type="number" min={0} max={100} value={form.hraPct} onChange={e => setField("hraPct", Number(e.target.value))} />
+                  <label className="att-label">HRA (₹)</label>
+                  <input className="att-input" type="number" min={0} placeholder="e.g. 7200" value={form.hraAmt || ""} onChange={e => setField("hraAmt", Number(e.target.value))} />
                 </div>
                 <div className="att-field">
-                  <label className="att-label">DA % of Basic</label>
-                  <input className="att-input" type="number" min={0} max={100} value={form.daPct} onChange={e => setField("daPct", Number(e.target.value))} />
+                  <label className="att-label">DA (₹)</label>
+                  <input className="att-input" type="number" min={0} placeholder="e.g. 1800" value={form.daAmt || ""} onChange={e => setField("daAmt", Number(e.target.value))} />
                 </div>
               </div>
 
@@ -356,8 +531,7 @@ export default function EmployeesTab({ branch }) {
                   </label>
                   {form.pfApplicable && (
                     <div className="att-stat-input-wrap">
-                      <input className="att-input" type="number" min={0} placeholder="Auto (12% of Basic, max ₹1800)" value={form.pfFixed} onChange={e => setField("pfFixed", e.target.value)} />
-                      <span className="att-stat-hint">Leave 0 for auto (12% of Basic, max ₹1800)</span>
+                      <input className="att-input" type="number" min={0} placeholder="Enter PF amount (₹)" value={form.pfFixed || ""} onChange={e => setField("pfFixed", Number(e.target.value))} />
                     </div>
                   )}
                 </div>
@@ -370,8 +544,7 @@ export default function EmployeesTab({ branch }) {
                   </label>
                   {form.esiApplicable && (
                     <div className="att-stat-input-wrap">
-                      <input className="att-input" type="number" min={0} placeholder="Auto (0.75% of Gross, if ≤₹21000)" value={form.esiFixed} onChange={e => setField("esiFixed", e.target.value)} />
-                      <span className="att-stat-hint">Leave 0 for auto (0.75% of Gross if salary ≤ ₹21,000)</span>
+                      <input className="att-input" type="number" min={0} placeholder="Enter ESI amount (₹)" value={form.esiFixed || ""} onChange={e => setField("esiFixed", Number(e.target.value))} />
                     </div>
                   )}
                 </div>
@@ -384,8 +557,7 @@ export default function EmployeesTab({ branch }) {
                   </label>
                   {form.ptApplicable && (
                     <div className="att-stat-input-wrap">
-                      <input className="att-input" type="number" min={0} placeholder="Auto (₹200 if Gross > ₹15000)" value={form.ptFixed} onChange={e => setField("ptFixed", e.target.value)} />
-                      <span className="att-stat-hint">Leave 0 for auto (₹200 if gross &gt; ₹15,000 — Karnataka)</span>
+                      <input className="att-input" type="number" min={0} placeholder="Enter PT amount (₹)" value={form.ptFixed || ""} onChange={e => setField("ptFixed", Number(e.target.value))} />
                     </div>
                   )}
                 </div>
@@ -398,13 +570,13 @@ export default function EmployeesTab({ branch }) {
                   <div className="att-sal-preview-grid">
                     {(() => {
                       const gross = Number(form.monthlySalary) || 0;
-                      const basic = Math.round(gross * (Number(form.basicPct) || 40) / 100);
-                      const hra   = Math.round(basic * (Number(form.hraPct)   || 40) / 100);
-                      const da    = Math.round(basic * (Number(form.daPct)    || 10) / 100);
+                      const basic = Number(form.basicAmt) > 0 ? Number(form.basicAmt) : Math.round(gross * 0.40);
+                      const hra   = Number(form.hraAmt)   > 0 ? Number(form.hraAmt)   : Math.round(basic * 0.40);
+                      const da    = Number(form.daAmt)    > 0 ? Number(form.daAmt)    : Math.round(basic * 0.10);
                       const special = Math.max(0, gross - basic - hra - da);
-                      const pf  = form.pfApplicable  ? (Number(form.pfFixed)  || Math.min(Math.round(basic * 0.12), 1800)) : 0;
-                      const esi = form.esiApplicable ? (Number(form.esiFixed) || (gross <= 21000 ? Math.round(gross * 0.0075) : 0)) : 0;
-                      const pt  = form.ptApplicable  ? (Number(form.ptFixed)  || (gross > 15000 ? 200 : 0)) : 0;
+                      const pf  = form.pfApplicable  ? (Number(form.pfFixed)  || 0) : 0;
+                      const esi = form.esiApplicable ? (Number(form.esiFixed) || 0) : 0;
+                      const pt  = form.ptApplicable  ? (Number(form.ptFixed)  || 0) : 0;
                       const net = gross - pf - esi - pt;
                       return (
                         <>

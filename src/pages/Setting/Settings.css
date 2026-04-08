@@ -225,6 +225,124 @@
   .st-toast-stack { bottom:80px; right:12px; }
 }
 
+/* ── Tablet (≤1024px) ────────────────────────────────────────────────────── */
+@media (max-width:1024px) {
+  .st-main          { padding:20px 20px; }
+  .st-body          { gap:16px; }
+  .st-nav           { width:170px; }
+  .st-branch-grid   { grid-template-columns:repeat(2,1fr); }
+  .st-targets-grid  { grid-template-columns:repeat(2,1fr); }
+  .st-modal-wide    { width:95vw !important; }
+}
+
+/* ── Mobile (≤768px) ─────────────────────────────────────────────────────── */
+@media (max-width:768px) {
+  /* Layout: sidebar above content */
+  .st-main   { padding:12px 12px 68px; }
+  .st-body   { flex-direction:column; gap:12px; align-items:stretch; }
+
+  /* Left nav becomes a horizontal scroll row */
+  .st-nav {
+    width:100%;
+    flex-direction:row;
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    position:static;
+    padding:6px 8px;
+    gap:4px;
+  }
+  .st-nav::-webkit-scrollbar { display:none; }
+  .st-nav-item {
+    flex-shrink:0;
+    white-space:nowrap;
+    padding:8px 14px;
+    font-size:12px;
+  }
+
+  /* Page header */
+  .st-page-header { flex-direction:column; align-items:flex-start; gap:8px; margin-bottom:16px; padding-bottom:14px; }
+  .st-page-title  { font-size:18px; }
+
+  /* Form grids — single column */
+  .st-form-grid, .st-form-grid2 { grid-template-columns:1fr; gap:12px; }
+
+  /* Branch grid — single column */
+  .st-branch-grid   { grid-template-columns:1fr; }
+
+  /* Targets grid — 1 col */
+  .st-targets-grid  { grid-template-columns:repeat(2,1fr); }
+
+  /* Info grid — single column */
+  .st-info-grid     { grid-template-columns:1fr; }
+
+  /* Report section grids */
+  .st-report-info-grid, .st-report-sections-grid { grid-template-columns:1fr; }
+
+  /* Perm header/rows — hide columns, keep name + actions readable */
+  .st-perm-header, .st-perm-row { grid-template-columns:1fr 70px 70px 70px; }
+  .st-perm-opt { width:64px; padding:4px; }
+
+  /* Invoice series row wraps */
+  .st-inv-series-row { flex-direction:column; gap:12px; }
+  .st-inv-series-row .st-field { min-width:0; }
+  .st-inv-preview   { min-width:0; width:100%; }
+
+  /* Table toolbar */
+  .st-table-toolbar { flex-wrap:wrap; gap:8px; }
+
+  /* Target filters */
+  .st-target-filters { flex-wrap:wrap; }
+
+  /* Modal */
+  .st-modal    { width:95vw; max-height:95vh; }
+  .st-modal-wide { width:95vw !important; }
+  .st-modal-body { padding:16px; }
+  .st-modal-footer { padding:12px 16px; }
+  .st-modal-header { padding:14px 16px; }
+
+  /* Section */
+  .st-section { padding:16px; }
+
+  /* Toggle row */
+  .st-toggle-row { width:100%; }
+  .st-toggle { flex:1; text-align:center; }
+}
+
+/* ── Small phone (≤480px) ────────────────────────────────────────────────── */
+@media (max-width:480px) {
+  .st-main   { padding:10px 10px 68px; }
+  .st-page-title { font-size:16px; }
+  .st-nav-item { font-size:11px; padding:7px 10px; }
+
+  /* Targets single column */
+  .st-targets-grid { grid-template-columns:1fr; }
+
+  /* Perm table — collapse to stacked */
+  .st-perm-header { display:none; }
+  .st-perm-row    { grid-template-columns:1fr; padding:8px 12px; gap:6px; }
+  .st-perm-col-opt { justify-content:flex-start; }
+  .st-perm-opt    { width:auto; }
+
+  /* Branch grid */
+  .st-branch-grid { grid-template-columns:1fr; }
+
+  /* Section padding */
+  .st-section { padding:12px; }
+
+  /* Table horizontal scroll */
+  .st-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+  /* Confirm box */
+  .st-confirm-box { width:95vw; padding:18px; }
+  .st-confirm-actions { flex-direction:column; }
+  .st-confirm-actions button { width:100%; justify-content:center; }
+
+  /* inv examples scroll */
+  .st-inv-examples { overflow-x:auto; flex-wrap:nowrap; }
+}
+
 .st-toast-stack { position:fixed; bottom:24px; right:24px; display:flex; flex-direction:column; gap:8px; z-index:9999; }
 .st-toast       { display:flex; align-items:center; gap:8px; padding:11px 16px; border-radius:9px; font-size:13px; font-weight:500; box-shadow:0 4px 16px rgba(0,0,0,.12); animation:st-in .2s ease; }
 .st-toast-success { background:#fff; border:1px solid #bbf7d0; color:#15803d; }

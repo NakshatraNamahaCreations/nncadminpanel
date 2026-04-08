@@ -184,9 +184,51 @@
 .gst-empty-label { font-size: 15px; font-weight: 700; color: #374151; }
 .gst-empty-sub   { font-size: 13px; color: #9ca3af; text-align: center; max-width: 320px; }
 
-/* ── Mobile ── */
+/* ── Tablet (1024px) ── */
+@media (max-width: 1024px) {
+  .gst-main { padding: 16px; }
+  .gst-cards { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ── Mobile (768px) ── */
 @media (max-width: 768px) {
-  .gst-main { padding: 12px 12px 72px; }
+  .gst-main { padding: 12px 12px 68px; }
+
+  /* topbar */
   .gst-topbar { flex-direction: column; align-items: flex-start; }
-  .gst-topbar-right { width: 100%; justify-content: space-between; }
+  .gst-topbar-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .gst-month-nav { width: 100%; justify-content: space-between; }
+  .gst-month-input { width: 100%; box-sizing: border-box; }
+  .gst-refresh-btn { width: 100%; justify-content: center; min-height: 36px; }
+
+  /* summary cards */
+  .gst-cards { grid-template-columns: repeat(2, 1fr); }
+
+  /* tab bar: stack tabs + export */
+  .gst-tab-bar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .gst-tab { flex: 1 1 auto; justify-content: center; min-height: 36px; }
+  .gst-tab-spacer { display: none; }
+  .gst-export-btn { width: 100%; justify-content: center; min-height: 36px; }
+
+  /* table scroll */
+  .gst-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .gst-table { min-width: 600px; }
+}
+
+/* ── Small phone (480px) ── */
+@media (max-width: 480px) {
+  .gst-main { padding: 10px 10px 68px; }
+  .gst-cards { grid-template-columns: 1fr; }
+  .gst-page-title { font-size: 16px; }
+  .gst-sum-value  { font-size: 15px; }
+  .gst-tab { font-size: 12px; padding: 7px 10px; }
+  .gst-breakdown-card { padding: 12px 14px; }
 }

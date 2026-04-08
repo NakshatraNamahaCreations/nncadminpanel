@@ -525,13 +525,55 @@
 /* ── Responsive ── */
 @media (max-width:1100px) { .umStatsRow { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:900px)  { .umFp { width:380px; min-width:380px; } }
+
+/* ── Tablet (1024px) ── */
+@media (max-width:1024px) {
+  .umStatsRow { grid-template-columns: repeat(2, 1fr); }
+  .umFp { width: 360px; min-width: 360px; }
+}
+
+/* ── Mobile (768px) ── */
 @media (max-width:768px) {
   .umTopbar { height:auto; padding:14px; flex-direction:column; align-items:flex-start; }
   .umTopRight { width:100%; flex-wrap:wrap; }
   .umSearch { min-width:unset; flex:1; }
-  .umStatsRow { grid-template-columns:1fr 1fr; }
+  .umTitle { font-size: 17px; }
+  .umStatsRow { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px 14px 0; }
   .umStatCard { padding:10px 12px; }
-  .umContentArea { flex-direction:column; padding:12px 12px 68px; }
+  .umStatVal { font-size: 22px; }
+  .umStatLabel { font-size: 10px; }
+  .umContentArea { flex-direction:column; padding: 12px 14px 68px; }
   .umFp { width:100%; min-width:unset; position:static; max-height:none; }
   .umMain { overflow-x: hidden; }
+  .umTableCard { border-radius: 12px; }
+  .umTableScroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .umTable thead th { font-size: 10px; padding: 9px 10px; }
+  .umRow td { font-size: 12px; padding: 10px; }
+  .umFpHeader { padding: 16px; }
+  .umFpHeaderTitle { font-size: 14px; }
+  .umFpSection { padding: 13px 16px; }
+  .umFpModGrid { grid-template-columns: 1fr; }
+}
+
+/* ── Small phone (480px) ── */
+@media (max-width:480px) {
+  .umTopbar { padding: 10px 12px; gap: 10px; }
+  .umTopLeft { flex-wrap: wrap; }
+  .umTitle { font-size: 15px; }
+  .umSuperPill { font-size: 10px; padding: 3px 8px; }
+  .umPrimaryBtn { font-size: 12px; padding: 0 10px; height: 32px; }
+  .umSearch { height: 32px; font-size: 12px; }
+  .umStatsRow { grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 12px 0; }
+  .umStatVal { font-size: 20px; }
+  .umStatCard { padding: 8px 10px; }
+  .umContentArea { padding: 10px 12px 68px; gap: 10px; }
+  .umTable thead th { font-size: 9px; padding: 8px 8px; }
+  .umRow td { font-size: 11px; padding: 8px; }
+  .umAvatar { width: 28px; height: 28px; font-size: 10px; }
+  .umUserName { font-size: 12px; }
+  .umUsername { font-size: 11px; }
+  .umFpChip { height: 26px; padding: 0 10px; font-size: 10px; }
+  .umFpInputWrap input { height: 36px; font-size: 12px; }
+  .umFpSaveBtn { padding: 0 16px; font-size: 12px; }
+  .umFpCancelBtn { padding: 0 12px; font-size: 12px; }
 }

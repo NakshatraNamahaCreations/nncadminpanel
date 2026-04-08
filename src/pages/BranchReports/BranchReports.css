@@ -806,6 +806,13 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .brKpiStrip  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .brProjGrid  { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .brConvRow   { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brTitle     { font-size: 22px; }
+}
+
 @media (max-width: 900px) {
   .brKpiStrip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -823,18 +830,81 @@
   }
 }
 
+/* ── Mobile (768px) ── */
 @media (max-width: 768px) {
   .brMain { padding-bottom: 68px; overflow-x: hidden; }
   .brTabRow { overflow-x: auto; flex-wrap: nowrap; }
-  .brTabBtn { flex-shrink: 0; }
-  .brTopbar { flex-direction: column; align-items: flex-start; min-height: unset; }
+  .brTabBtn { flex-shrink: 0; padding: 10px 14px; font-size: 12px; }
+  .brTopbar { flex-direction: column; align-items: flex-start; min-height: unset; padding: 10px 14px; }
   .brTopbarRight { width: 100%; flex-wrap: wrap; }
+  .brTitle { font-size: 20px; }
+
+  /* KPI strip: 6→2 columns at 768px */
+  .brKpiStrip  { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .brKpiValue  { font-size: 18px; }
+  .brKpiCard   { padding: 12px; gap: 8px; }
+  .brKpiIcon   { width: 36px; height: 36px; }
+
+  /* Conversion row: 4→2 columns */
+  .brConvRow   { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .brConvValue { font-size: 20px; }
+
+  /* Branch + funnel grids → single column */
+  .brBranchGrid,
+  .brFunnelCards { grid-template-columns: 1fr; }
+
+  /* Projection: 5→2 columns */
+  .brProjGrid  { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .brProjValue { font-size: 16px; }
+
+  /* Filter row: stack vertically */
+  .brFilterRow { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .brFilterRow .brSelect,
+  .brFilterRow .brGhostBtn { width: 100%; }
+
+  /* Table containers: ensure overflow scroll */
+  .brTableWrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .brTableCard { overflow-x: hidden; }
+  .brTable     { font-size: 12px; }
+  .brTable th  { font-size: 10px; padding: 8px 10px; }
+  .brTable td  { padding: 8px 10px; }
+
+  .brContent   { padding: 12px 14px; }
+  .brSectionHeader { font-size: 13px; }
 }
 
-@media (max-width: 640px) {
-  .brContent { padding: 12px; }
-  .brKpiStrip { grid-template-columns: 1fr 1fr; }
-  .brConvRow  { grid-template-columns: 1fr 1fr; }
-  .brProjGrid { grid-template-columns: 1fr 1fr; }
-  .brTitle { font-size: 22px; }
+/* ── Small phone (480px) ── */
+@media (max-width: 480px) {
+  .brTopbar    { padding: 10px 12px; }
+  .brTitle     { font-size: 17px; }
+  .brAdminPill { font-size: 10px; padding: 3px 8px; }
+  .brContent   { padding: 10px 12px 68px; }
+
+  /* KPI strip: keep 2 cols, tighter */
+  .brKpiStrip  { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .brKpiCard   { padding: 10px; gap: 6px; }
+  .brKpiValue  { font-size: 16px; }
+  .brKpiLabel  { font-size: 10px; }
+  .brKpiIcon   { width: 30px; height: 30px; border-radius: 8px; }
+
+  /* Conversion row → single column on small phones */
+  .brConvRow   { grid-template-columns: 1fr; gap: 6px; }
+  .brConvValue { font-size: 18px; }
+
+  /* Projection → single column */
+  .brProjGrid  { grid-template-columns: 1fr; gap: 6px; }
+  .brProjValue { font-size: 15px; }
+
+  .brChartCard { padding: 14px 12px 10px; }
+  .brChartTitle { font-size: 13px; }
+
+  .brTable th  { font-size: 9px; padding: 7px 8px; }
+  .brTable td  { font-size: 11px; padding: 7px 8px; }
+
+  .brBCardName { font-size: 14px; }
+  .brBCardSub  { font-size: 11px; }
+  .brRepName   { font-size: 13px; }
+  .brRepRev    { font-size: 13px; }
+
+  .brTabBtn    { padding: 8px 12px; font-size: 11px; }
 }

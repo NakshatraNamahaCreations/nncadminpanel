@@ -180,6 +180,7 @@ export default function AllLeads() {
         advanceReceived: x.advanceReceived != null ? Number(x.advanceReceived) : null,
         advanceReceivedDate: x.advanceReceivedDate || null,
         createdAt:       x.createdAt       || null,
+        onboardedDate:   x.onboardedDate   || null,
         days:            x.days            || "0d",
         docs:            Number(x.docs     || 0),
         rep:             x.rep             || "—",
@@ -195,6 +196,9 @@ export default function AllLeads() {
 
   useEffect(() => { fetchReps(); }, []);
   useEffect(() => { fetchLeads(); }, [queryParams]);
+
+  const [pageSize, setPageSize] = useState(20);
+  const [page, setPage] = useState(1);
 
   const total = useMemo(() => rows.reduce((a, b) => a + (b.value || 0), 0), [rows]);
 
@@ -216,6 +220,12 @@ export default function AllLeads() {
       })
       .reduce((a, b) => a + (b.advanceReceived || 0), 0);
   }, [rows, advancePeriod]);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const paginated  = rows.slice((page - 1) * pageSize, page * pageSize);
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1); }, [queryParams]);
 
   const addLeadToTodayPlan = async (e, row) => {
     try {
@@ -466,55 +476,103 @@ export default function AllLeads() {
             {rows.length === 0 ? (
               <div className="alEmpty">No leads found{filters.q ? ` for "${filters.q}"` : ""}.</div>
             ) : (
-              <div className="alList">
-                {rows.map(r => {
-                  const sc = STAGE_COLOR[r.stage] || {};
-                  const pc = PRIO_COLOR[r.priority] || "#94a3b8";
-                  return (
-                    <div key={r.id} className="alRow" onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
+              <>
+                <div style={{ overflowX: "auto" }}>
+                <table className="alTable">
+                  <thead>
+                    <tr>
+                      <th>Sl No</th>
+                      <th>Date</th>
+                      <th>Business Name</th>
+                      <th>Client Name</th>
+                      <th>Stage</th>
+                      <th>Date Onboarded</th>
+                      <th>Rep</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginated.map((r, idx) => {
+                      const rowNum = (page - 1) * pageSize + idx + 1;
+                      const fmtDate = (v) => v ? new Date(v).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+                      return (
+                        <tr key={r.id} onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
+                          <td style={{ textAlign: "center", color: "#94a3b8", fontSize: 12, fontWeight: 600 }}>{rowNum}</td>
+                          <td>
+                            <div style={{ fontSize: 12, color: "#374151", fontWeight: 500 }}>{fmtDate(r.createdAt)}</div>
+                            <div style={{ fontSize: 10, color: "#a1a1aa" }}>{getAgo(r.createdAt)}</div>
+                          </td>
+                          <td className="alRowBiz">{r.business}</td>
+                          <td>
+                            <div className="alRowName">{r.name}</div>
+                            <div className="alRowPhone">{r.phone}</div>
+                          </td>
+                          <td>
+                            {(() => { const sc = STAGE_COLOR[r.stage] || {}; return (
+                              <span className="alRowStage" style={{ background: sc.bg || "#f1f5f9", color: sc.color || "#64748b" }}>
+                                {r.stage}
+                              </span>
+                            ); })()}
+                          </td>
+                          <td>
+                            <div style={{ fontSize: 12, color: "#374151", fontWeight: 500 }}>{fmtDate(r.onboardedDate)}</div>
+                          </td>
+                          <td>
+                            <div className="alRowRep">{r.rep}</div>
+                          </td>
+                          <td onClick={e => e.stopPropagation()}>
+                            <div className="alRowActions">
+                              <button type="button" className="alAct view" title="View" onClick={e => { e.stopPropagation(); setSelectedId(r.id); setDrawerOpen(true); }}><Eye size={14}/></button>
+                              <button type="button" className="alAct edit" title="Edit" onClick={e => handleEditLead(e, r.id)}><Pencil size={14}/></button>
+                              <button type="button" className="alAct plan" title="Add to Today's Plan" onClick={e => addLeadToTodayPlan(e, r)} disabled={planningId === r.id}><CalendarPlus size={14}/></button>
+                              <button type="button" className="alAct del" title="Delete" onClick={e => handleDeleteLead(e, r.id)} disabled={deletingId === r.id}><Trash2 size={14}/></button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                </div>
 
-                      {/* Avatar */}
-                      <div className="alAvatar" style={{ background: sc.bg || "#f1f5f9", color: sc.color || "#475569" }}>
-                        {initials(r.name)}
-                      </div>
-
-                      {/* Name + phone */}
-                      <div className="alRowMain">
-                        <div className="alRowName">{r.name}</div>
-                        <div className="alRowPhone">{r.phone}</div>
-                      </div>
-
-                      {/* Business */}
-                      <div className="alRowBiz">{r.business}</div>
-
-                      {/* Stage pill */}
-                      <span className="alRowStage" style={{ background: sc.bg || "#f1f5f9", color: sc.color || "#64748b" }}>
-                        {r.stage}
+                {/* Pagination */}
+                {rows.length > 0 && (
+                  <div className="alPagination">
+                    <div className="alPagLeft">
+                      <span className="alPagInfo">
+                        {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, rows.length)} of {rows.length} leads
                       </span>
-
-                      {/* Priority dot */}
-                      <span className="alRowPrio" style={{ color: pc }}>● {r.priority}</span>
-
-                      {/* Value */}
-                      <div className="alRowValue">{money(r.value)}</div>
-
-                      {/* Rep + age */}
-                      <div className="alRowMeta">
-                        <div className="alRowRep">{r.rep}</div>
-                        <div className="alRowAgo">{getAgo(r.createdAt)}</div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="alRowActions" onClick={e => e.stopPropagation()}>
-                        <button type="button" className="alAct view" title="View" onClick={e => { e.stopPropagation(); setSelectedId(r.id); setDrawerOpen(true); }}><Eye size={14}/></button>
-                        <button type="button" className="alAct edit" title="Edit" onClick={e => handleEditLead(e, r.id)}><Pencil size={14}/></button>
-                        <button type="button" className="alAct plan" title="Add to Today's Plan" onClick={e => addLeadToTodayPlan(e, r)} disabled={planningId === r.id}><CalendarPlus size={14}/></button>
-                        <button type="button" className="alAct del"  title="Delete" onClick={e => handleDeleteLead(e, r.id)} disabled={deletingId === r.id}><Trash2 size={14}/></button>
-                      </div>
+                      <span className="alPagInfo" style={{ marginLeft: 12 }}>Rows per page:</span>
+                      <select
+                        className="alPagSizeSelect"
+                        value={pageSize}
+                        onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+                      >
+                        {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}</option>)}
+                      </select>
                     </div>
-                  );
-                })}
-              </div>
+                    <div className="alPagButtons">
+                      <button className="alPagBtn" disabled={page === 1} onClick={() => setPage(1)}>«</button>
+                      <button className="alPagBtn" disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹</button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+                        .reduce((acc, p, i, arr) => {
+                          if (i > 0 && p - arr[i - 1] > 1) acc.push("…");
+                          acc.push(p);
+                          return acc;
+                        }, [])
+                        .map((p, i) =>
+                          p === "…"
+                            ? <span key={`e${i}`} className="alPagEllipsis">…</span>
+                            : <button key={p} className={`alPagBtn ${p === page ? "active" : ""}`} onClick={() => setPage(p)}>{p}</button>
+                        )}
+                      <button className="alPagBtn" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>›</button>
+                      <button className="alPagBtn" disabled={page === totalPages} onClick={() => setPage(totalPages)}>»</button>
+                    </div>
+                  </div>
+                )}
+
+              </>
             )}
           </div>
         )}

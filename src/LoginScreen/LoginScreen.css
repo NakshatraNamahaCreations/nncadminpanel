@@ -281,6 +281,45 @@
   .loginRight { width: 100%; box-shadow: none; }
 }
 
+/* ── Tablet (≤1024px) ────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .loginRight { width: 420px; padding: 40px 36px; }
+  .lHeroTitle { font-size: 38px; }
+  .loginLeft  { padding: 48px 44px; }
+}
+
+/* ── Mobile (≤768px) ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .loginPage  { flex-direction: column; }
+  .loginLeft  { display: none; }
+  .loginRight {
+    width: 100%;
+    min-height: 100vh;
+    padding: 40px 24px 68px;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lrInner    { width: 100%; max-width: 420px; }
+  .lrTitle    { font-size: 24px; }
+  .lrLogo     { height: 44px; }
+  .fpModal    { width: 95vw; }
+}
+
+/* ── Small phone (≤480px) ────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .loginRight { padding: 28px 16px 68px; }
+  .loginBgImg     { display: none; }
+  .loginBgOverlay { display: none; }
+  .loginPage  { background: #f8fafc; }
+  .lrTitle    { font-size: 22px; }
+  .lrField input  { height: 44px; font-size: 13px; }
+  .lrSubmitBtn    { height: 46px; font-size: 14px; }
+  .fpBody     { padding: 18px 16px; }
+  .fpHeader   { padding: 16px 16px 12px; }
+}
+
 /* ── Forgot password modal ────────────────────────────────────────────── */
 .fpOverlay  { position: fixed; inset: 0; background: rgba(15,23,42,.45); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
 .fpModal    { background: #fff; border-radius: 16px; width: 420px; max-width: 95vw; box-shadow: 0 24px 64px rgba(0,0,0,.18); overflow: hidden; animation: fpIn .2s ease; font-family: 'Inter', sans-serif; }

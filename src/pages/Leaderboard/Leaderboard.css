@@ -110,9 +110,60 @@
 .lb-rate-badge.mid  { background:#fffbeb; color:#d97706; }
 .lb-rate-badge.low  { background:#fef2f2; color:#dc2626; }
 
+/* ── Tablet (1024px) ── */
+@media (max-width:1024px) {
+  .lb-main { padding:20px 20px; }
+  .lb-kpi-grid { grid-template-columns:repeat(3,1fr); }
+  .lb-mid-grid { grid-template-columns:1fr 1fr; }
+}
+
+/* ── Mobile (768px) ── */
 @media (max-width:768px) {
-  .lb-main        { padding:12px 12px 68px; }
-  .lb-header      { flex-direction:column; align-items:flex-start; }
-  .lb-search-wrap { min-width: unset; width:100%; }
-  .lb-table-wrap  { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .lb-main { padding:12px 12px 68px; }
+
+  /* header */
+  .lb-header { flex-direction:column; align-items:flex-start; }
+  .lb-header-right {
+    width:100%;
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+  }
+  .lb-search-wrap { min-width:unset; width:100%; }
+  .lb-sel { width:100%; min-height:36px; }
+  .lb-icon-btn { min-height:36px; min-width:36px; }
+
+  /* period tabs */
+  .lb-period-tabs { gap:6px; }
+  .lb-period-tab  { flex:1 1 auto; text-align:center; min-height:36px; display:flex; align-items:center; justify-content:center; }
+
+  /* kpi & mid grids */
+  .lb-kpi-grid { grid-template-columns:repeat(2,1fr); }
+  .lb-mid-grid { grid-template-columns:1fr; }
+
+  /* table scroll */
+  .lb-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+
+  /* podium scaling */
+  .lb-podium { gap:6px; }
+  .lb-podium-avatar { width:40px; height:40px; font-size:14px; }
+
+  /* activity card height */
+  .lb-activity-card { max-height:220px; }
+}
+
+/* ── Small phone (480px) ── */
+@media (max-width:480px) {
+  .lb-main { padding:10px 10px 68px; }
+  .lb-title { font-size:18px; }
+  .lb-kpi-grid { grid-template-columns:1fr; }
+  .lb-kpi-val { font-size:18px; }
+  .lb-period-tab { font-size:11px; padding:6px 10px; }
+  .lb-card { padding:14px; }
+  .lb-card-head { font-size:11px; }
+  .lb-podium-col { max-width:80px; }
+  .lb-podium-avatar { width:36px; height:36px; font-size:12px; }
+  .lb-podium-name { font-size:11px; }
+  .lb-table { min-width:700px; }
+  .lb-header-right { gap:6px; }
 }

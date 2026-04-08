@@ -450,7 +450,26 @@
 .enq-page-info { font-size: 12px; color: #94a3b8; }
 
 /* ═══════════════════════════════════════════════
-   RESPONSIVE — TABLET (≤ 900px)
+   RESPONSIVE — TABLET (≤ 1024px)
+═══════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .enq-header         { padding: 20px 20px 16px; flex-wrap: wrap; }
+  .enq-title          { font-size: 22px; }
+  .enq-kpi-strip      { grid-template-columns: repeat(2, 1fr); }
+  .enq-kpi-item:nth-child(2) { border-right: none; }
+  .enq-kpi-item:nth-child(3) { border-top: 1px solid #f1f5f9; }
+  .enq-filter-selects { padding: 10px 16px; }
+  .enq-table-section  { padding: 14px 16px; }
+  .enq-form-2col      { grid-template-columns: 1fr; }
+  .enq-form-sidebar   { min-height: auto; border-right: none; border-top: 1px solid #e2e8f0; }
+  .enq-detail-cols    { grid-template-columns: 1fr; }
+  .enq-detail-topbar  { flex-wrap: wrap; padding: 16px 20px; gap: 12px; }
+  .enq-form-subheader { padding: 16px 20px; }
+  .enq-services-grid  { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — TABLET (≤ 900px) — kept for compat
 ═══════════════════════════════════════════════ */
 @media (max-width: 900px) {
   .enq-header         { padding: 20px 20px 16px; flex-wrap: wrap; }
@@ -469,7 +488,141 @@
 }
 
 /* ═══════════════════════════════════════════════
-   RESPONSIVE — MOBILE (≤ 640px)
+   RESPONSIVE — MOBILE (≤ 768px)
+═══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Bottom nav clearance */
+  .enq-main           { padding-bottom: 68px; overflow-x: hidden; }
+  .enq-table-section  { padding: 10px 10px 68px; }
+
+  /* Header */
+  .enq-header         { padding: 16px 14px 14px; flex-direction: column; align-items: stretch; gap: 12px; }
+  .enq-title          { font-size: 20px; }
+  .enq-subtitle       { font-size: 12px; }
+  .enq-header-acts    { width: 100%; justify-content: stretch; gap: 8px; }
+  .enq-btn-prim       { flex: 1; justify-content: center; padding: 10px 12px; }
+  .enq-btn-sec        { flex: 1; justify-content: center; padding: 10px 12px; }
+
+  /* KPI strip — 2 columns */
+  .enq-kpi-strip      { grid-template-columns: 1fr 1fr; }
+  .enq-kpi-item       { padding: 14px 12px; gap: 10px; }
+  .enq-kpi-item:nth-child(2) { border-right: none; }
+  .enq-kpi-item:nth-child(3) { border-top: 1px solid #f1f5f9; }
+  .enq-kpi-item:nth-child(4) { border-top: 1px solid #f1f5f9; }
+  .enq-kpi-val        { font-size: 20px; }
+  .enq-kpi-label      { font-size: 9px; }
+  .enq-kpi-icon       { width: 36px; height: 36px; }
+
+  /* Date range filter — wrap pills */
+  .enq-date-range-group { padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
+  .enq-dr-btn           { padding: 5px 10px; font-size: 11px; flex: 1 1 auto; text-align: center; }
+
+  /* Filter selects — stack vertically */
+  .enq-filter-selects {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .enq-filter-selects select,
+  .enq-filter-selects input {
+    width: 100%;
+    font-size: 14px; /* prevent iOS zoom */
+    padding: 9px 12px;
+    min-height: 40px;
+  }
+  .enq-filter-selects .enq-search-wrap { width: 100%; }
+  .enq-filter-clear {
+    width: 100%;
+    text-align: center;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Tab bar — scrollable */
+  .enq-tab-bar  { overflow-x: auto; padding: 10px 12px 0; gap: 2px; }
+  .enq-tab-btn  { padding: 8px 14px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+
+  /* Table — horizontal scroll */
+  .enq-table-section  { padding: 10px 10px; }
+  .enq-table-card     { border-radius: 12px; }
+  .enq-table-head     { padding: 10px 14px; flex-wrap: wrap; gap: 6px; }
+  .enq-table-wrap     { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .enq-table          { min-width: 580px; }
+  .enq-table th,
+  .enq-table td       { padding: 10px 10px; }
+
+  /* Hide non-essential table columns on mobile */
+  /* Company(3) and Budget(5) columns */
+  .enq-table th:nth-child(3), .enq-table td:nth-child(3),
+  .enq-table th:nth-child(5), .enq-table td:nth-child(5) { display: none; }
+
+  /* Touch-friendly action buttons */
+  .enq-btn-icon { width: 36px; height: 36px; }
+  .enq-actions  { gap: 4px; }
+
+  /* Form view */
+  .enq-form-subheader { padding: 14px 14px; flex-wrap: wrap; gap: 10px; }
+  .enq-form-heading   { font-size: 17px; }
+  .enq-form-2col      { grid-template-columns: 1fr; }
+  .enq-form-left      { padding: 14px; gap: 16px; }
+  .enq-form-sidebar   {
+    padding: 14px;
+    min-height: auto;
+    border-right: none;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+  .enq-form-grid   { grid-template-columns: 1fr; gap: 10px; }
+  .enq-form-grid-3 { grid-template-columns: 1fr; gap: 10px; }
+  .enq-services-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .enq-status-pills  { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .enq-input, .enq-select, .enq-textarea {
+    font-size: 14px; /* prevent iOS zoom */
+    min-height: 40px;
+  }
+  .enq-save-btn   { width: 100%; padding: 13px; font-size: 14px; }
+  .enq-cancel-btn { width: 100%; padding: 13px; font-size: 14px; }
+  .enq-budget-row { flex-direction: column; gap: 6px; }
+  .enq-budget-dash { display: none; }
+
+  /* Detail view */
+  .enq-detail-topbar {
+    flex-direction: column;
+    padding: 14px;
+    gap: 12px;
+  }
+  .enq-detail-topbar-left { flex-wrap: wrap; gap: 10px; }
+  .enq-detail-acts  { flex-wrap: wrap; width: 100%; gap: 8px; }
+  .enq-convert-btn  { width: 100%; justify-content: center; }
+  .enq-detail-body  { padding: 12px; gap: 14px; }
+  .enq-detail-cols  { grid-template-columns: 1fr; gap: 0; }
+
+  /* Quotation line items */
+  .qt-line-row  { flex-wrap: wrap; gap: 6px; }
+  .qt-totals    { max-width: 100%; }
+
+  /* Pagination */
+  .enq-pagination {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  .enq-page-btn   { width: 36px; height: 36px; }
+  .enq-page-info  { width: 100%; text-align: center; }
+
+  /* Note form */
+  .enq-note-save-btn { align-self: stretch; text-align: center; padding: 10px; }
+
+  /* Export inline */
+  .enq-export-inline { font-size: 11px; padding: 5px 10px; }
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — MOBILE (≤ 640px) — original kept
 ═══════════════════════════════════════════════ */
 @media (max-width: 640px) {
   .enq-header         { padding: 16px 16px 14px; padding-top: 64px; } /* room for hamburger */
@@ -510,8 +663,43 @@
 
   .enq-pagination     { padding: 10px 12px; flex-wrap: wrap; gap: 6px; }
 }
-@media (max-width: 768px) {
-  .enq-main { padding-bottom: 68px; }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — SMALL PHONE (≤ 480px)
+═══════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .enq-header     { padding: 12px 10px 10px; padding-top: 60px; }
+  .enq-title      { font-size: 18px; }
+  .enq-eyebrow    { font-size: 9px; }
+  .enq-btn-prim,
+  .enq-btn-sec    { width: 100%; justify-content: center; }
+
+  .enq-kpi-item   { padding: 10px 8px; gap: 8px; }
+  .enq-kpi-val    { font-size: 17px; }
+  .enq-kpi-icon   { width: 30px; height: 30px; }
+
+  .enq-date-range-group { gap: 4px; }
+  .enq-dr-btn     { font-size: 10px; padding: 4px 8px; }
+
+  .enq-table-section { padding: 8px 8px; }
+  .enq-table         { min-width: 480px; }
+  .enq-table th,
+  .enq-table td      { padding: 8px 8px; font-size: 12px; }
+
+  .enq-form-left,
+  .enq-form-sidebar  { padding: 10px; }
+  .enq-form-card-body { padding: 12px; }
+  .enq-services-grid { grid-template-columns: 1fr; }
+  .enq-status-pills  { grid-template-columns: 1fr 1fr; }
+
+  .enq-detail-body   { padding: 10px; }
+  .enq-page-btn      { width: 32px; height: 32px; font-size: 12px; }
+
+  /* Quotation totals full width on tiny screens */
+  .qt-totals { max-width: 100%; }
+  .qt-total-row input.qt-total-input { width: 90px; }
+  .qt-line-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .qt-remove-line { align-self: flex-end; }
 }
 
 /* ═══════════════════════════════════════════════

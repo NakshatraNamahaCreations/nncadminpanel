@@ -496,20 +496,137 @@
   .pnl-row3 { grid-template-columns: 1fr; }
   .pnl-row4 { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 1024px) {
+  .pnl-row1  { grid-template-columns: 1fr; }
+  .pnl-row3  { grid-template-columns: 1fr; }
+  .pnl-row4  { grid-template-columns: 1fr; }
+  .pnl-kpi-col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .pnl-pulse-row { grid-template-columns: repeat(3, 1fr); }
+  .pnl-pulse-item:nth-child(3) { border-right: none; }
+  .pnl-hero-title { font-size: 22px; }
+}
+
 @media (max-width: 900px) {
   .pnl-pulse-row { grid-template-columns: repeat(3, 1fr); }
   .pnl-pulse-item:nth-child(3) { border-right: none; }
   .pnl-kpi-col { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── Mobile (768px) ── */
+@media (max-width: 768px) {
+  .pnl-main { padding-bottom: 68px; overflow-x: hidden; }
+
+  /* Hero: stack controls vertically */
+  .pnl-hero  { padding: 16px 16px 14px; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .pnl-hero-right { width: 100%; flex-wrap: wrap; }
+  .pnl-hero-title { font-size: 20px; }
+  .pnl-target-hero-btn { flex: 1; justify-content: center; }
+
+  .pnl-body  { padding: 12px 14px 68px; gap: 12px; }
+
+  /* Row 1: single column */
+  .pnl-row1  { grid-template-columns: 1fr; gap: 12px; }
+  /* KPI col: 2 columns (was 4) */
+  .pnl-kpi-col { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .pnl-kpi-card { padding: 11px 12px; }
+  .pnl-kpi-val  { font-size: 15px; }
+
+  /* Pulse: 2→ columns, reset nth-child borders */
+  .pnl-pulse-row { grid-template-columns: repeat(2, 1fr); }
+  .pnl-pulse-item:nth-child(2) { border-right: none; }
+  .pnl-pulse-item:nth-child(3) { border-right: 1px solid #f1f5f9; }
+  .pnl-pulse-val   { font-size: 17px; }
+  .pnl-pulse-label { font-size: 10px; }
+
+  /* Row 3 & 4: single column */
+  .pnl-row3  { grid-template-columns: 1fr; gap: 12px; }
+  .pnl-row4  { grid-template-columns: 1fr; gap: 12px; }
+
+  /* Target card */
+  .pnl-target-card   { padding: 16px; }
+  .pnl-target-goal   { font-size: 22px; }
+  .pnl-target-main   { flex-direction: column; align-items: flex-start; gap: 12px; }
+
+  /* Expense rows */
+  .pnl-exp-row {
+    grid-template-columns: 10px 80px 1fr 32px 64px;
+    gap: 6px;
+  }
+  .pnl-exp-name { font-size: 11px; }
+  .pnl-exp-amt  { font-size: 11px; }
+
+  /* Breakdown table: ensure scrollable */
+  .pnl-bd-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .pnl-bd-table      { font-size: 12px; }
+  .pnl-bd-table thead th { font-size: 9px; padding: 8px 10px; }
+  .pnl-bd-table td       { padding: 8px 10px; }
+
+  /* Breakdown head: stack on mobile */
+  .pnl-bd-head  { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 14px; }
+  .pnl-bd-tabs  { flex-wrap: wrap; }
+
+  .pnl-card     { padding: 14px 14px; }
+  .pnl-card-head { font-size: 12px; margin-bottom: 10px; }
+}
+
+/* ── Small phone (480px) ── */
+@media (max-width: 480px) {
+  .pnl-hero  { padding: 12px; }
+  .pnl-hero-title { font-size: 17px; }
+  .pnl-hero-eyebrow { font-size: 9px; }
+  .pnl-hero-period  { font-size: 12px; }
+
+  .pnl-body  { padding: 10px 10px 68px; gap: 10px; }
+
+  /* KPI: keep 2 cols, tighter */
+  .pnl-kpi-col  { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .pnl-kpi-card { padding: 10px; gap: 8px; }
+  .pnl-kpi-val  { font-size: 14px; }
+  .pnl-kpi-lbl  { font-size: 9px; }
+  .pnl-kpi-icon-wrap { width: 30px; height: 30px; border-radius: 8px; }
+
+  /* Pulse: 1 col on very small screens */
+  .pnl-pulse-row  { grid-template-columns: repeat(2, 1fr); }
+  .pnl-pulse-item { padding: 12px 10px; }
+  .pnl-pulse-val  { font-size: 15px; }
+
+  .pnl-target-card  { padding: 12px; }
+  .pnl-target-goal  { font-size: 18px; }
+  .pnl-gauge-pct    { font-size: 22px; }
+
+  /* Expense: hide bar on very small phones, show name+amt */
+  .pnl-exp-row {
+    grid-template-columns: 10px 1fr 56px;
+    gap: 6px;
+  }
+  .pnl-exp-bar-wrap,
+  .pnl-exp-pct { display: none; }
+
+  .pnl-bd-table thead th { font-size: 8px; padding: 7px 8px; }
+  .pnl-bd-table td       { font-size: 11px; padding: 7px 8px; }
+
+  .pnl-card     { padding: 12px; border-radius: 12px; }
+  .pnl-card-head { font-size: 11px; }
+
+  .pnl-modal    { border-radius: 16px; }
+  .pnl-modal-head { padding: 16px 16px 12px; }
+  .pnl-modal-body { padding: 14px 16px; }
+  .pnl-modal-foot { padding: 12px 16px 14px; }
+  .pnl-modal-input { font-size: 14px; }
+  .pnl-quick-btn { padding: 6px 10px; font-size: 11px; }
+}
+
 @media (max-width: 640px) {
-  .pnl-body    { padding: 12px 12px 32px; }
+  .pnl-body    { padding: 12px 12px 68px; }
   .pnl-hero    { padding: 16px; }
   .pnl-hero-title { font-size: 20px; }
   .pnl-pulse-row  { grid-template-columns: repeat(2, 1fr); }
   .pnl-pulse-item:nth-child(2) { border-right: none; }
   .pnl-kpi-col { grid-template-columns: 1fr 1fr; }
   .pnl-target-main { flex-direction: column; align-items: flex-start; }
-}
-@media (max-width: 768px) {
-  .pnl-main { padding-bottom: 68px; }
 }

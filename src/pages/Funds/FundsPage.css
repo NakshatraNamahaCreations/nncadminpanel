@@ -123,6 +123,63 @@
 .fd-del-warn   { font-size:12px; color:#f59e0b; background:#451a03; padding:8px 12px; border-radius:6px; margin-top:10px; }
 .fd-del-foot   { display:flex; justify-content:flex-end; gap:10px; }
 .fd-btn-del    { background:#ef4444; border:none; color:#fff; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; }
+/* ── Tablet (1024px) ── */
+@media (max-width: 1024px) {
+  .fd-main { padding: 18px 20px; }
+  .fd-cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Mobile (768px) ── */
 @media (max-width: 768px) {
-  .fd-main { padding-bottom: 68px; }
+  .fd-main { padding: 14px 14px 68px; }
+
+  /* header */
+  .fd-header { flex-direction: column; align-items: flex-start; }
+  .fd-header-right { width: 100%; flex-wrap: wrap; gap: 8px; }
+  .fd-total-badge { flex: 1; text-align: center; }
+  .fd-icon-btn { min-height: 36px; min-width: 36px; }
+
+  /* fund cards */
+  .fd-cards-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  /* detail panel */
+  .fd-detail-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .fd-add-btn { width: 100%; justify-content: center; min-height: 36px; }
+
+  .fd-detail-top {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .fd-purpose-block { min-width: unset; width: 100%; }
+
+  /* transaction table */
+  .fd-tx-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .fd-tx-table { min-width: 480px; }
+
+  /* modal */
+  .fd-modal { width: calc(100vw - 24px); max-width: unset; }
+  .fd-modal-body { padding: 14px; }
+  .fd-modal-foot { flex-wrap: wrap; gap: 8px; }
+  .fd-btn-cancel,
+  .fd-btn-save { flex: 1; justify-content: center; min-height: 36px; }
+
+  /* delete confirm */
+  .fd-del-modal { width: calc(100vw - 24px); }
+  .fd-del-foot { flex-wrap: wrap; gap: 8px; }
+  .fd-btn-del { flex: 1; justify-content: center; min-height: 36px; }
+}
+
+/* ── Small phone (480px) ── */
+@media (max-width: 480px) {
+  .fd-main { padding: 10px 10px 68px; }
+  .fd-cards-grid { grid-template-columns: 1fr; }
+  .fd-title { font-size: 18px; }
+  .fd-card-balance { font-size: 18px; }
+  .fd-balance-val { font-size: 24px; }
+  .fd-detail { padding: 14px; }
+  .fd-chart-wrap { padding: 10px; }
+  .fd-tx-table { min-width: 420px; }
 }

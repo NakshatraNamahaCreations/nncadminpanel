@@ -74,7 +74,7 @@ export default function OwnerDesk() {
       if(ref) setRefreshing(true); else setLoading(true);
       const [dr,nr,pr] = await Promise.all([
         fetch(`${API}/api/owner-desk`,                              { headers:auth() }),
-        fetch(`${API}/api/owner-desk/notes?date=${todayStr()}`,    { headers:auth() }),
+        fetch(`${API}/api/owner-desk/notes`,                        { headers:auth() }),
         fetch(`${API}/api/owner-desk/payment-expected`,            { headers:auth() }),
       ]);
       const [dj,nj,pj] = await Promise.all([dr.json(),nr.json(),pr.json()]);

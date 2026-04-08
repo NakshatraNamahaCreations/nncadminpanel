@@ -35,12 +35,29 @@ const BOTTOM_NAV = [
   { label: "Reports",path: "/analytics",   key: "analytics",   icon: BarChart3       },
 ];
 
+const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
+
 export default function Sidebar() {
   const nav = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const sbContentRef  = useRef(null);
   const scrollPosRef  = useRef(0);
+  const [newEnquiryCount, setNewEnquiryCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      try {
+        const token = localStorage.getItem("nnc_token");
+        const res = await fetch(`${API_BASE}/api/enquiries?status=new&limit=1`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const json = await res.json();
+        if (json?.success) setNewEnquiryCount(json.total || 0);
+      } catch { /* silent */ }
+    };
+    fetchCount();
+  }, [location.pathname]);
 
   /* Close drawer on route change, but restore sidebar scroll position */
   useEffect(() => {
@@ -98,8 +115,8 @@ export default function Sidebar() {
     {
       title: "Sales",
       items: [
+        { label: "Enquiries",  path: "/enquiries",   moduleKey: "enquiries",   icon: <MessageSquare size={15} />, badge: newEnquiryCount || null },
         { label: "All Leads", path: "/leads",     moduleKey: "all-leads", icon: <Users size={15} /> },
-        { label: "Enquiries",  path: "/enquiries",   moduleKey: "enquiries",   icon: <MessageSquare size={15} /> },
         { label: "Quotations", path: "/quotations",  moduleKey: "quotations",  icon: <ReceiptText size={15} /> },
         { label: "Calendar",   path: "/calendar",    moduleKey: "calendar",    icon: <CalendarDays size={15} /> },
       ],
