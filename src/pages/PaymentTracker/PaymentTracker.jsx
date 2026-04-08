@@ -241,7 +241,7 @@ export default function PaymentTracker() {
       setPaySaving(true);
       const newAdvance = payModal.advanceReceived + amt;
       // Update lead advance
-      const res = await fetch(`${API_BASE}/api/leads/${payModal._id}`, {
+      const res = await fetch(`${API_BASE}/api/leads/${payModal.id}`, {
         method: "PUT",
         headers: { ...auth(), "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -257,7 +257,7 @@ export default function PaymentTracker() {
         // Check if a PaymentClient exists for this lead id or name
         let clientsRes = await fetch(`${API_BASE}/api/payment-tracker/clients`, { headers: auth() });
         let clientsJson = await clientsRes.json();
-        let ptClient = (clientsJson.data || []).find(c => c.leadId === payModal._id || c.client === payModal.name);
+        let ptClient = (clientsJson.data || []).find(c => c.leadId === payModal.id || c.client === payModal.name);
         if (!ptClient) {
           // Create one on-the-fly
           const cr = await fetch(`${API_BASE}/api/payment-tracker/clients`, {
@@ -464,7 +464,7 @@ export default function PaymentTracker() {
                     <tr><td colSpan={12} className="ptEmpty">No records found.</td></tr>
                   )}
                   {paginated.map((r, idx) => (
-                    <tr key={r._id} className="ptRow" onClick={() => { setSelectedId(r._id); setDrawerOpen(true); }}>
+                    <tr key={r.id} className="ptRow" onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
                       <td style={{ color: "#94a3b8", fontSize: 12, fontWeight: 600, textAlign: "center" }}>
                         {(page - 1) * PAGE_SIZE + idx + 1}
                       </td>
@@ -493,7 +493,7 @@ export default function PaymentTracker() {
                       </td>
                       <td onClick={(e) => e.stopPropagation()} style={{ whiteSpace: "nowrap" }}>
                         <button type="button" className="ptViewBtn"
-                          onClick={() => { setSelectedId(r._id); setDrawerOpen(true); }}>
+                          onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
                           <Eye size={13} /> View
                         </button>
                         <button type="button" className="ptRecordPayBtn"
@@ -501,7 +501,7 @@ export default function PaymentTracker() {
                           <PlusCircle size={13} /> Payment
                         </button>
                         <button type="button" className="ptHistoryBtn"
-                          onClick={(e) => { e.stopPropagation(); setHistoryClientId(r._id); }}>
+                          onClick={(e) => { e.stopPropagation(); setHistoryClientId(r.id); }}>
                           <History size={13} /> History
                         </button>
                       </td>
