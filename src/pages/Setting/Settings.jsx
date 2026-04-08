@@ -3,7 +3,7 @@ import Sidebar from "../../components/Sidebar/Sidebar";
 import {
   User, Users, Building2, DollarSign, Target,
   FileBarChart2, Save, Plus, Trash2, Edit3, Eye, EyeOff,
-  CheckCircle2, XCircle, RefreshCcw, Send, Shield, X, UserCheck, Receipt,
+  CheckCircle2, XCircle, RefreshCcw, Send, Shield, X, UserCheck, Receipt, Landmark,
 } from "lucide-react";
 import "./Settings.css";
 
@@ -917,6 +917,160 @@ function RepsTab({ toast }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB 8 — Invoice Series
 // ══════════════════════════════════════════════════════════════════════════════
+function BankAccountsTab({ toast }) {
+  const [accounts, setAccounts] = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [saving,   setSaving]   = useState(false);
+  const [editId,   setEditId]   = useState(null);
+  const [form,     setForm]     = useState({ name: "", bankName: "", accountNumber: "", ifsc: "", branch: "" });
+
+  const authH = () => {
+    const t = localStorage.getItem("nnc_token");
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  };
+
+  const fetchAccounts = async () => {
+    setLoading(true);
+    try {
+      const res  = await fetch(`${API}/api/payment-tracker/bank-accounts`, { headers: authH() });
+      const json = await res.json();
+      if (json.success) setAccounts(json.data || []);
+      else toast("error", json.message || "Failed to load accounts");
+    } catch { toast("error", "Failed to load accounts"); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchAccounts(); }, []);
+
+  const save = async () => {
+    if (!form.name.trim()) return toast("error", "Account label is required");
+    setSaving(true);
+    try {
+      const url    = editId ? `${API}/api/payment-tracker/bank-accounts/${editId}` : `${API}/api/payment-tracker/bank-accounts`;
+      const method = editId ? "PUT" : "POST";
+      const res    = await fetch(url, { method, headers: { ...authH(), "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const json   = await res.json();
+      if (!res.ok || !json.success) return toast("error", json.message || "Save failed");
+      toast("success", editId ? "Account updated" : "Account added");
+      setForm({ name: "", bankName: "", accountNumber: "", ifsc: "", branch: "" });
+      setEditId(null);
+      fetchAccounts();
+    } catch { toast("error", "Save failed"); }
+    finally { setSaving(false); }
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm("Remove this bank account?")) return;
+    try {
+      await fetch(`${API}/api/payment-tracker/bank-accounts/${id}`, { method: "DELETE", headers: authH() });
+      toast("success", "Account removed");
+      fetchAccounts();
+    } catch { toast("error", "Failed to remove"); }
+  };
+
+  const startEdit = (a) => {
+    setEditId(a._id);
+    setForm({ name: a.name, bankName: a.bankName || "", accountNumber: a.accountNumber || "", ifsc: a.ifsc || "", branch: a.branch || "" });
+  };
+
+  const cancelEdit = () => {
+    setEditId(null);
+    setForm({ name: "", bankName: "", accountNumber: "", ifsc: "", branch: "" });
+  };
+
+  return (
+    <div className="st-tab-body">
+      <Section title="Bank Accounts" sub="Manage company bank accounts used in payment tracking">
+        {loading ? (
+          <div style={{ textAlign: "center", padding: 24 }}><RefreshCcw size={22} style={{ animation: "spin 1s linear infinite" }} /></div>
+        ) : (
+          <>
+            {/* Existing accounts list */}
+            {accounts.length > 0 && (
+              <div className="st-table-wrap" style={{ marginBottom: 24 }}>
+                <table className="st-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Account Label</th>
+                      <th>Bank Name</th>
+                      <th>Account Number</th>
+                      <th>IFSC</th>
+                      <th>Branch</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {accounts.map((a, i) => (
+                      <tr key={a._id}>
+                        <td style={{ color: "#94a3b8", fontSize: 12 }}>{i + 1}</td>
+                        <td style={{ fontWeight: 700, color: "#0f172a" }}>{a.name}</td>
+                        <td>{a.bankName || "—"}</td>
+                        <td style={{ fontFamily: "monospace" }}>{a.accountNumber || "—"}</td>
+                        <td style={{ fontFamily: "monospace" }}>{a.ifsc || "—"}</td>
+                        <td>{a.branch || "—"}</td>
+                        <td>
+                          <div style={{ display: "flex", gap: 6 }}>
+                            <button className="st-action-btn edit" onClick={() => startEdit(a)}>
+                              <Edit3 size={13} /> Edit
+                            </button>
+                            <button className="st-action-btn delete" onClick={() => remove(a._id)}>
+                              <Trash2 size={13} /> Remove
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Add / Edit form */}
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 20 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "#0f172a", marginBottom: 14 }}>
+                {editId ? "Edit Account" : "Add New Bank Account"}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div className="st-field">
+                  <label className="st-label">Account Label *</label>
+                  <input className="st-input" placeholder="e.g. NNC Main Account" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+                </div>
+                <div className="st-field">
+                  <label className="st-label">Bank Name</label>
+                  <input className="st-input" placeholder="e.g. HDFC Bank" value={form.bankName} onChange={e => setForm(f => ({ ...f, bankName: e.target.value }))} />
+                </div>
+                <div className="st-field">
+                  <label className="st-label">Account Number</label>
+                  <input className="st-input" placeholder="Account number" value={form.accountNumber} onChange={e => setForm(f => ({ ...f, accountNumber: e.target.value }))} />
+                </div>
+                <div className="st-field">
+                  <label className="st-label">IFSC Code</label>
+                  <input className="st-input" placeholder="IFSC" value={form.ifsc} onChange={e => setForm(f => ({ ...f, ifsc: e.target.value }))} />
+                </div>
+                <div className="st-field">
+                  <label className="st-label">Branch / Office</label>
+                  <input className="st-input" placeholder="e.g. Mysore" value={form.branch} onChange={e => setForm(f => ({ ...f, branch: e.target.value }))} />
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                <button className="st-save-btn" onClick={save} disabled={saving}>
+                  <Save size={14} /> {saving ? "Saving…" : editId ? "Update Account" : "Add Account"}
+                </button>
+                {editId && (
+                  <button className="st-cancel-btn" onClick={cancelEdit}>
+                    <X size={14} /> Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </Section>
+    </div>
+  );
+}
+
 function InvoiceTab({ toast }) {
   const [cfg,     setCfg]     = useState({ proformaPrefix:"NNC/PRF", taxPrefix:"NNC/TAX", paddingLength:4, includeFiscalYear:true });
   const [loading, setLoading] = useState(true);
@@ -1028,6 +1182,7 @@ const TABS = [
   { key:"branch",    label:"Branch & Rent",    icon:Building2    },
   { key:"financial", label:"Financial Config", icon:DollarSign   },
   { key:"targets",   label:"Targets",          icon:Target       },
+  { key:"bank",      label:"Bank Accounts",    icon:Landmark     },
   { key:"invoices",  label:"Invoice Series",   icon:Receipt      },
   { key:"reports",   label:"Report Settings",  icon:FileBarChart2},
 ];
@@ -1086,6 +1241,7 @@ export default function Settings() {
             {tab === "branch"    && <BranchTab     toast={toast}/>}
             {tab === "financial" && <FinancialTab  toast={toast}/>}
             {tab === "targets"   && <TargetsTab    toast={toast}/>}
+            {tab === "bank"      && <BankAccountsTab toast={toast}/>}
             {tab === "invoices"  && <InvoiceTab    toast={toast}/>}
             {tab === "reports"   && <ReportTab     toast={toast}/>}
           </div>
