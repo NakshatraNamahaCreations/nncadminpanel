@@ -464,7 +464,7 @@ export default function PaymentTracker() {
                     <tr><td colSpan={12} className="ptEmpty">No records found.</td></tr>
                   )}
                   {paginated.map((r, idx) => (
-                    <tr key={r.id} className="ptRow" onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
+                    <tr key={r._id} className="ptRow" onClick={() => { setSelectedId(r._id); setDrawerOpen(true); }}>
                       <td style={{ color: "#94a3b8", fontSize: 12, fontWeight: 600, textAlign: "center" }}>
                         {(page - 1) * PAGE_SIZE + idx + 1}
                       </td>
@@ -493,7 +493,7 @@ export default function PaymentTracker() {
                       </td>
                       <td onClick={(e) => e.stopPropagation()} style={{ whiteSpace: "nowrap" }}>
                         <button type="button" className="ptViewBtn"
-                          onClick={() => { setSelectedId(r.id); setDrawerOpen(true); }}>
+                          onClick={() => { setSelectedId(r._id); setDrawerOpen(true); }}>
                           <Eye size={13} /> View
                         </button>
                         <button type="button" className="ptRecordPayBtn"
@@ -501,7 +501,7 @@ export default function PaymentTracker() {
                           <PlusCircle size={13} /> Payment
                         </button>
                         <button type="button" className="ptHistoryBtn"
-                          onClick={(e) => { e.stopPropagation(); setHistoryClientId(r.id); }}>
+                          onClick={(e) => { e.stopPropagation(); setHistoryClientId(r._id); }}>
                           <History size={13} /> History
                         </button>
                       </td>
