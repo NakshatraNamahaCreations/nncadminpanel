@@ -241,7 +241,7 @@ export default function PaymentTracker() {
       setPaySaving(true);
       const newAdvance = payModal.advanceReceived + amt;
       // Update lead advance
-      const res = await fetch(`${API_BASE}/api/leads/${payModal.id}`, {
+      const res = await fetch(`${API_BASE}/api/leads/${payModal._id}`, {
         method: "PUT",
         headers: { ...auth(), "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -257,7 +257,7 @@ export default function PaymentTracker() {
         // Check if a PaymentClient exists for this lead id or name
         let clientsRes = await fetch(`${API_BASE}/api/payment-tracker/clients`, { headers: auth() });
         let clientsJson = await clientsRes.json();
-        let ptClient = (clientsJson.data || []).find(c => c.leadId === payModal.id || c.client === payModal.name);
+        let ptClient = (clientsJson.data || []).find(c => c.leadId === payModal._id || c.client === payModal.name);
         if (!ptClient) {
           // Create one on-the-fly
           const cr = await fetch(`${API_BASE}/api/payment-tracker/clients`, {
