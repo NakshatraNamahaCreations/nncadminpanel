@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Plus, Search, Eye, Edit2, Trash2, Send, RefreshCcw,
   ChevronLeft, ChevronRight, FileText, CheckCircle2, XCircle,
-  Clock, AlertCircle, PlusCircle, Minus, Download, MessageSquare,
-  GitBranch, ArrowRight, TrendingUp, Receipt,
+  PlusCircle, Minus, Download, MessageSquare,
+  GitBranch, TrendingUp, Receipt,
 } from "lucide-react";
 import Sidebar from "../../components/Sidebar/Sidebar";
 import { toast } from "../../utils/toast";
@@ -17,9 +17,9 @@ const getUser = () => localStorage.getItem("nnc_name") || "Admin";
 const BRANCHES = ["Bangalore", "Mysore", "Mumbai"];
 
 const BRANCH_INFO = {
-  Bangalore: { addr: "No. 45, 2nd Floor, HSR Layout, Bengaluru – 560102", phone: "+91 99005 66466" },
-  Mysore:    { addr: "Saraswathipuram, Mysuru – 570009",                   phone: "+91 99005 66466" },
-  Mumbai:    { addr: "Andheri East, Mumbai – 400069",                      phone: "+91 99005 66466" },
+  Bangalore: { addr: "Darshan Plaza, 1st Floor, Channasandra, Karnataka 560 098", phone: "+91 99005 66466" },
+  Mysore:    { addr: "Suswani Towers, JP Nagar 2nd Stage, Karnataka 570 008",      phone: "+91 99005 66466" },
+  Mumbai:    { addr: "Lodha Signet, Kolshet Rd, Thane West, Maharashtra 400 607",  phone: "+91 99005 66466" },
 };
 
 const NNC_GSTIN = "29AABCN1234F1Z5";
@@ -45,11 +45,98 @@ const PI_STATUS_META = {
 const STATUSES = Object.keys(STATUS_META);
 const EMPTY_ITEM = { description: "", qty: 1, rate: 0, amount: 0 };
 
+const SERVICE_CATEGORIES = [
+  "Website Development",
+  "Mobile Application",
+  "E-Commerce Website",
+  "SEO & Digital Marketing",
+  "Logo & Branding",
+  "UI/UX Design",
+  "Cloud & Hosting",
+  "CRM / Software Development",
+  "Social Media Management",
+  "Other",
+];
+
+const DEFAULT_TERMS = {
+  "Website Development": `1. A minimum of 50% advance payment is required to initiate the project.
+2. Remaining 50% to be paid before the website goes live on the domain.
+3. Client must provide all content (text, images, videos) within 5 working days of project start.
+4. Client feedbacks to be given at every milestone. We wait for 3 working days for feedback. If not submitted, we consider it approved and proceed.
+5. Post-launch support of 30 days is included at no additional cost for bug fixes only.
+6. Any new requirements raised after final delivery will be billed separately.
+7. Domain and hosting charges are not included in this quotation unless explicitly mentioned.`,
+
+  "Mobile Application": `1. A minimum of 50% advance payment is required to initiate the project.
+2. Remaining 50% to be paid before the app is submitted to the App Store / Play Store.
+3. Client must provide all content, branding assets, and API credentials within 5 working days.
+4. App Store / Play Store developer account charges are borne by the client.
+5. Client feedbacks to be given within 3 working days at each milestone; delays extend the delivery timeline.
+6. Post-launch support of 30 days is included for bug fixes only. New features will be billed separately.
+7. Any third-party API, payment gateway, or subscription charges are the client's responsibility.`,
+
+  "E-Commerce Website": `1. A minimum of 50% advance payment is required to initiate the project.
+2. Remaining 50% to be paid before going live.
+3. Product data, images, and descriptions must be provided by the client within 7 working days.
+4. Payment gateway integration charges (if any) are borne by the client.
+5. Domain, hosting, and SSL certificate charges are not included unless explicitly mentioned.
+6. Client feedbacks to be given within 3 working days at each stage; delays will extend delivery.
+7. Post-launch support of 30 days is included for bug fixes only.`,
+
+  "SEO & Digital Marketing": `1. Services are billed on a monthly retainer basis, payable in advance.
+2. A minimum contract period of 3 months is applicable.
+3. Results are subject to search engine algorithm changes and are not guaranteed.
+4. Client must provide access to website, Google Analytics, Search Console, and social accounts.
+5. Content approvals must be provided within 2 working days to maintain the posting schedule.
+6. Either party may terminate with 30 days written notice after the minimum period.`,
+
+  "Logo & Branding": `1. Full payment is required before delivery of final source files.
+2. Up to 3 rounds of revisions are included in the quoted price.
+3. Additional revision rounds will be charged at ₹500 per round.
+4. Final files will be delivered in AI, EPS, PNG, and PDF formats.
+5. All rights to the final design are transferred to the client upon full payment.
+6. NNC reserves the right to showcase the work in its portfolio unless requested otherwise.`,
+
+  "UI/UX Design": `1. A minimum of 50% advance payment is required to start the design work.
+2. Remaining 50% to be paid upon delivery of final design files.
+3. Up to 2 rounds of revisions are included per screen/page design.
+4. Client must provide brand guidelines, content, and reference materials before kickoff.
+5. Designs will be delivered in Figma or Adobe XD format.
+6. Development is not included unless separately quoted.`,
+
+  "Cloud & Hosting": `1. Hosting and cloud services are billed monthly/annually as per the chosen plan.
+2. Setup charges are one-time and non-refundable.
+3. The client is responsible for regular backups unless a managed backup plan is included.
+4. Downtime due to data center/provider issues is not the liability of NNC.
+5. Services can be cancelled with 15 days notice before the next billing cycle.`,
+
+  "CRM / Software Development": `1. A minimum of 50% advance payment is required to initiate development.
+2. Remaining 50% to be paid in milestones as agreed in the project plan.
+3. Requirements must be finalized and signed off before development begins. Changes post-sign-off will be billed separately.
+4. Client feedbacks to be given within 3 working days at each milestone.
+5. Source code ownership transfers to the client upon full payment.
+6. Post-delivery support of 60 days is included for bug fixes only.`,
+
+  "Social Media Management": `1. Services are billed monthly, payable in advance before the month begins.
+2. A minimum contract period of 3 months is applicable.
+3. Client must provide brand approvals for posts within 24 hours to maintain the schedule.
+4. Ad spend (if any) is separate and borne by the client.
+5. Either party may terminate with 30 days written notice after the minimum period.
+6. NNC retains the right to share content examples in its portfolio.`,
+
+  "Other": `1. A minimum of 50% advance payment is required to initiate the project.
+2. Remaining 50% to be paid upon project completion before final delivery.
+3. Client feedbacks to be given within 3 working days at each stage.
+4. Any changes to the scope after project start will be quoted and billed separately.
+5. All deliverables remain the property of NNC until full payment is received.`,
+};
+
 const EMPTY_FORM = {
   clientName: "", clientPhone: "", clientEmail: "", clientCompany: "",
   clientAddress: "", clientGstin: "",
   senderEmail: "",
   branch: "Bangalore", enquiryId: "", status: "draft",
+  serviceCategory: "",
   lineItems: [{ ...EMPTY_ITEM }],
   discount: 0, tax: 18,
   validUntil: "", notes: "", terms: "",
@@ -79,124 +166,648 @@ function fmtDate(d) {
 }
 
 /* ────────────────────────────────────────────────────────────────
+   PROPOSAL CONTENT DATA  (per service category)
+──────────────────────────────────────────────────────────────────*/
+const PROPOSAL_DATA = {
+  "Website Development": {
+    tagline: "Corporate Website Development",
+    techLabel: "Next.js | Responsive Design",
+    summary: (client) => `${client} requires a professional, fast-loading website that establishes credibility, showcases its products and services, and makes it easy for clients and partners to reach out. Nakshatra Namaha Creations proposes a clean, modern website built on Next.js — a technology that delivers the best combination of performance, SEO and modern design for a corporate brand. The website will be fully responsive across mobile, tablet and desktop, optimised for Google search, and delivered in 15 working days from kickoff.`,
+    stats: [{ val: "5-6", lbl: "Pages Delivered" }, { val: "Next.js", lbl: "Tech Stack" }, { val: "15", lbl: "Working Days" }, { val: "100%", lbl: "Mobile Responsive" }],
+    scope: [
+      { num: "01", title: "Home Page", desc: "Navigation header, hero banner with tagline and CTA, about us snippet, key services/product highlights, why-choose-us section, client logos/trust badges, footer with contact, quick links and social media." },
+      { num: "02", title: "About Us", desc: "Company background and history, mission and vision statements, core values, leadership team with photos and designations, company milestones and certificates." },
+      { num: "03", title: "Products / Services", desc: "Service/product category overview, individual cards with descriptions and specifications. Can be split into two pages if both products and services are required." },
+      { num: "04", title: "Why Us / Our Strength", desc: "Key differentiators, industry experience, quality commitments, certifications, client testimonials and achievement numbers (years in business, clients served, projects delivered)." },
+      { num: "05", title: "Gallery / Portfolio (Optional)", desc: "Grid-based image gallery with lightbox view. Included if client provides sufficient visual content, or can be replaced with an expanded Products/Services page." },
+      { num: "06", title: "Contact Us", desc: "Contact form with email notification, address, phone and email, Google Maps embed, business hours, WhatsApp direct contact button." },
+    ],
+    included: ["Next.js website — all pages built for fast loading and SEO performance", "Custom UI/UX design tailored to client brand — not a template", "Fully responsive — mobile, tablet and desktop", "Contact form with email notification", "Google Maps integration on Contact page", "WhatsApp click-to-chat button on all pages", "Basic technical SEO — page structure and headings optimised", "Social media links in header and footer", "Google Analytics 4 integration", "SSL-ready deployment", "Source code handover on final payment", "Deployment to Vercel or client hosting of choice", "30-day post-launch support for bug fixes"],
+    notIncluded: [["Domain name registration", "Yes — billed at actual cost"], ["Web hosting charges", "Yes — Vercel free tier or paid plan"], ["Content writing", "Yes — content writing service available"], ["Logo design", "Yes — logo design available separately"], ["E-commerce functionality", "Yes — e-commerce as separate project"], ["Admin panel or CMS", "Yes — CMS/admin as add-on"]],
+    timeline: [
+      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–4", activity: "Requirement discussion. Design mockups for Home and one inner page shared for approval.", client: "Share logo, brand colours, content brief and reference websites." },
+      { phase: "Phase 2 — Design Approval", days: "Days 5–6", activity: "Client reviews mockups. Revisions incorporated. Final design approved before development begins.", client: "Approve designs or give consolidated revision feedback within 24 hours." },
+      { phase: "Phase 3 — Development", days: "Days 7–12", activity: "All pages developed in Next.js. Contact form, maps, WhatsApp, SEO and analytics integrated.", client: "Provide all content: text, images, team photos, product details." },
+      { phase: "Phase 4 — Testing", days: "Days 13–14", activity: "Content uploaded. Cross-browser and mobile testing on iOS and Android. Speed optimisation and SEO meta tags added.", client: "Review staging link and share final feedback." },
+      { phase: "Phase 5 — Launch", days: "Day 15", activity: "Deployed to live domain. Google Analytics set up. DNS configuration completed.", client: "Confirm domain and hosting details. Make final payment before launch." },
+    ],
+    totalDays: "15 Working Days",
+  },
+  "Mobile Application": {
+    tagline: "Mobile Application Development",
+    techLabel: "React Native | iOS & Android",
+    summary: (client) => `${client} requires a professional, feature-rich mobile application that delivers a seamless experience on both iOS and Android platforms. Nakshatra Namaha Creations proposes a cross-platform mobile app built on React Native — enabling a single codebase that works perfectly on all devices, reducing cost and time-to-market. The app will be designed with a modern UI, smooth animations and all required functionality, delivered in 30 working days from kickoff.`,
+    stats: [{ val: "iOS+Android", lbl: "Both Platforms" }, { val: "React Native", lbl: "Tech Stack" }, { val: "30", lbl: "Working Days" }, { val: "100%", lbl: "Native Performance" }],
+    scope: [
+      { num: "01", title: "UI/UX Design", desc: "Complete app wireframes and high-fidelity designs for all screens, following iOS Human Interface Guidelines and Android Material Design principles." },
+      { num: "02", title: "Onboarding & Authentication", desc: "Splash screen, onboarding slides, user registration, login (email/phone/OTP), forgot password and secure session management." },
+      { num: "03", title: "Core Feature Screens", desc: "All primary feature screens as per client requirements — product listings, service pages, dashboards, forms, detail views and any custom business logic." },
+      { num: "04", title: "Profile & Settings", desc: "User profile management, notification preferences, account settings, password change and logout functionality." },
+      { num: "05", title: "Notifications", desc: "Push notification integration (Firebase FCM) for order updates, promotions, reminders and any event-driven alerts." },
+      { num: "06", title: "App Store Submission", desc: "App packaged and submitted to Google Play Store and Apple App Store. Developer account setup guidance provided. Review turnaround time is subject to store policies." },
+    ],
+    included: ["Cross-platform app for iOS and Android from a single codebase", "Custom UI/UX design for all screens", "User authentication — email, phone and OTP login", "Push notifications via Firebase FCM", "API integration with any existing backend or NNC-built backend", "Google Maps / location integration if required", "In-app camera, gallery and file upload support", "Offline-first capability for key screens", "App Store and Play Store submission", "Source code handover on final payment", "30-day post-launch support for bug fixes"],
+    notIncluded: [["App Store / Play Store developer account fees", "Client's responsibility"], ["Backend / API development", "Yes — available as separate scope"], ["Content writing and copywriting", "Yes — available separately"], ["Third-party API subscription charges", "Client's responsibility"], ["Paid push notification services beyond free tier", "Client's responsibility"]],
+    timeline: [
+      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–7", activity: "Requirement finalisation. Wireframes and high-fidelity designs for all key screens.", client: "Share brand assets, reference apps, content brief and feature list." },
+      { phase: "Phase 2 — Design Approval", days: "Days 8–9", activity: "Client reviews all screen designs. Revisions incorporated. Final designs signed off.", client: "Approve designs or give consolidated feedback within 24 hours." },
+      { phase: "Phase 3 — Development", days: "Days 10–24", activity: "All screens developed. Authentication, APIs, push notifications and third-party integrations built.", client: "Provide API credentials, content and any required access keys." },
+      { phase: "Phase 4 — Testing", days: "Days 25–28", activity: "QA testing on iOS and Android devices. Performance, crash and compatibility testing.", client: "Test on your own device and provide final feedback." },
+      { phase: "Phase 5 — Launch", days: "Days 29–30", activity: "App submitted to Google Play Store and Apple App Store. Store listing assets prepared.", client: "Confirm developer accounts and make final payment before submission." },
+    ],
+    totalDays: "30 Working Days",
+  },
+  "E-Commerce Website": {
+    tagline: "E-Commerce Website Development",
+    techLabel: "Next.js | Razorpay | Full Store",
+    summary: (client) => `${client} requires a complete, conversion-optimised e-commerce website to sell products or services online. Nakshatra Namaha Creations proposes a modern online store built on Next.js with a full product catalogue, cart, checkout, payment gateway integration and order management — giving the client a professional online selling platform that works seamlessly on all devices and ranks well on Google.`,
+    stats: [{ val: "Full Store", lbl: "End-to-End" }, { val: "Next.js", lbl: "Tech Stack" }, { val: "21", lbl: "Working Days" }, { val: "100%", lbl: "Mobile Ready" }],
+    scope: [
+      { num: "01", title: "Home Page", desc: "Hero banner with offers, featured products/categories, promotional sections, trust badges, newsletter signup and footer with all links." },
+      { num: "02", title: "Product Catalogue", desc: "Category pages, product listing with filters and sorting, product detail pages with images, descriptions, specifications and related products." },
+      { num: "03", title: "Cart & Checkout", desc: "Add to cart, update quantities, remove items, apply coupon codes, address entry, delivery options and order summary before payment." },
+      { num: "04", title: "Payment Gateway", desc: "Razorpay or PayU integration for UPI, cards, net banking and wallets. Order confirmation emails sent automatically on successful payment." },
+      { num: "05", title: "User Accounts", desc: "Customer registration, login, order history, saved addresses, wishlist and password management." },
+      { num: "06", title: "Admin Panel", desc: "Product management (add/edit/delete), order management, inventory tracking, coupon management and basic sales reports." },
+    ],
+    included: ["Complete e-commerce store with all core pages", "Product catalogue with categories, filters and search", "Cart and multi-step checkout flow", "Razorpay / PayU payment gateway integration", "Automatic order confirmation emails to customer and admin", "Customer accounts — registration, login, order history, wishlist", "Admin panel for products, orders and inventory management", "Coupon / promo code system", "Fully responsive — mobile-first design", "Basic technical SEO for all product and category pages", "Google Analytics 4 with e-commerce tracking", "SSL-ready deployment", "Source code handover on final payment", "30-day post-launch support"],
+    notIncluded: [["Domain and hosting charges", "Client's responsibility"], ["Payment gateway registration fees", "Client's responsibility"], ["Content writing / product descriptions", "Yes — available separately"], ["Bulk product upload (more than 100 SKUs)", "Yes — available as add-on"], ["Custom ERP or accounting integration", "Yes — quoted separately"]],
+    timeline: [
+      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–5", activity: "Requirement discussion. Design mockups for Home, Product listing and Product detail pages.", client: "Share product data, logo, brand colours and any reference stores." },
+      { phase: "Phase 2 — Design Approval", days: "Days 6–7", activity: "Client reviews designs. Revisions incorporated. Final designs approved.", client: "Approve or give consolidated feedback within 24 hours." },
+      { phase: "Phase 3 — Development", days: "Days 8–17", activity: "All pages developed. Cart, checkout, payment gateway and admin panel built and integrated.", client: "Provide complete product catalogue: names, descriptions, prices, images." },
+      { phase: "Phase 4 — Testing", days: "Days 18–20", activity: "End-to-end checkout testing, payment testing in sandbox mode, mobile and cross-browser testing.", client: "Review staging site and complete UAT (User Acceptance Testing)." },
+      { phase: "Phase 5 — Launch", days: "Day 21", activity: "Live deployment. Payment gateway switched to production mode. Analytics and SEO finalised.", client: "Confirm domain, hosting and payment gateway production credentials." },
+    ],
+    totalDays: "21 Working Days",
+  },
+  "SEO & Digital Marketing": {
+    tagline: "SEO & Digital Marketing Services",
+    techLabel: "SEO | Google Ads | Social Media",
+    summary: (client) => `${client} requires a structured digital marketing strategy to increase online visibility, drive qualified traffic and generate leads. Nakshatra Namaha Creations proposes a comprehensive SEO and digital marketing engagement covering on-page optimisation, local SEO, Google Ads management and social media marketing — delivering measurable growth in search rankings, website traffic and enquiries over a sustained engagement period.`,
+    stats: [{ val: "3 Months", lbl: "Minimum Engagement" }, { val: "10+", lbl: "Target Keywords" }, { val: "Monthly", lbl: "Reports" }, { val: "100%", lbl: "Transparent" }],
+    scope: [
+      { num: "01", title: "SEO Audit & Keyword Research", desc: "Full technical SEO audit, competitor analysis, keyword research for 10+ target keywords, on-page and off-page gap analysis." },
+      { num: "02", title: "On-Page SEO Optimisation", desc: "Title tags, meta descriptions, heading structure, URL optimisation, image alt text, internal linking, schema markup and page speed improvements." },
+      { num: "03", title: "Local SEO", desc: "Google Business Profile optimisation, local citations, NAP consistency, review generation strategy and local keyword targeting." },
+      { num: "04", title: "Content Marketing", desc: "Monthly blog posts (2–4 articles) optimised for target keywords, social media content calendar and LinkedIn/Instagram posts." },
+      { num: "05", title: "Google Ads Management (if applicable)", desc: "Campaign setup, ad copywriting, keyword bidding strategy, A/B testing, negative keywords and monthly performance optimisation." },
+      { num: "06", title: "Monthly Reporting", desc: "Keyword ranking report, traffic and lead analytics, campaign performance summary and next-month action plan shared every month." },
+    ],
+    included: ["Full SEO audit and competitor analysis", "Keyword research for 10+ target keywords", "On-page SEO for all website pages", "Google Business Profile optimisation", "Monthly blog content (2–4 articles)", "Social media content calendar and posts", "Google Search Console and Analytics setup", "Monthly ranking and traffic report", "Google Ads campaign management (if opted)", "Dedicated account manager"],
+    notIncluded: [["Google Ads budget / ad spend", "Client's responsibility — billed directly by Google"], ["Website development or redesign", "Yes — available separately"], ["Paid social media ads budget", "Client's responsibility"], ["Video production for ads", "Yes — available as add-on"], ["Guaranteed ranking results", "Not possible — results depend on competition and algorithm"]],
+    timeline: [
+      { phase: "Month 1 — Audit & Foundation", days: "Weeks 1–4", activity: "SEO audit, keyword finalisation, on-page optimisation, Google Business Profile setup, content calendar creation.", client: "Provide website access, Google Analytics and Search Console access." },
+      { phase: "Month 2 — Execution", days: "Weeks 5–8", activity: "Content publishing begins, link building outreach, social media posts go live, Google Ads campaign launched.", client: "Approve content drafts within 2 working days to maintain schedule." },
+      { phase: "Month 3 — Optimisation", days: "Weeks 9–12", activity: "Keyword ranking review, campaign optimisation, content strategy adjustment, detailed performance report.", client: "Review monthly report and share feedback for strategy adjustment." },
+    ],
+    totalDays: "Ongoing — minimum 3 months",
+  },
+  "Logo & Branding": {
+    tagline: "Logo Design & Brand Identity",
+    techLabel: "Brand Identity | Visual Design",
+    summary: (client) => `${client} requires a professional logo and brand identity that communicates its values, stands out in its market and works consistently across all media. Nakshatra Namaha Creations proposes a complete brand identity package — covering logo design, colour palette, typography selection and brand usage guidelines — delivered as production-ready files in all required formats within 7 working days.`,
+    stats: [{ val: "3 Concepts", lbl: "Initial Options" }, { val: "3 Rounds", lbl: "Revisions" }, { val: "7", lbl: "Working Days" }, { val: "All Formats", lbl: "Delivered" }],
+    scope: [
+      { num: "01", title: "Discovery & Brief", desc: "Brand questionnaire, competitor landscape review, mood board creation and design direction alignment with the client before any design work begins." },
+      { num: "02", title: "Logo Design — 3 Concepts", desc: "Three distinct logo concepts presented for client review. Each concept includes primary logo, variations and black/white version." },
+      { num: "03", title: "Revision Rounds", desc: "Up to 3 rounds of revisions on the chosen concept. Each round is one consolidated set of feedback communicated in a single message." },
+      { num: "04", title: "Colour Palette", desc: "Primary and secondary brand colours defined with hex, RGB and CMYK values for consistent use across print and digital." },
+      { num: "05", title: "Typography Selection", desc: "Primary and secondary brand fonts selected and specified with usage guidelines for headings, body text and digital use." },
+      { num: "06", title: "Final File Delivery", desc: "Final logo delivered in AI, EPS, SVG, PNG (transparent, white and dark backgrounds) and PDF formats. Brand guidelines document included." },
+    ],
+    included: ["Brand discovery questionnaire and mood board", "3 initial logo concepts", "Up to 3 revision rounds on chosen concept", "Primary and secondary colour palette with hex/RGB/CMYK codes", "Typography selection with usage guidance", "Final files in AI, EPS, SVG, PNG and PDF formats", "Black and white version of logo", "Brand usage guidelines document (1–2 pages)", "Full IP transfer on final payment"],
+    notIncluded: [["Stationery design (business cards, letterhead)", "Yes — available as add-on"], ["Social media branding kit", "Yes — available as add-on"], ["Packaging design", "Yes — quoted separately"], ["Website design or development", "Yes — separate project"], ["Video or motion logo animation", "Yes — available as add-on"]],
+    timeline: [
+      { phase: "Phase 1 — Discovery", days: "Day 1–2", activity: "Brand questionnaire, competitor research and mood board presented for approval.", client: "Fill discovery questionnaire and approve mood board direction." },
+      { phase: "Phase 2 — Concepts", days: "Days 3–4", activity: "Three logo concepts designed and presented with rationale.", client: "Choose preferred concept and share consolidated feedback." },
+      { phase: "Phase 3 — Refinement", days: "Days 5–6", activity: "Chosen concept refined through revision rounds. Colour palette and typography finalised.", client: "Provide revision feedback in one consolidated message per round." },
+      { phase: "Phase 4 — Delivery", days: "Day 7", activity: "Final files prepared in all formats. Brand guidelines document compiled and delivered.", client: "Review final deliverables and clear final payment for file handover." },
+    ],
+    totalDays: "7 Working Days",
+  },
+  "UI/UX Design": {
+    tagline: "UI/UX Design Services",
+    techLabel: "Figma | User Research | Prototyping",
+    summary: (client) => `${client} requires a professionally designed user interface and user experience that makes its digital product intuitive, visually compelling and easy to use. Nakshatra Namaha Creations proposes a structured UI/UX design engagement — from user research and wireframes through to high-fidelity Figma designs and interactive prototypes — delivering a complete design system ready for development handover.`,
+    stats: [{ val: "Figma", lbl: "Design Tool" }, { val: "2 Rounds", lbl: "Revisions/Screen" }, { val: "Hi-Fi", lbl: "Prototype" }, { val: "Dev Ready", lbl: "Handover" }],
+    scope: [
+      { num: "01", title: "User Research & Strategy", desc: "User personas, user journey mapping, competitor UX analysis and information architecture (IA) planning before any design begins." },
+      { num: "02", title: "Wireframes", desc: "Low-fidelity wireframes for all key screens showing layout, content hierarchy and user flow — approved before high-fidelity design begins." },
+      { num: "03", title: "Visual Design System", desc: "Colour palette, typography, icon style, spacing system, component library and design tokens established as the foundation for all screens." },
+      { num: "04", title: "High-Fidelity Screen Designs", desc: "Pixel-perfect Figma designs for all screens including desktop, tablet and mobile breakpoints. All states — default, hover, active, error, empty — designed." },
+      { num: "05", title: "Interactive Prototype", desc: "Clickable Figma prototype linking all screens for stakeholder review, usability testing or developer reference." },
+      { num: "06", title: "Developer Handover", desc: "Figma file with organised layers, annotated specs, asset exports (SVG/PNG), spacing values and component documentation for clean developer handover." },
+    ],
+    included: ["User research: personas and journey maps", "Information architecture and sitemap", "Low-fidelity wireframes for all screens", "Visual design system and component library", "High-fidelity designs for all screens and breakpoints", "All states designed: default, hover, error, empty, loading", "Interactive clickable prototype", "Developer handover file with specs and annotations", "Up to 2 revision rounds per screen", "Figma file ownership transferred on final payment"],
+    notIncluded: [["Frontend or backend development", "Yes — available as a separate project"], ["Copywriting or content creation", "Yes — available separately"], ["User testing recruitment and facilitation", "Yes — available as add-on"], ["Motion design / micro-animations", "Yes — available as add-on"], ["Branding / logo design", "Yes — available as separate project"]],
+    timeline: [
+      { phase: "Phase 1 — Research & IA", days: "Days 1–3", activity: "User research, personas, journey maps and information architecture completed.", client: "Share existing brand assets, reference products and user feedback if available." },
+      { phase: "Phase 2 — Wireframes", days: "Days 4–6", activity: "Wireframes for all key screens presented and revised.", client: "Approve wireframes before high-fidelity design begins." },
+      { phase: "Phase 3 — Visual Design", days: "Days 7–14", activity: "Design system built. High-fidelity screens designed for all breakpoints.", client: "Provide brand guidelines, approved content and image assets." },
+      { phase: "Phase 4 — Prototype & Handover", days: "Days 15–17", activity: "Interactive prototype built. Developer handover file prepared with all specs and assets.", client: "Review prototype and clear final payment for Figma file handover." },
+    ],
+    totalDays: "17 Working Days",
+  },
+  "CRM / Software Development": {
+    tagline: "Custom CRM & Software Development",
+    techLabel: "React | Node.js | MongoDB",
+    summary: (client) => `${client} requires a custom-built software solution to streamline its business operations, manage data and automate workflows. Nakshatra Namaha Creations proposes a tailored CRM or business software application built on a modern full-stack architecture — designed specifically for the client's business processes, scalable for future growth and delivered with full source code ownership.`,
+    stats: [{ val: "Custom Built", lbl: "No Templates" }, { val: "Full Stack", lbl: "Tech Stack" }, { val: "Milestones", lbl: "Delivery Model" }, { val: "100%", lbl: "Source Code Yours" }],
+    scope: [
+      { num: "01", title: "Requirements & System Design", desc: "Detailed requirements gathering, user role mapping, database schema design, API architecture planning and system flow documentation before development begins." },
+      { num: "02", title: "Authentication & Access Control", desc: "Secure login, role-based access control (RBAC), session management, password policies and audit logging for all user actions." },
+      { num: "03", title: "Core Module Development", desc: "All primary business modules built as per requirements — lead management, customer records, task management, billing, reports or any custom business logic." },
+      { num: "04", title: "Dashboard & Analytics", desc: "Real-time dashboard with KPIs, charts and data summaries relevant to the client's business. Export to Excel/PDF for all key reports." },
+      { num: "05", title: "Notifications & Automation", desc: "In-app notifications, email alerts for key events, automated reminders and any workflow automation rules as specified in requirements." },
+      { num: "06", title: "Deployment & Handover", desc: "Production deployment to a cloud server (AWS/DigitalOcean/Render). Source code pushed to client's private Git repository. Admin training session included." },
+    ],
+    included: ["Complete requirements analysis and system design document", "Custom frontend built in React", "Custom backend API in Node.js and Express", "MongoDB or PostgreSQL database", "Role-based access control for all user types", "All core business modules as per requirements", "Real-time dashboard with charts and KPIs", "Email notifications and automated alerts", "Excel and PDF export for all reports", "Production deployment to cloud server", "Source code handover to client's private repository", "60-day post-launch support for bug fixes", "Admin user training session"],
+    notIncluded: [["Cloud server subscription fees", "Client's responsibility"], ["Third-party API subscription costs", "Client's responsibility"], ["Mobile app version", "Yes — available as separate project"], ["Data migration from existing systems", "Yes — available as add-on"], ["Ongoing feature development after handover", "Yes — available on retainer"]],
+    timeline: [
+      { phase: "Phase 1 — Discovery", days: "Days 1–5", activity: "Requirements workshops, system design document, database schema and API architecture finalised.", client: "Assign a point of contact for daily requirement discussions during this phase." },
+      { phase: "Phase 2 — UI Design", days: "Days 6–10", activity: "All screen wireframes and high-fidelity designs for key modules presented for approval.", client: "Approve designs or provide consolidated feedback within 2 working days." },
+      { phase: "Phase 3 — Backend Development", days: "Days 11–25", activity: "All APIs, database models, authentication, business logic and integrations built and tested.", client: "Provide any third-party API credentials and sample data for testing." },
+      { phase: "Phase 4 — Frontend Development", days: "Days 26–38", activity: "All UI screens connected to backend APIs. Dashboard, reports and notifications implemented.", client: "Review each module as it is ready and provide feedback." },
+      { phase: "Phase 5 — Testing & Launch", days: "Days 39–45", activity: "Full QA testing, bug fixes, production deployment, source code handover and admin training.", client: "Conduct UAT, clear final payment and confirm production server details." },
+    ],
+    totalDays: "45 Working Days",
+  },
+  "Social Media Management": {
+    tagline: "Social Media Management",
+    techLabel: "Instagram | LinkedIn | Facebook",
+    summary: (client) => `${client} requires a consistent and professional social media presence to build brand awareness, engage its audience and drive enquiries from social platforms. Nakshatra Namaha Creations proposes a fully managed social media service — covering content strategy, graphic design, post scheduling, community management and monthly performance reporting — across Instagram, LinkedIn and Facebook.`,
+    stats: [{ val: "3 Platforms", lbl: "Coverage" }, { val: "12+ Posts", lbl: "Per Month" }, { val: "Monthly", lbl: "Reports" }, { val: "3 Months", lbl: "Min. Term" }],
+    scope: [
+      { num: "01", title: "Social Media Strategy", desc: "Brand audit, competitor analysis, audience research, content pillar definition, tone of voice guidelines and monthly content calendar creation." },
+      { num: "02", title: "Content Creation", desc: "12–16 designed posts per month across Instagram, LinkedIn and Facebook. Includes static graphics, carousel posts, story designs and caption copywriting." },
+      { num: "03", title: "Post Scheduling & Publishing", desc: "Posts scheduled and published at optimal times for maximum reach. All content sent to client for approval before publishing." },
+      { num: "04", title: "Community Management", desc: "Responding to comments and DMs within 24 hours (business days). Escalation of sales inquiries to the client team immediately." },
+      { num: "05", title: "Reels / Short Videos (Optional)", desc: "2–4 short-form video reels per month using client-provided raw footage, edited with captions, music and branding. Available as an add-on." },
+      { num: "06", title: "Monthly Performance Report", desc: "Reach, impressions, engagement rate, follower growth, top-performing content and next-month strategy shared in a clear monthly report." },
+    ],
+    included: ["Social media strategy and content calendar", "12–16 designed posts per month", "Content for Instagram, LinkedIn and Facebook", "Caption copywriting for all posts", "Post scheduling and publishing at optimal times", "Community management — comments and DMs (Mon–Sat)", "Monthly performance analytics report", "Dedicated social media manager", "Content approval workflow before every post"],
+    notIncluded: [["Paid social media advertising budget", "Client's responsibility — billed by Meta/LinkedIn"], ["Video shooting and production", "Client to provide raw footage"], ["Influencer marketing and collaborations", "Yes — available as add-on"], ["Logo or brand design", "Yes — available separately"], ["Website development", "Yes — separate project"]],
+    timeline: [
+      { phase: "Month 1 — Strategy & Setup", days: "Weeks 1–4", activity: "Brand audit, competitor analysis, content strategy document, content calendar for Month 1 created and approved.", client: "Share brand assets, product/service information, past content and any preferences." },
+      { phase: "Month 2 — Full Execution", days: "Weeks 5–8", activity: "Content published daily as per calendar. Community management begins. Mid-month check-in call.", client: "Approve all content within 24 hours. Share any upcoming offers or events to feature." },
+      { phase: "Month 3 — Optimisation", days: "Weeks 9–12", activity: "Performance analysed, best-performing content types scaled, strategy refined for Month 3 based on data.", client: "Review monthly report and share feedback for content and strategy direction." },
+    ],
+    totalDays: "Ongoing — minimum 3 months",
+  },
+  "Cloud & Hosting": {
+    tagline: "Cloud Infrastructure & Hosting",
+    techLabel: "AWS | DigitalOcean | Managed Hosting",
+    summary: (client) => `${client} requires reliable, secure and scalable cloud infrastructure to host its website or application. Nakshatra Namaha Creations proposes a managed cloud hosting setup — covering server provisioning, security hardening, SSL configuration, automated backups and ongoing monitoring — ensuring the client's digital presence remains fast, secure and always online.`,
+    stats: [{ val: "99.9%", lbl: "Uptime SLA" }, { val: "Managed", lbl: "Setup & Support" }, { val: "SSL", lbl: "Secured" }, { val: "Auto", lbl: "Daily Backups" }],
+    scope: [
+      { num: "01", title: "Server Provisioning", desc: "Cloud server setup on AWS, DigitalOcean or Hetzner as per requirement. OS installation, firewall configuration and initial security hardening." },
+      { num: "02", title: "Domain & DNS Configuration", desc: "Domain DNS records configured, subdomain setup, email DNS records (MX, SPF, DKIM) and CDN configuration if required." },
+      { num: "03", title: "SSL Certificate Setup", desc: "Free Let's Encrypt SSL or commercial SSL certificate installation, HTTPS enforcement and auto-renewal configuration." },
+      { num: "04", title: "Application Deployment", desc: "Website or application deployed to the configured server. Environment variables, process manager (PM2) and Nginx/Apache reverse proxy configured." },
+      { num: "05", title: "Automated Backups", desc: "Daily automated backups configured to a separate storage bucket (S3 or equivalent). Backup retention policy set as per client requirements." },
+      { num: "06", title: "Monitoring & Alerts", desc: "Uptime monitoring configured with alerts to client email/WhatsApp if the server goes down. Monthly server health report provided." },
+    ],
+    included: ["Cloud server setup and OS configuration", "Firewall and basic security hardening", "Domain DNS and subdomain configuration", "SSL certificate installation and auto-renewal", "Application deployment and Nginx/Apache configuration", "Automated daily backups to cloud storage", "Uptime monitoring with email/WhatsApp alerts", "Monthly server health report", "One-time complete setup and handover documentation"],
+    notIncluded: [["Monthly cloud server subscription cost", "Client's responsibility — billed by AWS/DO/Hetzner"], ["Domain registration fees", "Client's responsibility"], ["Application development or bug fixes", "Yes — quoted separately"], ["Managed WAF / DDoS protection (enterprise)", "Yes — available as add-on"], ["24/7 on-call support", "Yes — available on retainer"]],
+    timeline: [
+      { phase: "Phase 1 — Planning", days: "Day 1", activity: "Server requirements assessment, technology stack review, hosting platform selection and cost estimation.", client: "Share current setup details, expected traffic and any compliance requirements." },
+      { phase: "Phase 2 — Server Setup", days: "Days 2–3", activity: "Server provisioned, OS configured, firewall rules set, SSL installed and Nginx configured.", client: "Provide domain access, application code/repository access and environment variables." },
+      { phase: "Phase 3 — Deployment", days: "Days 4–5", activity: "Application deployed, tested in production, backups configured and monitoring set up.", client: "Test the live application and confirm everything is functioning correctly." },
+    ],
+    totalDays: "5 Working Days (setup)",
+  },
+  "Other": {
+    tagline: "Custom Digital Solutions",
+    techLabel: "Tailored to Your Requirements",
+    summary: (client) => `${client} requires a custom digital solution tailored to its specific business needs. Nakshatra Namaha Creations will work closely with the client to understand the full scope, define deliverables clearly and execute the project to a high standard with regular communication and transparent milestone-based delivery.`,
+    stats: [{ val: "Custom", lbl: "Built for You" }, { val: "Dedicated", lbl: "Project Team" }, { val: "Milestone", lbl: "Delivery Model" }, { val: "100%", lbl: "Transparent" }],
+    scope: [
+      { num: "01", title: "Discovery & Requirements", desc: "Detailed requirements gathering sessions to fully understand the project scope, expected outcomes and success criteria." },
+      { num: "02", title: "Proposal & Scope Definition", desc: "Detailed scope document, deliverable list and project plan agreed and signed off before any work begins." },
+      { num: "03", title: "Design Phase", desc: "All design deliverables completed and approved by the client before development or execution begins." },
+      { num: "04", title: "Development / Execution", desc: "Project executed in agreed milestones with regular updates and demos at each stage." },
+      { num: "05", title: "Testing & Review", desc: "Thorough testing and client review period before final delivery to ensure all requirements are met." },
+      { num: "06", title: "Delivery & Handover", desc: "All deliverables handed over in agreed formats. Documentation provided. Post-delivery support period included." },
+    ],
+    included: ["Complete requirements analysis", "Dedicated project manager", "Regular progress updates and milestone demos", "All agreed deliverables as per scope document", "Quality assurance and testing", "Final delivery in all agreed formats", "Source code / file handover on final payment", "30-day post-delivery support for bug fixes"],
+    notIncluded: [["Any scope beyond what is explicitly agreed", "Will be estimated and quoted separately"], ["Third-party service subscription costs", "Client's responsibility"], ["Ongoing maintenance after support period", "Yes — available on retainer"]],
+    timeline: [
+      { phase: "Phase 1 — Discovery", days: "Days 1–3", activity: "Requirements gathering, scope finalisation and project plan agreed.", client: "Assign a point of contact and provide all reference materials." },
+      { phase: "Phase 2 — Design", days: "Days 4–8", activity: "All design work completed and presented for approval.", client: "Provide feedback within agreed turnaround time." },
+      { phase: "Phase 3 — Execution", days: "Days 9 onwards", activity: "Development / production work executed in milestones with regular demos.", client: "Review each milestone and provide timely feedback." },
+      { phase: "Phase 4 — Delivery", days: "Final Days", activity: "Full testing, final delivery and handover of all files and documentation.", client: "Complete final payment before handover." },
+    ],
+    totalDays: "As per agreed project plan",
+  },
+};
+
+/* shared page footer for proposal doc */
+function ProposalPageFooter({ client }) {
+  return (
+    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 32px", borderTop:"1px solid #e0e7ff", marginTop:24, fontSize:11, color:"#94a3b8" }}>
+      <span style={{ color:"#1d4ed8", fontWeight:700, letterSpacing:1 }}>CONFIDENTIAL</span>
+      <span>info@nakshatranamahacreations.com | +91 99005 66466 | nakshatranamahacreations.com</span>
+      <span>{client ? `Proposal | ${client}` : "NNC Proposal"}</span>
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────
    ENTERPRISE DOCUMENT COMPONENT (also used for PDF print)
 ──────────────────────────────────────────────────────────────────*/
 function QuotationDocument({ q, isProforma = false }) {
-  const bi = BRANCH_INFO[q.branch] || BRANCH_INFO.Bangalore;
+  const bi   = BRANCH_INFO[q.branch] || BRANCH_INFO.Bangalore;
   const gstAmt = ((q.subtotal - q.discount) * q.tax) / 100;
 
-  return (
-    <div className="qt-doc" id="qt-pdf-target">
-      {/* Header */}
-      <div className="qt-doc-header">
-        <div className="qt-doc-brand">
-          <img src={nncLogo} alt="NNC" className="qt-doc-logo" />
-          <div>
-            <div className="qt-doc-company">Nakshatra Namaha Creations Pvt. Ltd.</div>
-            <div className="qt-doc-tagline">Bengaluru · Mysuru · Mumbai</div>
+  /* ── For Proforma Invoice — keep existing simple format ── */
+  if (isProforma) {
+    return (
+      <div className="qt-doc" id="qt-pdf-target">
+        <div className="qt-doc-header">
+          <div className="qt-doc-brand">
+            <img src={nncLogo} alt="NNC" className="qt-doc-logo" />
+            <div>
+              <div className="qt-doc-company">Nakshatra Namaha Creations Pvt. Ltd.</div>
+              <div className="qt-doc-tagline">Bengaluru · Mysuru · Mumbai</div>
+            </div>
+          </div>
+          <div className="qt-doc-title-block">
+            <div className="qt-doc-type">PROFORMA INVOICE</div>
+            <div className="qt-doc-num">{q.proformaNumber}</div>
+            {q.quoteNumber && <div className="qt-doc-ref">Ref: {q.quoteNumber}</div>}
           </div>
         </div>
-        <div className="qt-doc-title-block">
-          <div className="qt-doc-type">{isProforma ? "PROFORMA INVOICE" : "QUOTATION"}</div>
-          <div className="qt-doc-num">{isProforma ? q.proformaNumber : q.quoteNumber}</div>
-          {isProforma && q.quoteNumber && (
-            <div className="qt-doc-ref">Ref: {q.quoteNumber}</div>
-          )}
-          {!isProforma && q.revisionNumber > 1 && (
-            <div className="qt-doc-rev">Revision {q.revisionNumber}</div>
-          )}
-        </div>
-      </div>
-
-      {/* Bill To / Details */}
-      <div className="qt-doc-meta">
-        <div className="qt-doc-billto">
-          <div className="qt-doc-meta-label">Bill To</div>
-          <div className="qt-doc-client-name">{q.clientName}</div>
-          {q.clientCompany && <div className="qt-doc-client-co">{q.clientCompany}</div>}
-          {q.clientAddress && <div className="qt-doc-client-addr">{q.clientAddress}</div>}
-          {q.clientPhone   && <div className="qt-doc-client-contact">📞 {q.clientPhone}</div>}
-          {q.clientEmail   && <div className="qt-doc-client-contact">✉ {q.clientEmail}</div>}
-          {q.clientGstin   && <div className="qt-doc-client-gstin">GSTIN: {q.clientGstin}</div>}
-        </div>
-        <div className="qt-doc-details">
-          <div className="qt-doc-meta-label">{isProforma ? "Invoice Details" : "Quotation Details"}</div>
-          <table className="qt-doc-detail-tbl">
-            <tbody>
+        <div className="qt-doc-meta">
+          <div className="qt-doc-billto">
+            <div className="qt-doc-meta-label">Bill To</div>
+            <div className="qt-doc-client-name">{q.clientName}</div>
+            {q.clientCompany && <div className="qt-doc-client-co">{q.clientCompany}</div>}
+            {q.clientAddress && <div className="qt-doc-client-addr">{q.clientAddress}</div>}
+            {q.clientPhone   && <div className="qt-doc-client-contact">{q.clientPhone}</div>}
+            {q.clientEmail   && <div className="qt-doc-client-contact">{q.clientEmail}</div>}
+            {q.clientGstin   && <div className="qt-doc-client-gstin">GSTIN: {q.clientGstin}</div>}
+          </div>
+          <div className="qt-doc-details">
+            <div className="qt-doc-meta-label">Invoice Details</div>
+            <table className="qt-doc-detail-tbl"><tbody>
               <tr><td>Date</td><td>{fmtDate(new Date())}</td></tr>
-              {!isProforma && q.validUntil && <tr><td>Valid Until</td><td>{fmtDate(q.validUntil)}</td></tr>}
-              {isProforma  && q.deliveryDate && <tr><td>Delivery</td><td>{fmtDate(q.deliveryDate)}</td></tr>}
-              {isProforma  && q.paymentTerms && <tr><td>Payment</td><td>{q.paymentTerms}</td></tr>}
+              {q.deliveryDate && <tr><td>Delivery</td><td>{fmtDate(q.deliveryDate)}</td></tr>}
+              {q.paymentTerms && <tr><td>Payment</td><td>{q.paymentTerms}</td></tr>}
               <tr><td>Branch</td><td>{q.branch}</td></tr>
               <tr><td>Our GSTIN</td><td>{NNC_GSTIN}</td></tr>
-            </tbody>
-          </table>
+            </tbody></table>
+          </div>
         </div>
-      </div>
-
-      {/* Items */}
-      <table className="qt-doc-items">
-        <thead>
-          <tr>
-            <th className="col-sno">#</th>
-            <th className="col-desc">Description</th>
-            <th className="col-qty">Qty</th>
-            <th className="col-rate">Rate (₹)</th>
-            <th className="col-amt">Amount (₹)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(q.lineItems || []).map((item, i) => (
+        <table className="qt-doc-items">
+          <thead><tr>
+            <th className="col-sno">#</th><th className="col-desc">Description</th>
+            <th className="col-qty">Qty</th><th className="col-rate">Rate (₹)</th><th className="col-amt">Amount (₹)</th>
+          </tr></thead>
+          <tbody>{(q.lineItems||[]).map((it,i)=>(
             <tr key={i}>
-              <td className="col-sno">{i + 1}</td>
-              <td className="col-desc">{item.description || "—"}</td>
-              <td className="col-qty">{item.qty}</td>
-              <td className="col-rate">{fmt(item.rate)}</td>
-              <td className="col-amt">{fmt(item.amount)}</td>
+              <td className="col-sno">{i+1}</td><td className="col-desc">{it.description||"—"}</td>
+              <td className="col-qty">{it.qty}</td><td className="col-rate">{fmt(it.rate)}</td><td className="col-amt">{fmt(it.amount)}</td>
             </tr>
+          ))}</tbody>
+        </table>
+        <div className="qt-doc-totals">
+          <div/>
+          <div className="qt-doc-total-rows">
+            <div className="qt-doc-total-row"><span>Subtotal</span><span>₹{fmt(q.subtotal)}</span></div>
+            {q.discount>0 && <div className="qt-doc-total-row disc"><span>Discount</span><span>−₹{fmt(q.discount)}</span></div>}
+            {q.tax>0 && <div className="qt-doc-total-row"><span>GST ({q.tax}%)</span><span>₹{fmt(gstAmt)}</span></div>}
+            <div className="qt-doc-total-row grand"><span>Total</span><span>₹{fmt(q.total)}</span></div>
+          </div>
+        </div>
+        {q.notes && <div className="qt-doc-box notes-box"><div className="qt-doc-box-label">Notes</div><div className="qt-doc-box-body">{q.notes}</div></div>}
+        {q.terms && <div className="qt-doc-box terms-box"><div className="qt-doc-box-label">Terms &amp; Conditions</div><div className="qt-doc-box-body">{q.terms}</div></div>}
+        <div className="qt-doc-footer">
+          <div className="qt-doc-sig"><div className="qt-doc-sig-line"/><div className="qt-doc-sig-label">Authorised Signatory</div><div className="qt-doc-sig-co">NNC Nakshatra Namaha Creations</div></div>
+          <div className="qt-doc-footer-info">
+            <div className="qt-doc-footer-co">NNC Nakshatra Namaha Creations Pvt. Ltd.</div>
+            <div className="qt-doc-footer-addr">{bi.addr}</div>
+            <div className="qt-doc-footer-phone">{bi.phone} · nakshatranamahacreations.com</div>
+            <div className="qt-doc-footer-gstin">GSTIN: {NNC_GSTIN}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── FULL PROPOSAL FORMAT for Quotations ── */
+  const pd  = PROPOSAL_DATA[q.serviceCategory] || PROPOSAL_DATA["Other"];
+  const cat = q.serviceCategory || "Custom Digital Solutions";
+
+  return (
+    <div className="qt-doc" id="qt-pdf-target" style={{ fontFamily:"Arial, Helvetica, sans-serif", fontSize:13, color:"#374151" }}>
+
+      {/* ══ PAGE 1: COVER ══ */}
+      <div style={{ background:"linear-gradient(160deg,#020617 0%,#0c1445 45%,#1e3a8a 80%,#1d4ed8 100%)", minHeight:700, padding:"28px 32px 32px", position:"relative", overflow:"hidden", pageBreakAfter:"always" }}>
+        {/* grid overlay */}
+        <div style={{ position:"absolute", inset:0, backgroundImage:"repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 40px)", pointerEvents:"none" }}/>
+        {/* coral glow */}
+        <div style={{ position:"absolute", right:-60, top:-60, width:280, height:280, borderRadius:"50%", background:"radial-gradient(circle,rgba(251,113,28,.2),transparent 70%)", pointerEvents:"none" }}/>
+        {/* header row */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", zIndex:1, marginBottom:60 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:40, borderRadius:6 }}/>
+            <div>
+              <div style={{ fontSize:13, fontWeight:800, color:"#fff" }}>Nakshatra Namaha Creations Pvt Ltd</div>
+              <div style={{ fontSize:11, color:"rgba(255,255,255,.5)" }}>Your Digital Solutions Partner | Bengaluru</div>
+            </div>
+          </div>
+        </div>
+        {/* eyebrow */}
+        <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:"#fb923c", textTransform:"uppercase", marginBottom:16, position:"relative", zIndex:1 }}>{pd.techLabel}</div>
+        {/* client name big */}
+        <div style={{ fontSize:44, fontWeight:900, color:"#fff", lineHeight:1.1, marginBottom:8, position:"relative", zIndex:1 }}>{q.clientName || q.clientCompany || "Client"}</div>
+        {/* service heading */}
+        <div style={{ fontSize:36, fontWeight:900, color:"#60a5fa", lineHeight:1.1, marginBottom:12, position:"relative", zIndex:1 }}>{cat}</div>
+        <div style={{ fontSize:16, fontWeight:700, color:"rgba(255,255,255,.7)", marginBottom:48, position:"relative", zIndex:1 }}>Proposal</div>
+        <div style={{ fontSize:13, color:"rgba(255,255,255,.5)", marginBottom:32, position:"relative", zIndex:1 }}>{pd.tagline}</div>
+        {/* prepared for block */}
+        <div style={{ border:"1px solid rgba(255,255,255,.15)", borderRadius:12, padding:"20px 24px", maxWidth:560, position:"relative", zIndex:1, background:"rgba(255,255,255,.04)", marginTop:24 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
+            <div>
+              <div style={{ fontSize:10, fontWeight:800, color:"#fb923c", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>Exclusively Prepared For</div>
+              <div style={{ fontSize:16, fontWeight:800, color:"#fff", marginBottom:4 }}>{q.clientName}{q.clientCompany ? ` — ${q.clientCompany}` : ""}</div>
+              <div style={{ fontSize:12, color:"rgba(255,255,255,.5)" }}>{pd.tagline} | {q.branch}</div>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              <div><div style={{ fontSize:10, color:"#fb923c", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Date</div><div style={{ fontSize:13, color:"#fff" }}>{fmtDate(new Date())}</div></div>
+              <div><div style={{ fontSize:10, color:"#fb923c", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Proposal Type</div><div style={{ fontSize:13, color:"#fff" }}>{cat}</div></div>
+              <div><div style={{ fontSize:10, color:"#fb923c", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Reference</div><div style={{ fontSize:13, color:"#fff", fontFamily:"monospace" }}>{q.quoteNumber}</div></div>
+              <div><div style={{ fontSize:10, color:"#fb923c", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Valid For</div><div style={{ fontSize:13, color:"#fff" }}>{q.validUntil ? `Until ${fmtDate(q.validUntil)}` : "30 Days from Issue"}</div></div>
+            </div>
+          </div>
+        </div>
+        {/* confidential footer */}
+        <div style={{ position:"relative", zIndex:1, marginTop:48, display:"flex", justifyContent:"space-between", alignItems:"center", borderTop:"1px solid rgba(255,255,255,.1)", paddingTop:16, fontSize:11 }}>
+          <span style={{ color:"#fb923c", fontWeight:800, letterSpacing:1 }}>CONFIDENTIAL</span>
+          <span style={{ color:"rgba(255,255,255,.45)" }}>info@nakshatranamahacreations.com | +91 99005 66466 | nakshatranamahacreations.com</span>
+          <span style={{ color:"rgba(255,255,255,.45)" }}>NNC Digital</span>
+        </div>
+      </div>
+
+      {/* ══ PAGE 2: EXECUTIVE SUMMARY + ABOUT NNC ══ */}
+      <div style={{ padding:"28px 32px 0", pageBreakAfter:"always" }}>
+        {/* mini header */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
+            <div>
+              <div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div>
+              <div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div>
+            </div>
+          </div>
+          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
+        </div>
+
+        {/* 01 Executive Summary */}
+        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>01 | Executive Summary</div>
+        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>A Professional {cat} for {q.clientName || q.clientCompany}</div>
+        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
+        <div style={{ fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:20, textAlign:"justify" }}>{pd.summary(q.clientName || q.clientCompany || "your company")}</div>
+
+        {/* stat boxes */}
+        <div style={{ display:"grid", gridTemplateColumns:`repeat(${pd.stats.length},1fr)`, gap:0, marginBottom:36, border:"1px solid #1e3a8a", borderRadius:8, overflow:"hidden" }}>
+          {pd.stats.map((s,i)=>(
+            <div key={i} style={{ padding:"18px 14px", textAlign:"center", background: i%2===0 ? "#0c1445" : "#1e3a8a", borderRight: i < pd.stats.length-1 ? "1px solid rgba(255,255,255,.1)" : "none" }}>
+              <div style={{ fontSize:26, fontWeight:900, color:"#60a5fa", lineHeight:1 }}>{s.val}</div>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,.6)", marginTop:4, textTransform:"uppercase", letterSpacing:0.5 }}>{s.lbl}</div>
+            </div>
           ))}
-        </tbody>
-      </table>
-
-      {/* Totals */}
-      <div className="qt-doc-totals">
-        <div />
-        <div className="qt-doc-total-rows">
-          <div className="qt-doc-total-row"><span>Subtotal</span><span>₹{fmt(q.subtotal)}</span></div>
-          {q.discount > 0 && <div className="qt-doc-total-row disc"><span>Discount</span><span>− ₹{fmt(q.discount)}</span></div>}
-          {q.tax > 0 && <div className="qt-doc-total-row"><span>GST ({q.tax}%)</span><span>₹{fmt(gstAmt)}</span></div>}
-          <div className="qt-doc-total-row grand"><span>Total</span><span>₹{fmt(q.total)}</span></div>
         </div>
+
+        {/* 02 About NNC */}
+        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>02 | About Nakshatra Namaha Creations</div>
+        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Your {cat.split(" ")[0]} Partner</div>
+        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
+        <div style={{ fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:20, textAlign:"justify" }}>Nakshatra Namaha Creations is a full-service digital agency with over 10 years of experience building websites, mobile apps, CRM systems and digital platforms for businesses across India. We have delivered 565+ projects for clients in trading, manufacturing, healthcare, real estate and professional services. Our in-house team of designers and developers brings the same quality to every project regardless of size.</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, border:"1px solid #1e3a8a", borderRadius:8, overflow:"hidden" }}>
+          {[{val:"10+",lbl:"Years in Business"},{val:"565+",lbl:"Projects Delivered"},{val:"35+",lbl:"In-House Experts"},{val:"4",lbl:"Office Locations"}].map((s,i)=>(
+            <div key={i} style={{ padding:"16px 12px", textAlign:"center", background: i%2===0 ? "#0c1445" : "#1e3a8a", borderRight: i<3 ? "1px solid rgba(255,255,255,.1)":"none" }}>
+              <div style={{ fontSize:22, fontWeight:900, color:"#fb923c", lineHeight:1 }}>{s.val}</div>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,.6)", marginTop:4, textTransform:"uppercase", letterSpacing:0.5 }}>{s.lbl}</div>
+            </div>
+          ))}
+        </div>
+        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
       </div>
 
-      {/* Notes / Terms */}
-      {q.notes && (
-        <div className="qt-doc-box notes-box">
-          <div className="qt-doc-box-label">Notes</div>
-          <div className="qt-doc-box-body">{q.notes}</div>
+      {/* ══ PAGE 3: SCOPE OF WORK ══ */}
+      <div style={{ padding:"28px 32px 0", pageBreakAfter:"always" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
+            <div><div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div><div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div></div>
+          </div>
+          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
         </div>
-      )}
-      {q.terms && (
-        <div className="qt-doc-box terms-box">
-          <div className="qt-doc-box-label">Terms &amp; Conditions</div>
-          <div className="qt-doc-box-body">{q.terms}</div>
-        </div>
-      )}
-
-      {/* Signature + Footer */}
-      <div className="qt-doc-footer">
-        <div className="qt-doc-sig">
-          <div className="qt-doc-sig-line" />
-          <div className="qt-doc-sig-label">Authorised Signatory</div>
-          <div className="qt-doc-sig-co">NNC Nakshatra Namaha Creations</div>
-        </div>
-        <div className="qt-doc-footer-info">
-          <div className="qt-doc-footer-co">NNC Nakshatra Namaha Creations Pvt. Ltd.</div>
-          <div className="qt-doc-footer-addr">{bi.addr}</div>
-          <div className="qt-doc-footer-phone">{bi.phone} · nakshatranamahacreations.com</div>
-          <div className="qt-doc-footer-gstin">GSTIN: {NNC_GSTIN}</div>
-        </div>
+        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>03 | Scope of Work</div>
+        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>What We Will Deliver</div>
+        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
+        <div style={{ fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:24, textAlign:"justify" }}>The following sections describe every deliverable included in this engagement for {q.clientName || q.clientCompany}. Every item is individually designed and built to meet the specific requirements of this project.</div>
+        {pd.scope.map((s,i)=>(
+          <div key={i} style={{ display:"flex", gap:16, marginBottom:16, padding:"14px 16px", background: i%2===0 ? "#f8faff" : "#fff", borderRadius:8, border:"1px solid #e0e7ff" }}>
+            <div style={{ flexShrink:0, width:32, height:32, borderRadius:6, background:"#1e3a8a", color:"#fff", fontSize:12, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{s.num}</div>
+            <div>
+              <div style={{ fontSize:13, fontWeight:800, color:"#0f172a", marginBottom:4 }}>{s.title}</div>
+              <div style={{ fontSize:12, color:"#475569", lineHeight:1.7, textAlign:"justify" }}>{s.desc}</div>
+            </div>
+          </div>
+        ))}
+        {q.notes && (
+          <div style={{ marginTop:20, padding:"14px 16px", background:"#eef2ff", borderRadius:8, borderLeft:"3px solid #1d4ed8" }}>
+            <div style={{ fontSize:10, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:.8, marginBottom:6 }}>Additional Notes</div>
+            <div style={{ fontSize:12, color:"#475569", lineHeight:1.7, whiteSpace:"pre-wrap" }}>{q.notes}</div>
+          </div>
+        )}
+        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
       </div>
+
+      {/* ══ PAGE 4: WHAT IS INCLUDED + TIMELINE ══ */}
+      <div style={{ padding:"28px 32px 0", pageBreakAfter:"always" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
+            <div><div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div><div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div></div>
+          </div>
+          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
+        </div>
+        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>04 | What Is Included</div>
+        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Complete Deliverables — What You Get</div>
+        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
+        <div style={{ marginBottom:24 }}>
+          {pd.included.map((item,i)=>(
+            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"7px 0", borderBottom:"1px solid #f0f4ff" }}>
+              <span style={{ color:"#1d4ed8", fontWeight:900, fontSize:14, flexShrink:0, marginTop:1 }}>✓</span>
+              <span style={{ fontSize:12, color:"#374151", lineHeight:1.6 }} dangerouslySetInnerHTML={{ __html: item.replace(/^([^—]+)—/, '<strong>$1</strong>—') }}/>
+            </div>
+          ))}
+        </div>
+        {pd.notIncluded.length > 0 && (
+          <>
+            <div style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginBottom:10 }}>What is NOT Included</div>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, marginBottom:24 }}>
+              <thead><tr style={{ background:"#0c1445" }}><th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>Item</th><th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>Status</th><th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>Available Separately</th></tr></thead>
+              <tbody>{pd.notIncluded.map(([item,avail],i)=>(
+                <tr key={i} style={{ background: i%2===0 ? "#f8faff":"#fff" }}>
+                  <td style={{ padding:"9px 14px", color:"#374151", borderBottom:"1px solid #f0f4ff" }}>{item}</td>
+                  <td style={{ padding:"9px 14px", color:"#64748b", borderBottom:"1px solid #f0f4ff" }}>Not included</td>
+                  <td style={{ padding:"9px 14px", color:"#475569", borderBottom:"1px solid #f0f4ff" }}>{avail}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </>
+        )}
+        {/* Timeline */}
+        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>05 | Project Timeline</div>
+        <div style={{ fontSize:18, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Delivery Timeline — {pd.totalDays}</div>
+        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:14, borderRadius:2 }}/>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+          <thead><tr style={{ background:"#0c1445" }}>
+            <th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11, width:"22%" }}>Phase</th>
+            <th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11, width:"12%" }}>Duration</th>
+            <th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11, width:"33%" }}>Activities</th>
+            <th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>Client Action Required</th>
+          </tr></thead>
+          <tbody>{pd.timeline.map((t,i)=>(
+            <tr key={i} style={{ background: i%2===0 ? "#f8faff":"#fff" }}>
+              <td style={{ padding:"10px 14px", fontWeight:700, color:"#0f172a", borderBottom:"1px solid #f0f4ff", verticalAlign:"top" }}>{t.phase}</td>
+              <td style={{ padding:"10px 14px", color:"#1d4ed8", fontWeight:700, borderBottom:"1px solid #f0f4ff", verticalAlign:"top", whiteSpace:"nowrap" }}>{t.days}</td>
+              <td style={{ padding:"10px 14px", color:"#374151", borderBottom:"1px solid #f0f4ff", verticalAlign:"top", lineHeight:1.6 }}>{t.activity}</td>
+              <td style={{ padding:"10px 14px", color:"#475569", borderBottom:"1px solid #f0f4ff", verticalAlign:"top", lineHeight:1.6 }}>{t.client}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
+      </div>
+
+      {/* ══ PAGE 5: INVESTMENT ══ */}
+      <div style={{ padding:"28px 32px 0", pageBreakAfter:"always" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
+            <div><div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div><div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div></div>
+          </div>
+          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
+        </div>
+        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>06 | Investment</div>
+        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Pricing and Payment Schedule</div>
+        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
+        <div style={{ fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:20 }}>The investment for this engagement is as follows. Payment is structured in two equal milestones for your convenience.</div>
+        {/* Total highlight box */}
+        <div style={{ background:"linear-gradient(135deg,#0c1445,#1e3a8a)", borderRadius:12, padding:"20px 24px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontSize:36, fontWeight:900, color:"#60a5fa" }}>Rs. {fmt(q.subtotal || q.total)}</div>
+            <div style={{ fontSize:11, fontWeight:800, color:"#fb923c", letterSpacing:1, textTransform:"uppercase", marginTop:4 }}>{cat.toUpperCase()}</div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,.6)", marginBottom:4 }}>Complete Delivery Package</div>
+            <div style={{ fontSize:13, fontWeight:800, color:"#fff" }}>+ {q.tax || 18}% GST applicable</div>
+          </div>
+        </div>
+        {/* Line items */}
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, marginBottom:20 }}>
+          <thead><tr style={{ background:"#f8faff", borderBottom:"2px solid #1d4ed8" }}>
+            <th style={{ padding:"10px 14px", textAlign:"left", color:"#64748b", fontWeight:800, fontSize:10, textTransform:"uppercase", letterSpacing:.5, width:40 }}></th>
+            <th style={{ padding:"10px 14px", textAlign:"left", color:"#64748b", fontWeight:800, fontSize:10, textTransform:"uppercase", letterSpacing:.5 }}>Deliverable</th>
+            <th style={{ padding:"10px 14px", textAlign:"right", color:"#64748b", fontWeight:800, fontSize:10, textTransform:"uppercase", letterSpacing:.5 }}>Amount</th>
+          </tr></thead>
+          <tbody>{(q.lineItems||[]).map((it,i)=>(
+            <tr key={i} style={{ borderBottom:"1px solid #f0f4ff" }}>
+              <td style={{ padding:"12px 14px" }}><div style={{ width:28, height:28, borderRadius:5, background:"#1e3a8a", color:"#fff", fontSize:11, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{String(i+1).padStart(2,"0")}</div></td>
+              <td style={{ padding:"12px 14px" }}>
+                <div style={{ fontWeight:800, color:"#0f172a", marginBottom:2 }}>{it.description}</div>
+              </td>
+              <td style={{ padding:"12px 14px", textAlign:"right", fontWeight:700, color:"#1d4ed8", fontSize:13 }}>Rs. {fmt(it.amount)}</td>
+            </tr>
+          ))}</tbody>
+          <tfoot>
+            <tr style={{ borderTop:"1px solid #e0e7ff" }}><td/><td style={{ padding:"8px 14px", color:"#475569", fontWeight:600, fontSize:12 }}>Subtotal</td><td style={{ padding:"8px 14px", textAlign:"right", fontWeight:700, color:"#0f172a" }}>Rs. {fmt(q.subtotal)}</td></tr>
+            {q.discount > 0 && <tr><td/><td style={{ padding:"4px 14px", color:"#16a34a", fontWeight:600, fontSize:12 }}>Discount</td><td style={{ padding:"4px 14px", textAlign:"right", color:"#16a34a", fontWeight:700 }}>− Rs. {fmt(q.discount)}</td></tr>}
+            {q.tax > 0 && <tr><td/><td style={{ padding:"4px 14px", color:"#475569", fontWeight:600, fontSize:12 }}>GST @ {q.tax}%</td><td style={{ padding:"4px 14px", textAlign:"right", color:"#475569", fontWeight:700 }}>Rs. {fmt(gstAmt)}</td></tr>}
+            <tr style={{ background:"#0c1445", borderRadius:8 }}><td/><td style={{ padding:"12px 14px", color:"#fff", fontWeight:800, fontSize:14 }}>Total Payable (incl. GST)</td><td style={{ padding:"12px 14px", textAlign:"right", color:"#60a5fa", fontWeight:900, fontSize:16 }}>Rs. {fmt(q.total)}</td></tr>
+          </tfoot>
+        </table>
+        {/* Payment schedule */}
+        <div style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginBottom:10 }}>Payment Schedule</div>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+          <thead><tr style={{ background:"#0c1445" }}>
+            {["Milestone","Amount","GST","Total Payable","When Due"].map(h=>(
+              <th key={h} style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>{h}</th>
+            ))}
+          </tr></thead>
+          <tbody>
+            {[["Milestone 1 — Project Kickoff", q.subtotal/2, q.tax, "Before design / development begins"],
+              ["Milestone 2 — Before Delivery",  q.subtotal/2, q.tax, "Before final delivery / go-live"]].map(([label, amt, tax, when], i) => {
+                const gst = (amt * (tax||18)) / 100;
+                return (
+                  <tr key={i} style={{ background: i%2===0 ? "#f8faff":"#fff", borderBottom:"1px solid #f0f4ff" }}>
+                    <td style={{ padding:"12px 14px", fontWeight:700, color:"#0f172a" }}>{label}</td>
+                    <td style={{ padding:"12px 14px", color:"#1d4ed8", fontWeight:700 }}>Rs. {fmt(amt)}</td>
+                    <td style={{ padding:"12px 14px", color:"#64748b" }}>Rs. {fmt(gst)}</td>
+                    <td style={{ padding:"12px 14px", fontWeight:800, color:"#fff", background:"#1e3a8a" }}>Rs. {fmt(amt+gst)}</td>
+                    <td style={{ padding:"12px 14px", color:"#475569" }}>{when}</td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
+        <div style={{ marginTop:12, fontSize:11, color:"#64748b", lineHeight:1.6 }}>GST Invoice will be raised at each milestone. Accepted payment modes: Bank Transfer (NEFT/IMPS/RTGS), UPI, Cheque. PAN and GST details will be shared on the invoice.</div>
+        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
+      </div>
+
+      {/* ══ PAGE 6: TERMS & CLOSING ══ */}
+      <div style={{ padding:"28px 32px 0" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
+            <div><div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div><div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div></div>
+          </div>
+          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
+        </div>
+        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>07 | Terms &amp; Conditions</div>
+        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Project Terms and Conditions</div>
+        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
+        {/* terms content */}
+        {(q.terms || DEFAULT_TERMS[q.serviceCategory] || "").split("\n").filter(Boolean).map((line, i) => (
+          <div key={i} style={{ padding:"10px 16px", background: i%2===0 ? "#f8faff":"#fff", borderRadius:6, marginBottom:6, fontSize:12, color:"#374151", lineHeight:1.7, border:"1px solid #f0f4ff" }}>
+            {line}
+          </div>
+        ))}
+        {/* Ready to start box */}
+        <div style={{ marginTop:32, border:"1px solid #e0e7ff", borderRadius:12, overflow:"hidden", display:"flex" }}>
+          <div style={{ flex:1, padding:"24px", background:"#f8faff" }}>
+            <div style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginBottom:8 }}>Ready to get started?</div>
+            <div style={{ fontSize:13, fontWeight:700, color:"#374151", lineHeight:1.7 }}>Confirm this proposal and your {cat.toLowerCase()} can be delivered in {pd.totalDays}.</div>
+          </div>
+          <div style={{ flex:1, padding:"24px", background:"#0c1445" }}>
+            <div style={{ fontSize:18, fontWeight:900, color:"#fb923c", marginBottom:8 }}>+91 99005 66466</div>
+            <div style={{ fontSize:12, color:"rgba(255,255,255,.7)", marginBottom:4 }}>info@nakshatranamahacreations.com</div>
+            <div style={{ fontSize:12, color:"#60a5fa" }}>nakshatranamahacreations.com</div>
+          </div>
+        </div>
+        {/* Signature */}
+        <div style={{ marginTop:32, display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
+          <div>
+            <div style={{ width:160, height:1, background:"#94a3b8", marginBottom:6 }}/>
+            <div style={{ fontSize:11, color:"#64748b" }}>Authorised Signatory</div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#0f172a" }}>NNC Nakshatra Namaha Creations</div>
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:12, fontWeight:700, color:"#0f172a" }}>NNC Nakshatra Namaha Creations Pvt. Ltd.</div>
+            <div style={{ fontSize:11, color:"#64748b", marginTop:2 }}>{bi.addr}</div>
+            <div style={{ fontSize:11, color:"#fb923c", marginTop:2 }}>{bi.phone} · nakshatranamahacreations.com</div>
+            <div style={{ fontSize:10, color:"#94a3b8", marginTop:2 }}>GSTIN: {NNC_GSTIN}</div>
+          </div>
+        </div>
+        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
+      </div>
+
     </div>
   );
 }
@@ -484,13 +1095,14 @@ export default function QuotationPage() {
       branch:        q.branch        || "Bangalore",
       enquiryId:     q.enquiryId     || "",
       senderEmail:   q.senderEmail   || "",
-      status:        q.status        || "draft",
-      lineItems:     q.lineItems?.length ? q.lineItems : [{ ...EMPTY_ITEM }],
-      discount:      q.discount      ?? 0,
-      tax:           q.tax           ?? 18,
-      validUntil:    q.validUntil ? q.validUntil.slice(0, 10) : "",
-      notes:         q.notes         || "",
-      terms:         q.terms         || "",
+      status:          q.status          || "draft",
+      serviceCategory: q.serviceCategory || "",
+      lineItems:       q.lineItems?.length ? q.lineItems : [{ ...EMPTY_ITEM }],
+      discount:        q.discount        ?? 0,
+      tax:             q.tax             ?? 18,
+      validUntil:      q.validUntil ? q.validUntil.slice(0, 10) : "",
+      notes:           q.notes           || "",
+      terms:           q.terms           || "",
     });
     setEditingId(q._id);
     setEnquirySearch(q.enquiryId ? "Linked to enquiry" : "");
@@ -582,28 +1194,63 @@ export default function QuotationPage() {
         {/* ══ LIST MODE ══ */}
         {mode === "list" && (
           <>
+            {/* ── NNC Company Showcase Banner ── */}
+            <div className="qt-brand-banner">
+              <div className="qt-brand-left">
+                <h2 className="qt-brand-heading">Nakshatra Namaha Creations</h2>
+                <p className="qt-brand-tagline">Transforming businesses with cutting-edge digital solutions since 2018</p>
+                <div className="qt-brand-services">
+                  {["🌐 Website Development","📱 Mobile Apps","🛒 E-Commerce","🔍 SEO & Marketing","🎨 Logo & Branding","☁️ Cloud Solutions"].map(s => (
+                    <span key={s} className="qt-service-chip">{s}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="qt-brand-right">
+                <div className="qt-brand-stat"><span className="qt-bs-num">500+</span><span className="qt-bs-lbl">Projects Delivered</span></div>
+                <div className="qt-brand-divider"/>
+                <div className="qt-brand-stat"><span className="qt-bs-num">350+</span><span className="qt-bs-lbl">Happy Clients</span></div>
+                <div className="qt-brand-divider"/>
+                <div className="qt-brand-stat"><span className="qt-bs-num">6+</span><span className="qt-bs-lbl">Years Experience</span></div>
+              </div>
+            </div>
+
             {/* Stats */}
             <div className="qt-stats">
               <div className="qt-stat-card indigo">
-                <div className="qt-stat-label">Total</div>
+                <div className="qt-stat-icon">📋</div>
+                <div className="qt-stat-label">Total Quotes</div>
                 <div className="qt-stat-val">{stats.total}</div>
+                <div className="qt-stat-sub">All time</div>
               </div>
               <div className="qt-stat-card blue">
+                <div className="qt-stat-icon">📤</div>
                 <div className="qt-stat-label">Sent</div>
                 <div className="qt-stat-val">{stats.byStatus?.sent || 0}</div>
+                <div className="qt-stat-sub">Awaiting reply</div>
               </div>
               <div className="qt-stat-card amber">
+                <div className="qt-stat-icon">🤝</div>
                 <div className="qt-stat-label">Negotiating</div>
                 <div className="qt-stat-val">{stats.byStatus?.under_negotiation || 0}</div>
+                <div className="qt-stat-sub">In discussion</div>
               </div>
               <div className="qt-stat-card green">
+                <div className="qt-stat-icon">🏆</div>
                 <div className="qt-stat-label">Won</div>
                 <div className="qt-stat-val">{(stats.byStatus?.approved || 0) + (stats.byStatus?.final || 0) + (stats.byStatus?.converted || 0)}</div>
                 <div className="qt-stat-sub">₹{fmt(stats.acceptedValue)}</div>
               </div>
               <div className="qt-stat-card violet">
+                <div className="qt-stat-icon">📈</div>
                 <div className="qt-stat-label">Conversion</div>
                 <div className="qt-stat-val">{stats.conversionRate}%</div>
+                <div className="qt-stat-sub">Win rate</div>
+              </div>
+              <div className="qt-stat-card teal">
+                <div className="qt-stat-icon">📅</div>
+                <div className="qt-stat-label">This Month</div>
+                <div className="qt-stat-val">{stats.thisMonth || 0}</div>
+                <div className="qt-stat-sub">New quotes</div>
               </div>
             </div>
 
@@ -666,9 +1313,14 @@ export default function QuotationPage() {
                               {q.isRevision && <span className="qt-rev-badge">R{q.revisionNumber}</span>}
                             </td>
                             <td>
-                              <div className="qt-client-name">{q.clientName}</div>
-                              {q.clientCompany && <div className="qt-client-co">{q.clientCompany}</div>}
-                              {q.clientPhone   && <div className="qt-client-ph">{q.clientPhone}</div>}
+                              <div className="qt-client-cell">
+                                <div className="qt-client-avatar">{(q.clientName||"?").charAt(0).toUpperCase()}</div>
+                                <div className="qt-client-info">
+                                  <div className="qt-client-name">{q.clientName}</div>
+                                  {q.clientCompany && <div className="qt-client-co">{q.clientCompany}</div>}
+                                  {q.clientPhone   && <div className="qt-client-ph">{q.clientPhone}</div>}
+                                </div>
+                              </div>
                             </td>
                             <td><span className="qt-branch">{q.branch}</span></td>
                             <td><span className="qt-amount">₹{fmt(q.total)}</span></td>
@@ -762,6 +1414,23 @@ export default function QuotationPage() {
               <div className="qt-form-section">
                 <div className="qt-section-title">Client Information</div>
                 <div className="qt-form-grid">
+                  <div className="qt-field full">
+                    <label>Service Category *</label>
+                    <select
+                      value={formData.serviceCategory}
+                      onChange={e => {
+                        const cat = e.target.value;
+                        setFormData(f => ({
+                          ...f,
+                          serviceCategory: cat,
+                          terms: cat && DEFAULT_TERMS[cat] && !f.terms ? DEFAULT_TERMS[cat] : (cat && DEFAULT_TERMS[cat] ? DEFAULT_TERMS[cat] : f.terms),
+                        }));
+                      }}
+                    >
+                      <option value="">— Select service type —</option>
+                      {SERVICE_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
                   <div className="qt-field">
                     <label>Client Name *</label>
                     <input value={formData.clientName} onChange={e => setFormData(f => ({ ...f, clientName: e.target.value }))} placeholder="Full name" required />
@@ -877,7 +1546,13 @@ export default function QuotationPage() {
                   </div>
                   <div className="qt-field full">
                     <label>Terms &amp; Conditions</label>
-                    <textarea rows={3} value={formData.terms} onChange={e => setFormData(f => ({ ...f, terms: e.target.value }))} placeholder="Payment terms, delivery conditions..." />
+                    <textarea rows={7} value={formData.terms} onChange={e => setFormData(f => ({ ...f, terms: e.target.value }))} placeholder="Select a service category above to auto-fill standard terms, or type custom terms here..." />
+                    {formData.serviceCategory && DEFAULT_TERMS[formData.serviceCategory] && (
+                      <span style={{fontSize:"11px",color:"#1d4ed8",marginTop:3,cursor:"pointer",userSelect:"none"}}
+                        onClick={() => setFormData(f => ({ ...f, terms: DEFAULT_TERMS[f.serviceCategory] }))}>
+                        Reset to default terms for "{formData.serviceCategory}"
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
