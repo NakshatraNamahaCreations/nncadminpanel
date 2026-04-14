@@ -499,313 +499,401 @@ function QuotationDocument({ q, isProforma = false }) {
   const pd  = PROPOSAL_DATA[q.serviceCategory] || PROPOSAL_DATA["Other"];
   const cat = q.serviceCategory || "Custom Digital Solutions";
 
+  /* ── Shared style tokens ── */
+  const NAVY    = "#0a1628";
+  const NAVY2   = "#0f2347";
+  const GOLD    = "#c9a84c";
+  const GOLD2   = "#f0c96e";
+  const WHITE   = "#ffffff";
+  const OFFWHITE= "#f9f8f5";
+  const SLATE   = "#64748b";
+  const BODY    = "#374151";
+  const BORDER  = "#e8e4da";
+
+  /* ── Reusable sub-components ── */
+  const PageHeader = ({ label }) => (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:32, paddingBottom:0 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <div style={{ width:4, height:36, background:`linear-gradient(180deg,${GOLD},${GOLD2})`, borderRadius:2 }}/>
+        <div>
+          <div style={{ fontSize:12, fontWeight:800, color:NAVY, letterSpacing:.3 }}>Nakshatra Namaha Creations Pvt Ltd</div>
+          <div style={{ fontSize:10, color:GOLD, fontWeight:600, letterSpacing:.5 }}>Your Digital Solutions Partner</div>
+        </div>
+      </div>
+      <div style={{ fontSize:10, color:SLATE, fontWeight:600, letterSpacing:.5 }}>{label || `Proposal | ${q.clientName || q.clientCompany}`}</div>
+    </div>
+  );
+
+  const SectionLabel = ({ num, title }) => (
+    <div style={{ marginBottom:18 }}>
+      <div style={{ display:"inline-flex", alignItems:"center", gap:10, marginBottom:6 }}>
+        <div style={{ fontSize:9, fontWeight:800, color:GOLD, letterSpacing:2, textTransform:"uppercase" }}>{num}</div>
+        <div style={{ width:1, height:10, background:GOLD, opacity:.5 }}/>
+        <div style={{ fontSize:9, fontWeight:800, color:SLATE, letterSpacing:2, textTransform:"uppercase" }}>Section</div>
+      </div>
+      <div style={{ fontSize:22, fontWeight:900, color:NAVY, lineHeight:1.15, letterSpacing:-.3 }}>{title}</div>
+      <div style={{ width:40, height:2, background:`linear-gradient(90deg,${GOLD},transparent)`, marginTop:8, borderRadius:1 }}/>
+    </div>
+  );
+
+  const PageFooter = () => (
+    <div style={{ marginTop:32, paddingTop:12, borderTop:`1px solid ${BORDER}`, display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:9.5 }}>
+      <span style={{ color:GOLD, fontWeight:800, letterSpacing:1 }}>CONFIDENTIAL</span>
+      <span style={{ color:SLATE }}>info@nakshatranamahacreations.com  |  +91 99005 66466  |  nakshatranamahacreations.com</span>
+      <span style={{ color:SLATE }}>{q.clientName || q.clientCompany} | Proposal</span>
+    </div>
+  );
+
   return (
-    <div className="qt-doc" id="qt-pdf-target" style={{ fontFamily:"Arial, Helvetica, sans-serif", fontSize:13, color:"#374151" }}>
+    <div id="qt-pdf-target" style={{ fontFamily:"'Georgia', 'Times New Roman', serif", fontSize:13, color:BODY, background:WHITE }}>
 
-      {/* ══ PAGE 1: COVER ══ */}
-      <div style={{ background:"linear-gradient(160deg,#020617 0%,#0c1445 45%,#1e3a8a 80%,#1d4ed8 100%)", minHeight:700, padding:"28px 32px 32px", position:"relative", overflow:"hidden", pageBreakAfter:"always" }}>
-        {/* grid overlay */}
-        <div style={{ position:"absolute", inset:0, backgroundImage:"repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0,rgba(255,255,255,.03) 1px,transparent 1px,transparent 40px)", pointerEvents:"none" }}/>
-        {/* coral glow */}
-        <div style={{ position:"absolute", right:-60, top:-60, width:280, height:280, borderRadius:"50%", background:"radial-gradient(circle,rgba(251,113,28,.2),transparent 70%)", pointerEvents:"none" }}/>
-        {/* header row */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", zIndex:1, marginBottom:60 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-            <img src={nncLogo} alt="NNC" style={{ height:40, borderRadius:6 }}/>
+      {/* ══════════════════════════════════════════
+          PAGE 1 — PREMIUM COVER
+      ══════════════════════════════════════════ */}
+      <div style={{ background:NAVY, minHeight:780, position:"relative", overflow:"hidden", pageBreakAfter:"always", display:"flex", flexDirection:"column" }}>
+
+        {/* Left gold accent bar */}
+        <div style={{ position:"absolute", left:0, top:0, bottom:0, width:6, background:`linear-gradient(180deg,${GOLD2} 0%,${GOLD} 50%,${GOLD2} 100%)` }}/>
+
+        {/* Subtle diagonal texture */}
+        <div style={{ position:"absolute", inset:0, backgroundImage:`repeating-linear-gradient(135deg, rgba(255,255,255,.012) 0px, rgba(255,255,255,.012) 1px, transparent 1px, transparent 60px)`, pointerEvents:"none" }}/>
+
+        {/* Gold circle orb top-right */}
+        <div style={{ position:"absolute", right:-80, top:-80, width:340, height:340, borderRadius:"50%", background:`radial-gradient(circle, rgba(201,168,76,.12) 0%, transparent 70%)`, pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", right:40, bottom:-60, width:200, height:200, borderRadius:"50%", background:`radial-gradient(circle, rgba(201,168,76,.07) 0%, transparent 70%)`, pointerEvents:"none" }}/>
+
+        {/* Top header strip */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"28px 44px 28px 50px", borderBottom:`1px solid rgba(201,168,76,.2)`, flexShrink:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:38, borderRadius:6, filter:"brightness(1.1)" }}/>
             <div>
-              <div style={{ fontSize:13, fontWeight:800, color:"#fff" }}>Nakshatra Namaha Creations Pvt Ltd</div>
-              <div style={{ fontSize:11, color:"rgba(255,255,255,.5)" }}>Your Digital Solutions Partner | Bengaluru</div>
+              <div style={{ fontSize:13, fontWeight:700, color:WHITE, letterSpacing:.3 }}>Nakshatra Namaha Creations Pvt Ltd</div>
+              <div style={{ fontSize:10, color:GOLD, fontWeight:500, letterSpacing:.8 }}>Your Digital Solutions Partner  |  Bengaluru</div>
             </div>
           </div>
-        </div>
-        {/* eyebrow */}
-        <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:"#fb923c", textTransform:"uppercase", marginBottom:16, position:"relative", zIndex:1 }}>{pd.techLabel}</div>
-        {/* client name big */}
-        <div style={{ fontSize:44, fontWeight:900, color:"#fff", lineHeight:1.1, marginBottom:8, position:"relative", zIndex:1 }}>{q.clientName || q.clientCompany || "Client"}</div>
-        {/* service heading */}
-        <div style={{ fontSize:36, fontWeight:900, color:"#60a5fa", lineHeight:1.1, marginBottom:12, position:"relative", zIndex:1 }}>{cat}</div>
-        <div style={{ fontSize:16, fontWeight:700, color:"rgba(255,255,255,.7)", marginBottom:48, position:"relative", zIndex:1 }}>Proposal</div>
-        <div style={{ fontSize:13, color:"rgba(255,255,255,.5)", marginBottom:32, position:"relative", zIndex:1 }}>{pd.tagline}</div>
-        {/* prepared for block */}
-        <div style={{ border:"1px solid rgba(255,255,255,.15)", borderRadius:12, padding:"20px 24px", maxWidth:560, position:"relative", zIndex:1, background:"rgba(255,255,255,.04)", marginTop:24 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-            <div>
-              <div style={{ fontSize:10, fontWeight:800, color:"#fb923c", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>Exclusively Prepared For</div>
-              <div style={{ fontSize:16, fontWeight:800, color:"#fff", marginBottom:4 }}>{q.clientName}{q.clientCompany ? ` — ${q.clientCompany}` : ""}</div>
-              <div style={{ fontSize:12, color:"rgba(255,255,255,.5)" }}>{pd.tagline} | {q.branch}</div>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-              <div><div style={{ fontSize:10, color:"#fb923c", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Date</div><div style={{ fontSize:13, color:"#fff" }}>{fmtDate(new Date())}</div></div>
-              <div><div style={{ fontSize:10, color:"#fb923c", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Proposal Type</div><div style={{ fontSize:13, color:"#fff" }}>{cat}</div></div>
-              <div><div style={{ fontSize:10, color:"#fb923c", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Reference</div><div style={{ fontSize:13, color:"#fff", fontFamily:"monospace" }}>{q.quoteNumber}</div></div>
-              <div><div style={{ fontSize:10, color:"#fb923c", fontWeight:800, letterSpacing:1, textTransform:"uppercase", marginBottom:4 }}>Valid For</div><div style={{ fontSize:13, color:"#fff" }}>{q.validUntil ? `Until ${fmtDate(q.validUntil)}` : "30 Days from Issue"}</div></div>
-            </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontSize:9, fontWeight:700, color:GOLD, letterSpacing:2, textTransform:"uppercase", marginBottom:2 }}>Ref No.</div>
+            <div style={{ fontSize:12, fontFamily:"'Courier New', monospace", color:"rgba(255,255,255,.7)", fontWeight:700 }}>{q.quoteNumber}</div>
           </div>
         </div>
-        {/* confidential footer */}
-        <div style={{ position:"relative", zIndex:1, marginTop:48, display:"flex", justifyContent:"space-between", alignItems:"center", borderTop:"1px solid rgba(255,255,255,.1)", paddingTop:16, fontSize:11 }}>
-          <span style={{ color:"#fb923c", fontWeight:800, letterSpacing:1 }}>CONFIDENTIAL</span>
-          <span style={{ color:"rgba(255,255,255,.45)" }}>info@nakshatranamahacreations.com | +91 99005 66466 | nakshatranamahacreations.com</span>
-          <span style={{ color:"rgba(255,255,255,.45)" }}>NNC Digital</span>
+
+        {/* Centre content */}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", padding:"48px 44px 32px 50px" }}>
+          {/* Eyebrow pill */}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:8, marginBottom:28, alignSelf:"flex-start" }}>
+            <div style={{ width:24, height:1, background:GOLD }}/>
+            <div style={{ fontSize:10, fontWeight:700, color:GOLD, letterSpacing:2.5, textTransform:"uppercase" }}>{pd.techLabel}</div>
+            <div style={{ width:24, height:1, background:GOLD }}/>
+          </div>
+
+          {/* Client name */}
+          <div style={{ fontSize:13, fontWeight:600, color:"rgba(255,255,255,.5)", letterSpacing:1, textTransform:"uppercase", marginBottom:10 }}>Exclusively Prepared For</div>
+          <div style={{ fontSize:46, fontWeight:900, color:WHITE, lineHeight:1.05, letterSpacing:-1, marginBottom:6 }}>{q.clientName || q.clientCompany || "Client"}</div>
+          {q.clientCompany && q.clientName !== q.clientCompany && (
+            <div style={{ fontSize:16, color:"rgba(255,255,255,.45)", marginBottom:16, fontStyle:"italic" }}>{q.clientCompany}</div>
+          )}
+
+          {/* Gold rule */}
+          <div style={{ display:"flex", alignItems:"center", gap:12, margin:"20px 0" }}>
+            <div style={{ flex:1, height:1, background:`linear-gradient(90deg,${GOLD},rgba(201,168,76,.1))` }}/>
+          </div>
+
+          {/* Service title */}
+          <div style={{ fontSize:34, fontWeight:300, color:GOLD2, lineHeight:1.1, letterSpacing:-.5, marginBottom:8 }}>{cat}</div>
+          <div style={{ fontSize:18, fontWeight:700, color:"rgba(255,255,255,.6)", marginBottom:40 }}>Proposal</div>
+
+          {/* Info grid */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, border:`1px solid rgba(201,168,76,.25)`, borderRadius:10, overflow:"hidden", marginBottom:40 }}>
+            {[
+              { lbl:"Prepared For",  val: q.clientName || q.clientCompany || "—" },
+              { lbl:"Date",          val: fmtDate(new Date()) },
+              { lbl:"Proposal Type", val: cat },
+              { lbl:"Valid Until",   val: q.validUntil ? fmtDate(q.validUntil) : "30 Days from Issue" },
+            ].map((item, i) => (
+              <div key={i} style={{ padding:"16px 18px", borderRight: i<3 ? `1px solid rgba(201,168,76,.2)` : "none", background: i%2===0 ? "rgba(255,255,255,.03)" : "rgba(255,255,255,.015)" }}>
+                <div style={{ fontSize:9, fontWeight:700, color:GOLD, letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>{item.lbl}</div>
+                <div style={{ fontSize:12, color:WHITE, fontWeight:600, lineHeight:1.4 }}>{item.val}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom confidential strip */}
+        <div style={{ padding:"14px 44px 14px 50px", borderTop:`1px solid rgba(201,168,76,.2)`, display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,.2)", flexShrink:0 }}>
+          <span style={{ fontSize:9, fontWeight:800, color:GOLD, letterSpacing:2, textTransform:"uppercase" }}>Confidential</span>
+          <span style={{ fontSize:9.5, color:"rgba(255,255,255,.35)" }}>info@nakshatranamahacreations.com  |  +91 99005 66466  |  nakshatranamahacreations.com</span>
+          <span style={{ fontSize:9, color:"rgba(255,255,255,.35)", fontWeight:600 }}>NNC Digital</span>
         </div>
       </div>
 
-      {/* ══ PAGE 2: EXECUTIVE SUMMARY + ABOUT NNC ══ */}
-      <div style={{ padding:"28px 32px 0", pageBreakAfter:"always" }}>
-        {/* mini header */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
-            <div>
-              <div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div>
-              <div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div>
-            </div>
-          </div>
-          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
-        </div>
+      {/* ══════════════════════════════════════════
+          PAGE 2 — EXECUTIVE SUMMARY + ABOUT NNC
+      ══════════════════════════════════════════ */}
+      <div style={{ padding:"36px 44px 0", background:WHITE, pageBreakAfter:"always" }}>
+        <PageHeader/>
 
-        {/* 01 Executive Summary */}
-        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>01 | Executive Summary</div>
-        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>A Professional {cat} for {q.clientName || q.clientCompany}</div>
-        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
-        <div style={{ fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:20, textAlign:"justify" }}>{pd.summary(q.clientName || q.clientCompany || "your company")}</div>
+        <SectionLabel num="01" title={`Executive Summary`}/>
+        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24, textAlign:"justify" }}>{pd.summary(q.clientName || q.clientCompany || "your company")}</div>
 
-        {/* stat boxes */}
-        <div style={{ display:"grid", gridTemplateColumns:`repeat(${pd.stats.length},1fr)`, gap:0, marginBottom:36, border:"1px solid #1e3a8a", borderRadius:8, overflow:"hidden" }}>
-          {pd.stats.map((s,i)=>(
-            <div key={i} style={{ padding:"18px 14px", textAlign:"center", background: i%2===0 ? "#0c1445" : "#1e3a8a", borderRight: i < pd.stats.length-1 ? "1px solid rgba(255,255,255,.1)" : "none" }}>
-              <div style={{ fontSize:26, fontWeight:900, color:"#60a5fa", lineHeight:1 }}>{s.val}</div>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,.6)", marginTop:4, textTransform:"uppercase", letterSpacing:0.5 }}>{s.lbl}</div>
+        {/* Stat highlight bar */}
+        <div style={{ display:"grid", gridTemplateColumns:`repeat(${pd.stats.length},1fr)`, marginBottom:40, borderRadius:10, overflow:"hidden", border:`1px solid ${NAVY}` }}>
+          {pd.stats.map((s, i) => (
+            <div key={i} style={{ padding:"20px 14px", textAlign:"center", background: i%2===0 ? NAVY : NAVY2, borderRight: i<pd.stats.length-1 ? `1px solid rgba(201,168,76,.15)` : "none" }}>
+              <div style={{ fontSize:26, fontWeight:900, color:GOLD2, lineHeight:1, fontFamily:"Georgia, serif" }}>{s.val}</div>
+              <div style={{ fontSize:9, color:"rgba(255,255,255,.55)", marginTop:6, textTransform:"uppercase", letterSpacing:1 }}>{s.lbl}</div>
             </div>
           ))}
         </div>
 
-        {/* 02 About NNC */}
-        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>02 | About Nakshatra Namaha Creations</div>
-        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Your {cat.split(" ")[0]} Partner</div>
-        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
-        <div style={{ fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:20, textAlign:"justify" }}>Nakshatra Namaha Creations is a full-service digital agency with over 10 years of experience building websites, mobile apps, CRM systems and digital platforms for businesses across India. We have delivered 565+ projects for clients in trading, manufacturing, healthcare, real estate and professional services. Our in-house team of designers and developers brings the same quality to every project regardless of size.</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, border:"1px solid #1e3a8a", borderRadius:8, overflow:"hidden" }}>
+        <SectionLabel num="02" title="About Nakshatra Namaha Creations"/>
+        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24, textAlign:"justify" }}>Nakshatra Namaha Creations is a full-service digital agency with over 10 years of experience building websites, mobile apps, CRM systems and digital platforms for businesses across India. We have delivered 565+ projects for clients in trading, manufacturing, healthcare, real estate and professional services. Our in-house team of designers and developers brings the same quality and attention to detail to every engagement — regardless of project size.</div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", borderRadius:10, overflow:"hidden", border:`1px solid ${GOLD}` }}>
           {[{val:"10+",lbl:"Years in Business"},{val:"565+",lbl:"Projects Delivered"},{val:"35+",lbl:"In-House Experts"},{val:"4",lbl:"Office Locations"}].map((s,i)=>(
-            <div key={i} style={{ padding:"16px 12px", textAlign:"center", background: i%2===0 ? "#0c1445" : "#1e3a8a", borderRight: i<3 ? "1px solid rgba(255,255,255,.1)":"none" }}>
-              <div style={{ fontSize:22, fontWeight:900, color:"#fb923c", lineHeight:1 }}>{s.val}</div>
-              <div style={{ fontSize:10, color:"rgba(255,255,255,.6)", marginTop:4, textTransform:"uppercase", letterSpacing:0.5 }}>{s.lbl}</div>
+            <div key={i} style={{ padding:"18px 12px", textAlign:"center", background: i%2===0 ? OFFWHITE : WHITE, borderRight: i<3 ? `1px solid ${BORDER}` : "none" }}>
+              <div style={{ fontSize:24, fontWeight:900, color:NAVY, lineHeight:1, fontFamily:"Georgia, serif" }}>{s.val}</div>
+              <div style={{ fontSize:9, color:SLATE, marginTop:5, textTransform:"uppercase", letterSpacing:1 }}>{s.lbl}</div>
             </div>
           ))}
         </div>
-        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
+
+        <PageFooter/>
       </div>
 
-      {/* ══ PAGE 3: SCOPE OF WORK ══ */}
-      <div style={{ padding:"28px 32px 0", pageBreakAfter:"always" }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
-            <div><div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div><div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div></div>
-          </div>
-          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
-        </div>
-        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>03 | Scope of Work</div>
-        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>What We Will Deliver</div>
-        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
-        <div style={{ fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:24, textAlign:"justify" }}>The following sections describe every deliverable included in this engagement for {q.clientName || q.clientCompany}. Every item is individually designed and built to meet the specific requirements of this project.</div>
-        {pd.scope.map((s,i)=>(
-          <div key={i} style={{ display:"flex", gap:16, marginBottom:16, padding:"14px 16px", background: i%2===0 ? "#f8faff" : "#fff", borderRadius:8, border:"1px solid #e0e7ff" }}>
-            <div style={{ flexShrink:0, width:32, height:32, borderRadius:6, background:"#1e3a8a", color:"#fff", fontSize:12, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{s.num}</div>
-            <div>
-              <div style={{ fontSize:13, fontWeight:800, color:"#0f172a", marginBottom:4 }}>{s.title}</div>
-              <div style={{ fontSize:12, color:"#475569", lineHeight:1.7, textAlign:"justify" }}>{s.desc}</div>
+      {/* ══════════════════════════════════════════
+          PAGE 3 — SCOPE OF WORK
+      ══════════════════════════════════════════ */}
+      <div style={{ padding:"36px 44px 0", background:WHITE, pageBreakAfter:"always" }}>
+        <PageHeader/>
+        <SectionLabel num="03" title="Scope of Work"/>
+        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24, textAlign:"justify" }}>The following sections describe every deliverable included in this engagement for <strong>{q.clientName || q.clientCompany}</strong>. Each item is individually scoped and executed — not a template.</div>
+
+        {pd.scope.map((s, i) => (
+          <div key={i} style={{ display:"flex", gap:0, marginBottom:14, borderRadius:8, overflow:"hidden", border:`1px solid ${BORDER}` }}>
+            {/* number tab */}
+            <div style={{ flexShrink:0, width:48, background: i%2===0 ? NAVY : NAVY2, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <span style={{ fontSize:13, fontWeight:900, color:GOLD2, fontFamily:"Georgia, serif" }}>{s.num}</span>
+            </div>
+            {/* content */}
+            <div style={{ flex:1, padding:"12px 18px", background: i%2===0 ? WHITE : OFFWHITE }}>
+              <div style={{ fontSize:13, fontWeight:700, color:NAVY, marginBottom:4, letterSpacing:.1 }}>{s.title}</div>
+              <div style={{ fontSize:11.5, color:SLATE, lineHeight:1.75, textAlign:"justify" }}>{s.desc}</div>
             </div>
           </div>
         ))}
+
         {q.notes && (
-          <div style={{ marginTop:20, padding:"14px 16px", background:"#eef2ff", borderRadius:8, borderLeft:"3px solid #1d4ed8" }}>
-            <div style={{ fontSize:10, fontWeight:800, color:"#64748b", textTransform:"uppercase", letterSpacing:.8, marginBottom:6 }}>Additional Notes</div>
-            <div style={{ fontSize:12, color:"#475569", lineHeight:1.7, whiteSpace:"pre-wrap" }}>{q.notes}</div>
+          <div style={{ marginTop:20, padding:"14px 18px", background:OFFWHITE, borderRadius:8, borderLeft:`3px solid ${GOLD}` }}>
+            <div style={{ fontSize:9, fontWeight:800, color:GOLD, textTransform:"uppercase", letterSpacing:1.5, marginBottom:6 }}>Additional Notes</div>
+            <div style={{ fontSize:12, color:BODY, lineHeight:1.8, whiteSpace:"pre-wrap" }}>{q.notes}</div>
           </div>
         )}
-        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
+        <PageFooter/>
       </div>
 
-      {/* ══ PAGE 4: WHAT IS INCLUDED + TIMELINE ══ */}
-      <div style={{ padding:"28px 32px 0", pageBreakAfter:"always" }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
-            <div><div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div><div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div></div>
-          </div>
-          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
-        </div>
-        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>04 | What Is Included</div>
-        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Complete Deliverables — What You Get</div>
-        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
-        <div style={{ marginBottom:24 }}>
-          {pd.included.map((item,i)=>(
-            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"7px 0", borderBottom:"1px solid #f0f4ff" }}>
-              <span style={{ color:"#1d4ed8", fontWeight:900, fontSize:14, flexShrink:0, marginTop:1 }}>✓</span>
-              <span style={{ fontSize:12, color:"#374151", lineHeight:1.6 }} dangerouslySetInnerHTML={{ __html: item.replace(/^([^—]+)—/, '<strong>$1</strong>—') }}/>
+      {/* ══════════════════════════════════════════
+          PAGE 4 — DELIVERABLES + TIMELINE
+      ══════════════════════════════════════════ */}
+      <div style={{ padding:"36px 44px 0", background:WHITE, pageBreakAfter:"always" }}>
+        <PageHeader/>
+        <SectionLabel num="04" title="What Is Included"/>
+
+        <div style={{ columns:2, columnGap:32, marginBottom:28 }}>
+          {pd.included.map((item, i) => (
+            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:9, padding:"5px 0", borderBottom:`1px solid ${BORDER}`, breakInside:"avoid" }}>
+              <span style={{ color:GOLD, fontWeight:900, fontSize:13, flexShrink:0, lineHeight:1.6 }}>✓</span>
+              <span style={{ fontSize:11.5, color:BODY, lineHeight:1.7 }} dangerouslySetInnerHTML={{ __html: item.replace(/^([^—]+)—/, '<strong style="color:#0a1628">$1</strong> —') }}/>
             </div>
           ))}
         </div>
+
         {pd.notIncluded.length > 0 && (
           <>
-            <div style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginBottom:10 }}>What is NOT Included</div>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, marginBottom:24 }}>
-              <thead><tr style={{ background:"#0c1445" }}><th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>Item</th><th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>Status</th><th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>Available Separately</th></tr></thead>
-              <tbody>{pd.notIncluded.map(([item,avail],i)=>(
-                <tr key={i} style={{ background: i%2===0 ? "#f8faff":"#fff" }}>
-                  <td style={{ padding:"9px 14px", color:"#374151", borderBottom:"1px solid #f0f4ff" }}>{item}</td>
-                  <td style={{ padding:"9px 14px", color:"#64748b", borderBottom:"1px solid #f0f4ff" }}>Not included</td>
-                  <td style={{ padding:"9px 14px", color:"#475569", borderBottom:"1px solid #f0f4ff" }}>{avail}</td>
+            <div style={{ fontSize:13, fontWeight:700, color:NAVY, marginBottom:10, paddingBottom:6, borderBottom:`2px solid ${GOLD}`, display:"inline-block" }}>What is NOT Included</div>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11.5, marginBottom:28 }}>
+              <thead>
+                <tr style={{ background:NAVY }}>
+                  <th style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5 }}>Item</th>
+                  <th style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5 }}>Status</th>
+                  <th style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5 }}>Available Separately</th>
                 </tr>
-              ))}</tbody>
+              </thead>
+              <tbody>
+                {pd.notIncluded.map(([item, avail], i) => (
+                  <tr key={i} style={{ background: i%2===0 ? OFFWHITE : WHITE }}>
+                    <td style={{ padding:"9px 14px", color:BODY, borderBottom:`1px solid ${BORDER}` }}>{item}</td>
+                    <td style={{ padding:"9px 14px", color:SLATE, borderBottom:`1px solid ${BORDER}` }}>Not included</td>
+                    <td style={{ padding:"9px 14px", color:SLATE, borderBottom:`1px solid ${BORDER}` }}>{avail}</td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </>
         )}
-        {/* Timeline */}
-        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>05 | Project Timeline</div>
-        <div style={{ fontSize:18, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Delivery Timeline — {pd.totalDays}</div>
-        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:14, borderRadius:2 }}/>
-        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-          <thead><tr style={{ background:"#0c1445" }}>
-            <th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11, width:"22%" }}>Phase</th>
-            <th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11, width:"12%" }}>Duration</th>
-            <th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11, width:"33%" }}>Activities</th>
-            <th style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>Client Action Required</th>
-          </tr></thead>
-          <tbody>{pd.timeline.map((t,i)=>(
-            <tr key={i} style={{ background: i%2===0 ? "#f8faff":"#fff" }}>
-              <td style={{ padding:"10px 14px", fontWeight:700, color:"#0f172a", borderBottom:"1px solid #f0f4ff", verticalAlign:"top" }}>{t.phase}</td>
-              <td style={{ padding:"10px 14px", color:"#1d4ed8", fontWeight:700, borderBottom:"1px solid #f0f4ff", verticalAlign:"top", whiteSpace:"nowrap" }}>{t.days}</td>
-              <td style={{ padding:"10px 14px", color:"#374151", borderBottom:"1px solid #f0f4ff", verticalAlign:"top", lineHeight:1.6 }}>{t.activity}</td>
-              <td style={{ padding:"10px 14px", color:"#475569", borderBottom:"1px solid #f0f4ff", verticalAlign:"top", lineHeight:1.6 }}>{t.client}</td>
-            </tr>
-          ))}</tbody>
-        </table>
-        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
-      </div>
 
-      {/* ══ PAGE 5: INVESTMENT ══ */}
-      <div style={{ padding:"28px 32px 0", pageBreakAfter:"always" }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
-            <div><div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div><div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div></div>
-          </div>
-          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
-        </div>
-        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>06 | Investment</div>
-        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Pricing and Payment Schedule</div>
-        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
-        <div style={{ fontSize:13, color:"#374151", lineHeight:1.8, marginBottom:20 }}>The investment for this engagement is as follows. Payment is structured in two equal milestones for your convenience.</div>
-        {/* Total highlight box */}
-        <div style={{ background:"linear-gradient(135deg,#0c1445,#1e3a8a)", borderRadius:12, padding:"20px 24px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div>
-            <div style={{ fontSize:36, fontWeight:900, color:"#60a5fa" }}>Rs. {fmt(q.subtotal || q.total)}</div>
-            <div style={{ fontSize:11, fontWeight:800, color:"#fb923c", letterSpacing:1, textTransform:"uppercase", marginTop:4 }}>{cat.toUpperCase()}</div>
-          </div>
-          <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:12, color:"rgba(255,255,255,.6)", marginBottom:4 }}>Complete Delivery Package</div>
-            <div style={{ fontSize:13, fontWeight:800, color:"#fff" }}>+ {q.tax || 18}% GST applicable</div>
-          </div>
-        </div>
-        {/* Line items */}
-        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, marginBottom:20 }}>
-          <thead><tr style={{ background:"#f8faff", borderBottom:"2px solid #1d4ed8" }}>
-            <th style={{ padding:"10px 14px", textAlign:"left", color:"#64748b", fontWeight:800, fontSize:10, textTransform:"uppercase", letterSpacing:.5, width:40 }}></th>
-            <th style={{ padding:"10px 14px", textAlign:"left", color:"#64748b", fontWeight:800, fontSize:10, textTransform:"uppercase", letterSpacing:.5 }}>Deliverable</th>
-            <th style={{ padding:"10px 14px", textAlign:"right", color:"#64748b", fontWeight:800, fontSize:10, textTransform:"uppercase", letterSpacing:.5 }}>Amount</th>
-          </tr></thead>
-          <tbody>{(q.lineItems||[]).map((it,i)=>(
-            <tr key={i} style={{ borderBottom:"1px solid #f0f4ff" }}>
-              <td style={{ padding:"12px 14px" }}><div style={{ width:28, height:28, borderRadius:5, background:"#1e3a8a", color:"#fff", fontSize:11, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center" }}>{String(i+1).padStart(2,"0")}</div></td>
-              <td style={{ padding:"12px 14px" }}>
-                <div style={{ fontWeight:800, color:"#0f172a", marginBottom:2 }}>{it.description}</div>
-              </td>
-              <td style={{ padding:"12px 14px", textAlign:"right", fontWeight:700, color:"#1d4ed8", fontSize:13 }}>Rs. {fmt(it.amount)}</td>
+        <SectionLabel num="05" title={`Project Timeline — ${pd.totalDays}`}/>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11.5 }}>
+          <thead>
+            <tr style={{ background:NAVY }}>
+              {["Phase","Duration","Activities","Client Action Required"].map((h,i)=>(
+                <th key={h} style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5, width: i===0?"22%": i===1?"11%": i===2?"33%":"auto" }}>{h}</th>
+              ))}
             </tr>
-          ))}</tbody>
-          <tfoot>
-            <tr style={{ borderTop:"1px solid #e0e7ff" }}><td/><td style={{ padding:"8px 14px", color:"#475569", fontWeight:600, fontSize:12 }}>Subtotal</td><td style={{ padding:"8px 14px", textAlign:"right", fontWeight:700, color:"#0f172a" }}>Rs. {fmt(q.subtotal)}</td></tr>
-            {q.discount > 0 && <tr><td/><td style={{ padding:"4px 14px", color:"#16a34a", fontWeight:600, fontSize:12 }}>Discount</td><td style={{ padding:"4px 14px", textAlign:"right", color:"#16a34a", fontWeight:700 }}>− Rs. {fmt(q.discount)}</td></tr>}
-            {q.tax > 0 && <tr><td/><td style={{ padding:"4px 14px", color:"#475569", fontWeight:600, fontSize:12 }}>GST @ {q.tax}%</td><td style={{ padding:"4px 14px", textAlign:"right", color:"#475569", fontWeight:700 }}>Rs. {fmt(gstAmt)}</td></tr>}
-            <tr style={{ background:"#0c1445", borderRadius:8 }}><td/><td style={{ padding:"12px 14px", color:"#fff", fontWeight:800, fontSize:14 }}>Total Payable (incl. GST)</td><td style={{ padding:"12px 14px", textAlign:"right", color:"#60a5fa", fontWeight:900, fontSize:16 }}>Rs. {fmt(q.total)}</td></tr>
-          </tfoot>
-        </table>
-        {/* Payment schedule */}
-        <div style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginBottom:10 }}>Payment Schedule</div>
-        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-          <thead><tr style={{ background:"#0c1445" }}>
-            {["Milestone","Amount","GST","Total Payable","When Due"].map(h=>(
-              <th key={h} style={{ padding:"10px 14px", color:"rgba(255,255,255,.75)", textAlign:"left", fontWeight:700, fontSize:11 }}>{h}</th>
-            ))}
-          </tr></thead>
+          </thead>
           <tbody>
-            {[["Milestone 1 — Project Kickoff", q.subtotal/2, q.tax, "Before design / development begins"],
-              ["Milestone 2 — Before Delivery",  q.subtotal/2, q.tax, "Before final delivery / go-live"]].map(([label, amt, tax, when], i) => {
-                const gst = (amt * (tax||18)) / 100;
-                return (
-                  <tr key={i} style={{ background: i%2===0 ? "#f8faff":"#fff", borderBottom:"1px solid #f0f4ff" }}>
-                    <td style={{ padding:"12px 14px", fontWeight:700, color:"#0f172a" }}>{label}</td>
-                    <td style={{ padding:"12px 14px", color:"#1d4ed8", fontWeight:700 }}>Rs. {fmt(amt)}</td>
-                    <td style={{ padding:"12px 14px", color:"#64748b" }}>Rs. {fmt(gst)}</td>
-                    <td style={{ padding:"12px 14px", fontWeight:800, color:"#fff", background:"#1e3a8a" }}>Rs. {fmt(amt+gst)}</td>
-                    <td style={{ padding:"12px 14px", color:"#475569" }}>{when}</td>
-                  </tr>
-                );
-              })
-            }
+            {pd.timeline.map((t, i) => (
+              <tr key={i} style={{ background: i%2===0 ? OFFWHITE : WHITE }}>
+                <td style={{ padding:"10px 14px", fontWeight:700, color:NAVY, borderBottom:`1px solid ${BORDER}`, verticalAlign:"top", lineHeight:1.5 }}>{t.phase}</td>
+                <td style={{ padding:"10px 14px", fontWeight:700, color:GOLD, borderBottom:`1px solid ${BORDER}`, verticalAlign:"top", whiteSpace:"nowrap" }}>{t.days}</td>
+                <td style={{ padding:"10px 14px", color:BODY, borderBottom:`1px solid ${BORDER}`, verticalAlign:"top", lineHeight:1.7 }}>{t.activity}</td>
+                <td style={{ padding:"10px 14px", color:SLATE, borderBottom:`1px solid ${BORDER}`, verticalAlign:"top", lineHeight:1.7, fontStyle:"italic" }}>{t.client}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
-        <div style={{ marginTop:12, fontSize:11, color:"#64748b", lineHeight:1.6 }}>GST Invoice will be raised at each milestone. Accepted payment modes: Bank Transfer (NEFT/IMPS/RTGS), UPI, Cheque. PAN and GST details will be shared on the invoice.</div>
-        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
+        <PageFooter/>
       </div>
 
-      {/* ══ PAGE 6: TERMS & CLOSING ══ */}
-      <div style={{ padding:"28px 32px 0" }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingBottom:12, borderBottom:"2px solid #1d4ed8", marginBottom:28 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <img src={nncLogo} alt="NNC" style={{ height:28, borderRadius:4 }}/>
-            <div><div style={{ fontSize:12, fontWeight:800, color:"#0f172a" }}>Nakshatra Namaha Creations Pvt Ltd</div><div style={{ fontSize:10, color:"#1d4ed8" }}>Your Digital Solutions Partner</div></div>
+      {/* ══════════════════════════════════════════
+          PAGE 5 — INVESTMENT
+      ══════════════════════════════════════════ */}
+      <div style={{ padding:"36px 44px 0", background:WHITE, pageBreakAfter:"always" }}>
+        <PageHeader/>
+        <SectionLabel num="06" title="Investment &amp; Payment Schedule"/>
+        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24 }}>The investment for this engagement for <strong>{q.clientName || q.clientCompany}</strong> is as follows. Payment is structured in two equal milestones for your convenience.</div>
+
+        {/* Total callout — premium dark */}
+        <div style={{ background:`linear-gradient(135deg,${NAVY} 0%,${NAVY2} 100%)`, borderRadius:12, padding:"24px 32px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between", border:`1px solid rgba(201,168,76,.3)`, position:"relative", overflow:"hidden" }}>
+          <div style={{ position:"absolute", right:-40, top:-40, width:200, height:200, borderRadius:"50%", background:`radial-gradient(circle,rgba(201,168,76,.08),transparent 70%)` }}/>
+          <div>
+            <div style={{ fontSize:9, fontWeight:700, color:GOLD, letterSpacing:2, textTransform:"uppercase", marginBottom:8 }}>{cat.toUpperCase()}</div>
+            <div style={{ fontSize:40, fontWeight:900, color:WHITE, lineHeight:1, fontFamily:"Georgia, serif" }}>&#8377; {fmt(q.subtotal || q.total)}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.45)", marginTop:6 }}>Excluding GST</div>
           </div>
-          <div style={{ fontSize:11, color:"#94a3b8" }}>Proposal | {q.clientName || q.clientCompany}</div>
+          <div style={{ textAlign:"right", position:"relative", zIndex:1 }}>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", marginBottom:4 }}>Complete Delivery Package</div>
+            <div style={{ fontSize:14, fontWeight:800, color:GOLD2 }}>+ {q.tax || 18}% GST applicable</div>
+            <div style={{ marginTop:10, padding:"6px 16px", background:`rgba(201,168,76,.15)`, borderRadius:20, border:`1px solid rgba(201,168,76,.3)`, display:"inline-block" }}>
+              <span style={{ fontSize:10, fontWeight:700, color:GOLD, letterSpacing:1 }}>TOTAL: &#8377; {fmt(q.total)}</span>
+            </div>
+          </div>
         </div>
-        <div style={{ fontSize:10, fontWeight:800, color:"#1d4ed8", letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>07 | Terms &amp; Conditions</div>
-        <div style={{ fontSize:20, fontWeight:900, color:"#0f172a", marginBottom:4 }}>Project Terms and Conditions</div>
-        <div style={{ width:48, height:3, background:"#1d4ed8", marginBottom:16, borderRadius:2 }}/>
-        {/* terms content */}
+
+        {/* Line items table */}
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, marginBottom:24 }}>
+          <thead>
+            <tr style={{ borderBottom:`2px solid ${GOLD}` }}>
+              <th style={{ padding:"10px 14px", textAlign:"left", color:SLATE, fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:.5, width:44 }}>#</th>
+              <th style={{ padding:"10px 14px", textAlign:"left", color:SLATE, fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:.5 }}>Deliverable</th>
+              <th style={{ padding:"10px 14px", textAlign:"right", color:SLATE, fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:.5 }}>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(q.lineItems||[]).map((it, i) => (
+              <tr key={i} style={{ background: i%2===0 ? OFFWHITE : WHITE, borderBottom:`1px solid ${BORDER}` }}>
+                <td style={{ padding:"12px 14px" }}>
+                  <div style={{ width:28, height:28, borderRadius:50, background:NAVY, color:GOLD2, fontSize:11, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Georgia, serif" }}>{i+1}</div>
+                </td>
+                <td style={{ padding:"12px 14px", fontWeight:600, color:NAVY }}>{it.description}</td>
+                <td style={{ padding:"12px 14px", textAlign:"right", fontWeight:700, color:NAVY, fontSize:13 }}>&#8377; {fmt(it.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{ borderTop:`1px solid ${BORDER}` }}>
+              <td/><td style={{ padding:"8px 14px", color:SLATE, fontSize:12 }}>Subtotal</td>
+              <td style={{ padding:"8px 14px", textAlign:"right", fontWeight:700, color:NAVY }}>&#8377; {fmt(q.subtotal)}</td>
+            </tr>
+            {q.discount > 0 && (
+              <tr><td/><td style={{ padding:"4px 14px", color:"#16a34a", fontSize:12 }}>Discount</td><td style={{ padding:"4px 14px", textAlign:"right", color:"#16a34a", fontWeight:700 }}>− &#8377; {fmt(q.discount)}</td></tr>
+            )}
+            {q.tax > 0 && (
+              <tr><td/><td style={{ padding:"4px 14px", color:SLATE, fontSize:12 }}>GST @ {q.tax}%</td><td style={{ padding:"4px 14px", textAlign:"right", color:SLATE, fontWeight:700 }}>&#8377; {fmt(gstAmt)}</td></tr>
+            )}
+            <tr style={{ background:NAVY }}>
+              <td/>
+              <td style={{ padding:"14px", color:WHITE, fontWeight:800, fontSize:14 }}>Total Payable (incl. GST)</td>
+              <td style={{ padding:"14px", textAlign:"right", color:GOLD2, fontWeight:900, fontSize:18, fontFamily:"Georgia, serif" }}>&#8377; {fmt(q.total)}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        {/* Payment schedule */}
+        <div style={{ fontSize:14, fontWeight:700, color:NAVY, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${GOLD}`, display:"inline-block" }}>Payment Schedule</div>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, marginBottom:14 }}>
+          <thead>
+            <tr style={{ background:NAVY }}>
+              {["Milestone","Amount","GST","Total Payable","When Due"].map(h=>(
+                <th key={h} style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[["Milestone 1 — Project Kickoff","Before design / development begins"],
+              ["Milestone 2 — Before Delivery", "Before final delivery / go-live"]].map(([label, when], i) => {
+              const half = (q.subtotal||0)/2;
+              const gst  = (half * (q.tax||18)) / 100;
+              return (
+                <tr key={i} style={{ background: i%2===0 ? OFFWHITE : WHITE, borderBottom:`1px solid ${BORDER}` }}>
+                  <td style={{ padding:"12px 14px", fontWeight:700, color:NAVY }}>{label}</td>
+                  <td style={{ padding:"12px 14px", fontWeight:700, color:NAVY }}>&#8377; {fmt(half)}</td>
+                  <td style={{ padding:"12px 14px", color:SLATE }}>&#8377; {fmt(gst)}</td>
+                  <td style={{ padding:"12px 14px", fontWeight:800, color:WHITE, background:NAVY2 }}>&#8377; {fmt(half+gst)}</td>
+                  <td style={{ padding:"12px 14px", color:SLATE, fontStyle:"italic" }}>{when}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div style={{ fontSize:11, color:SLATE, lineHeight:1.7, padding:"10px 14px", background:OFFWHITE, borderRadius:6, border:`1px solid ${BORDER}` }}>Accepted payment modes: Bank Transfer (NEFT / IMPS / RTGS), UPI, Cheque. A GST Invoice will be raised at each milestone. PAN and GSTIN details will be provided on the invoice.</div>
+        <PageFooter/>
+      </div>
+
+      {/* ══════════════════════════════════════════
+          PAGE 6 — TERMS & CLOSING
+      ══════════════════════════════════════════ */}
+      <div style={{ padding:"36px 44px 0", background:WHITE }}>
+        <PageHeader/>
+        <SectionLabel num="07" title="Terms &amp; Conditions"/>
+
         {(q.terms || DEFAULT_TERMS[q.serviceCategory] || "").split("\n").filter(Boolean).map((line, i) => (
-          <div key={i} style={{ padding:"10px 16px", background: i%2===0 ? "#f8faff":"#fff", borderRadius:6, marginBottom:6, fontSize:12, color:"#374151", lineHeight:1.7, border:"1px solid #f0f4ff" }}>
-            {line}
+          <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"10px 14px", background: i%2===0 ? OFFWHITE : WHITE, borderRadius:6, marginBottom:6, border:`1px solid ${BORDER}` }}>
+            <div style={{ flexShrink:0, width:20, height:20, borderRadius:"50%", background:NAVY, color:GOLD2, fontSize:9, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center", marginTop:1 }}>{i+1}</div>
+            <div style={{ fontSize:12, color:BODY, lineHeight:1.8 }}>{line.replace(/^\d+\.\s*/, "")}</div>
           </div>
         ))}
-        {/* Ready to start box */}
-        <div style={{ marginTop:32, border:"1px solid #e0e7ff", borderRadius:12, overflow:"hidden", display:"flex" }}>
-          <div style={{ flex:1, padding:"24px", background:"#f8faff" }}>
-            <div style={{ fontSize:15, fontWeight:800, color:"#0f172a", marginBottom:8 }}>Ready to get started?</div>
-            <div style={{ fontSize:13, fontWeight:700, color:"#374151", lineHeight:1.7 }}>Confirm this proposal and your {cat.toLowerCase()} can be delivered in {pd.totalDays}.</div>
+
+        {/* CTA closing box */}
+        <div style={{ marginTop:36, borderRadius:12, overflow:"hidden", display:"flex", border:`1px solid ${GOLD}` }}>
+          <div style={{ flex:"0 0 55%", padding:"28px 32px", background:OFFWHITE, borderRight:`1px solid ${BORDER}` }}>
+            <div style={{ fontSize:9, fontWeight:800, color:GOLD, letterSpacing:2, textTransform:"uppercase", marginBottom:8 }}>Next Step</div>
+            <div style={{ fontSize:18, fontWeight:800, color:NAVY, marginBottom:10, lineHeight:1.3 }}>Ready to get started?</div>
+            <div style={{ fontSize:13, color:BODY, lineHeight:1.8 }}>Confirm this proposal and your <strong>{cat.toLowerCase()}</strong> can be delivered in <strong>{pd.totalDays}</strong>. Reply to this proposal or contact us directly to proceed.</div>
           </div>
-          <div style={{ flex:1, padding:"24px", background:"#0c1445" }}>
-            <div style={{ fontSize:18, fontWeight:900, color:"#fb923c", marginBottom:8 }}>+91 99005 66466</div>
-            <div style={{ fontSize:12, color:"rgba(255,255,255,.7)", marginBottom:4 }}>info@nakshatranamahacreations.com</div>
-            <div style={{ fontSize:12, color:"#60a5fa" }}>nakshatranamahacreations.com</div>
+          <div style={{ flex:1, padding:"28px 28px", background:NAVY, display:"flex", flexDirection:"column", justifyContent:"center" }}>
+            <div style={{ fontSize:9, fontWeight:700, color:GOLD, letterSpacing:2, textTransform:"uppercase", marginBottom:12 }}>Contact Us</div>
+            <div style={{ fontSize:20, fontWeight:900, color:GOLD2, marginBottom:8, fontFamily:"Georgia, serif" }}>+91 99005 66466</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.6)", marginBottom:4 }}>info@nakshatranamahacreations.com</div>
+            <div style={{ fontSize:11, color:GOLD, fontWeight:600 }}>nakshatranamahacreations.com</div>
           </div>
         </div>
-        {/* Signature */}
-        <div style={{ marginTop:32, display:"flex", justifyContent:"space-between", alignItems:"flex-end" }}>
+
+        {/* Signature row */}
+        <div style={{ marginTop:36, display:"flex", justifyContent:"space-between", alignItems:"flex-end", padding:"20px 0", borderTop:`1px solid ${BORDER}` }}>
           <div>
-            <div style={{ width:160, height:1, background:"#94a3b8", marginBottom:6 }}/>
-            <div style={{ fontSize:11, color:"#64748b" }}>Authorised Signatory</div>
-            <div style={{ fontSize:12, fontWeight:700, color:"#0f172a" }}>NNC Nakshatra Namaha Creations</div>
+            <div style={{ width:140, height:1, background:SLATE, marginBottom:8 }}/>
+            <div style={{ fontSize:10, color:SLATE, marginBottom:2 }}>Authorised Signatory</div>
+            <div style={{ fontSize:12, fontWeight:700, color:NAVY }}>Nakshatra Namaha Creations</div>
           </div>
           <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:12, fontWeight:700, color:"#0f172a" }}>NNC Nakshatra Namaha Creations Pvt. Ltd.</div>
-            <div style={{ fontSize:11, color:"#64748b", marginTop:2 }}>{bi.addr}</div>
-            <div style={{ fontSize:11, color:"#fb923c", marginTop:2 }}>{bi.phone} · nakshatranamahacreations.com</div>
-            <div style={{ fontSize:10, color:"#94a3b8", marginTop:2 }}>GSTIN: {NNC_GSTIN}</div>
+            <div style={{ fontSize:12, fontWeight:700, color:NAVY }}>NNC Nakshatra Namaha Creations Pvt. Ltd.</div>
+            <div style={{ fontSize:10.5, color:SLATE, marginTop:3 }}>{bi.addr}</div>
+            <div style={{ fontSize:10.5, color:GOLD, marginTop:3, fontWeight:600 }}>{bi.phone}  ·  nakshatranamahacreations.com</div>
+            <div style={{ fontSize:10, color:SLATE, marginTop:3 }}>GSTIN: {NNC_GSTIN}</div>
           </div>
         </div>
-        <ProposalPageFooter client={q.clientName || q.clientCompany}/>
+
+        <PageFooter/>
       </div>
 
     </div>
@@ -1669,12 +1757,18 @@ export default function QuotationPage() {
                   )}
                   <div className="qt-neg-add">
                     <textarea
-                      rows={2}
-                      placeholder="Add negotiation note..."
+                      rows={3}
+                      placeholder="Type your note here and click Add Note..."
                       value={negotiationNote}
+                      onInput={e => setNegotiationNote(e.target.value)}
                       onChange={e => setNegotiationNote(e.target.value)}
+                      style={{ minHeight: 64 }}
                     />
-                    <button className="qt-wf-btn blue" disabled={addingNote} onClick={handleAddNote}>
+                    <button
+                      className="qt-wf-btn blue"
+                      disabled={addingNote || !negotiationNote.trim()}
+                      onClick={e => { e.preventDefault(); e.stopPropagation(); handleAddNote(); }}
+                    >
                       {addingNote ? <RefreshCcw size={12} className="qt-spin" /> : <Plus size={12} />} Add Note
                     </button>
                   </div>
