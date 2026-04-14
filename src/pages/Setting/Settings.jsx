@@ -917,6 +917,56 @@ function RepsTab({ toast }) {
 // ══════════════════════════════════════════════════════════════════════════════
 // TAB 8 — Invoice Series
 // ══════════════════════════════════════════════════════════════════════════════
+// ── Company Info Tab ──────────────────────────────────────────────────────────
+function CompanyInfoTab({ toast }) {
+  const [form, setForm] = useState({
+    gstin:   localStorage.getItem("nnc_gstin")   || "",
+    pan:     localStorage.getItem("nnc_pan")     || "",
+    cin:     localStorage.getItem("nnc_cin")     || "",
+    website: localStorage.getItem("nnc_website") || "nakshatranamahacreations.com",
+    email:   localStorage.getItem("nnc_email_id")|| "info@nakshatranamahacreations.com",
+    phone:   localStorage.getItem("nnc_phone")   || "+91 99005 66466",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const save = () => {
+    setSaving(true);
+    Object.entries(form).forEach(([k, v]) => localStorage.setItem(`nnc_${k === "email" ? "email_id" : k === "website" ? "website" : k}`, v));
+    localStorage.setItem("nnc_gstin",    form.gstin);
+    localStorage.setItem("nnc_pan",      form.pan);
+    localStorage.setItem("nnc_cin",      form.cin);
+    localStorage.setItem("nnc_website",  form.website);
+    localStorage.setItem("nnc_email_id", form.email);
+    localStorage.setItem("nnc_phone",    form.phone);
+    setTimeout(() => { setSaving(false); toast("success", "Company info saved."); }, 400);
+  };
+
+  const F = ({ label, k, placeholder }) => (
+    <div className="st-field">
+      <label className="st-label">{label}</label>
+      <input className="st-input" value={form[k]} placeholder={placeholder} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))}/>
+    </div>
+  );
+
+  return (
+    <Section title="Company Information" sub="These details appear on quotations, proposals and invoices">
+      <div className="st-grid-2">
+        <F label="GSTIN" k="gstin" placeholder="e.g. 29AABCN1234F1Z5"/>
+        <F label="PAN" k="pan" placeholder="e.g. AABCN1234F"/>
+        <F label="CIN" k="cin" placeholder="e.g. U72900KA2015PTC082801"/>
+        <F label="Phone" k="phone" placeholder="+91 99005 66466"/>
+        <F label="Email" k="email" placeholder="info@nakshatranamahacreations.com"/>
+        <F label="Website" k="website" placeholder="nakshatranamahacreations.com"/>
+      </div>
+      <div style={{ marginTop:20 }}>
+        <button className="st-btn-primary" onClick={save} disabled={saving}>
+          <Save size={14}/> {saving ? "Saving…" : "Save Company Info"}
+        </button>
+      </div>
+    </Section>
+  );
+}
+
 function BankAccountsTab({ toast }) {
   const [accounts, setAccounts] = useState([]);
   const [loading,  setLoading]  = useState(true);
@@ -1182,6 +1232,7 @@ const TABS = [
   { key:"branch",    label:"Branch & Rent",    icon:Building2    },
   { key:"financial", label:"Financial Config", icon:DollarSign   },
   { key:"targets",   label:"Targets",          icon:Target       },
+  { key:"company",   label:"Company Info",     icon:Shield       },
   { key:"bank",      label:"Bank Accounts",    icon:Landmark     },
   { key:"invoices",  label:"Invoice Series",   icon:Receipt      },
   { key:"reports",   label:"Report Settings",  icon:FileBarChart2},
@@ -1241,6 +1292,7 @@ export default function Settings() {
             {tab === "branch"    && <BranchTab     toast={toast}/>}
             {tab === "financial" && <FinancialTab  toast={toast}/>}
             {tab === "targets"   && <TargetsTab    toast={toast}/>}
+            {tab === "company"   && <CompanyInfoTab   toast={toast}/>}
             {tab === "bank"      && <BankAccountsTab toast={toast}/>}
             {tab === "invoices"  && <InvoiceTab    toast={toast}/>}
             {tab === "reports"   && <ReportTab     toast={toast}/>}

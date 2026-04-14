@@ -22,7 +22,7 @@ const BRANCH_INFO = {
   Mumbai:    { addr: "Lodha Signet, Kolshet Rd, Thane West, Maharashtra 400 607",  phone: "+91 99005 66466" },
 };
 
-const NNC_GSTIN = "29AABCN1234F1Z5";
+const getNncGstin = () => localStorage.getItem("nnc_gstin") || "29AABCN1234F1Z5";
 
 const STATUS_META = {
   draft:            { label: "Draft",             color: "gray"   },
@@ -185,11 +185,11 @@ const PROPOSAL_DATA = {
     included: ["Next.js website — all pages built for fast loading and SEO performance", "Custom UI/UX design tailored to client brand — not a template", "Fully responsive — mobile, tablet and desktop", "Contact form with email notification", "Google Maps integration on Contact page", "WhatsApp click-to-chat button on all pages", "Basic technical SEO — page structure and headings optimised", "Social media links in header and footer", "Google Analytics 4 integration", "SSL-ready deployment", "Source code handover on final payment", "Deployment to Vercel or client hosting of choice", "30-day post-launch support for bug fixes"],
     notIncluded: [["Domain name registration", "Yes — billed at actual cost"], ["Web hosting charges", "Yes — Vercel free tier or paid plan"], ["Content writing", "Yes — content writing service available"], ["Logo design", "Yes — logo design available separately"], ["E-commerce functionality", "Yes — e-commerce as separate project"], ["Admin panel or CMS", "Yes — CMS/admin as add-on"]],
     timeline: [
-      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–4", activity: "Requirement discussion. Design mockups for Home and one inner page shared for approval.", client: "Share logo, brand colours, content brief and reference websites." },
-      { phase: "Phase 2 — Design Approval", days: "Days 5–6", activity: "Client reviews mockups. Revisions incorporated. Final design approved before development begins.", client: "Approve designs or give consolidated revision feedback within 24 hours." },
-      { phase: "Phase 3 — Development", days: "Days 7–12", activity: "All pages developed in Next.js. Contact form, maps, WhatsApp, SEO and analytics integrated.", client: "Provide all content: text, images, team photos, product details." },
-      { phase: "Phase 4 — Testing", days: "Days 13–14", activity: "Content uploaded. Cross-browser and mobile testing on iOS and Android. Speed optimisation and SEO meta tags added.", client: "Review staging link and share final feedback." },
-      { phase: "Phase 5 — Launch", days: "Day 15", activity: "Deployed to live domain. Google Analytics set up. DNS configuration completed.", client: "Confirm domain and hosting details. Make final payment before launch." },
+      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–4", activity: "Requirement discussion. Design mockups for Home and one inner page shared for approval.", client: "Design mockups, sitemap, UI wireframes shared with client." },
+      { phase: "Phase 2 — Design Approval", days: "Days 5–6", activity: "Client reviews mockups. Revisions incorporated. Final design approved before development begins.", client: "Revised designs with incorporated feedback delivered." },
+      { phase: "Phase 3 — Development", days: "Days 7–12", activity: "All pages developed in Next.js. Contact form, maps, WhatsApp, SEO and analytics integrated.", client: "Fully functional staging site with all pages and integrations." },
+      { phase: "Phase 4 — Testing", days: "Days 13–14", activity: "Content uploaded. Cross-browser and mobile testing on iOS and Android. Speed optimisation and SEO meta tags added.", client: "Tested, optimised staging site ready for final client review." },
+      { phase: "Phase 5 — Launch", days: "Day 15", activity: "Deployed to live domain. Google Analytics set up. DNS configuration completed.", client: "Live website, Analytics configured, deployment report shared." },
     ],
     totalDays: "15 Working Days",
   },
@@ -209,11 +209,11 @@ const PROPOSAL_DATA = {
     included: ["Cross-platform app for iOS and Android from a single codebase", "Custom UI/UX design for all screens", "User authentication — email, phone and OTP login", "Push notifications via Firebase FCM", "API integration with any existing backend or NNC-built backend", "Google Maps / location integration if required", "In-app camera, gallery and file upload support", "Offline-first capability for key screens", "App Store and Play Store submission", "Source code handover on final payment", "30-day post-launch support for bug fixes"],
     notIncluded: [["App Store / Play Store developer account fees", "Client's responsibility"], ["Backend / API development", "Yes — available as separate scope"], ["Content writing and copywriting", "Yes — available separately"], ["Third-party API subscription charges", "Client's responsibility"], ["Paid push notification services beyond free tier", "Client's responsibility"]],
     timeline: [
-      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–7", activity: "Requirement finalisation. Wireframes and high-fidelity designs for all key screens.", client: "Share brand assets, reference apps, content brief and feature list." },
-      { phase: "Phase 2 — Design Approval", days: "Days 8–9", activity: "Client reviews all screen designs. Revisions incorporated. Final designs signed off.", client: "Approve designs or give consolidated feedback within 24 hours." },
-      { phase: "Phase 3 — Development", days: "Days 10–24", activity: "All screens developed. Authentication, APIs, push notifications and third-party integrations built.", client: "Provide API credentials, content and any required access keys." },
-      { phase: "Phase 4 — Testing", days: "Days 25–28", activity: "QA testing on iOS and Android devices. Performance, crash and compatibility testing.", client: "Test on your own device and provide final feedback." },
-      { phase: "Phase 5 — Launch", days: "Days 29–30", activity: "App submitted to Google Play Store and Apple App Store. Store listing assets prepared.", client: "Confirm developer accounts and make final payment before submission." },
+      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–7", activity: "Requirement finalisation. Wireframes and high-fidelity designs for all key screens.", client: "Complete wireframes + high-fidelity Figma designs for all screens." },
+      { phase: "Phase 2 — Design Approval", days: "Days 8–9", activity: "Client reviews all screen designs. Revisions incorporated. Final designs signed off.", client: "Revised screen designs with all feedback incorporated." },
+      { phase: "Phase 3 — Development", days: "Days 10–24", activity: "All screens developed. Authentication, APIs, push notifications and third-party integrations built.", client: "Working app build on staging with all features integrated." },
+      { phase: "Phase 4 — Testing", days: "Days 25–28", activity: "QA testing on iOS and Android devices. Performance, crash and compatibility testing.", client: "QA report, bug fixes and tested APK/IPA build shared." },
+      { phase: "Phase 5 — Launch", days: "Days 29–30", activity: "App submitted to Google Play Store and Apple App Store. Store listing assets prepared.", client: "Store submission confirmation and live app link shared." },
     ],
     totalDays: "30 Working Days",
   },
@@ -233,11 +233,11 @@ const PROPOSAL_DATA = {
     included: ["Complete e-commerce store with all core pages", "Product catalogue with categories, filters and search", "Cart and multi-step checkout flow", "Razorpay / PayU payment gateway integration", "Automatic order confirmation emails to customer and admin", "Customer accounts — registration, login, order history, wishlist", "Admin panel for products, orders and inventory management", "Coupon / promo code system", "Fully responsive — mobile-first design", "Basic technical SEO for all product and category pages", "Google Analytics 4 with e-commerce tracking", "SSL-ready deployment", "Source code handover on final payment", "30-day post-launch support"],
     notIncluded: [["Domain and hosting charges", "Client's responsibility"], ["Payment gateway registration fees", "Client's responsibility"], ["Content writing / product descriptions", "Yes — available separately"], ["Bulk product upload (more than 100 SKUs)", "Yes — available as add-on"], ["Custom ERP or accounting integration", "Yes — quoted separately"]],
     timeline: [
-      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–5", activity: "Requirement discussion. Design mockups for Home, Product listing and Product detail pages.", client: "Share product data, logo, brand colours and any reference stores." },
-      { phase: "Phase 2 — Design Approval", days: "Days 6–7", activity: "Client reviews designs. Revisions incorporated. Final designs approved.", client: "Approve or give consolidated feedback within 24 hours." },
-      { phase: "Phase 3 — Development", days: "Days 8–17", activity: "All pages developed. Cart, checkout, payment gateway and admin panel built and integrated.", client: "Provide complete product catalogue: names, descriptions, prices, images." },
-      { phase: "Phase 4 — Testing", days: "Days 18–20", activity: "End-to-end checkout testing, payment testing in sandbox mode, mobile and cross-browser testing.", client: "Review staging site and complete UAT (User Acceptance Testing)." },
-      { phase: "Phase 5 — Launch", days: "Day 21", activity: "Live deployment. Payment gateway switched to production mode. Analytics and SEO finalised.", client: "Confirm domain, hosting and payment gateway production credentials." },
+      { phase: "Phase 1 — Kickoff & Design", days: "Days 1–5", activity: "Requirement discussion. Design mockups for Home, Product listing and Product detail pages.", client: "UI mockups for Home, Product listing and Product detail pages." },
+      { phase: "Phase 2 — Design Approval", days: "Days 6–7", activity: "Client reviews designs. Revisions incorporated. Final designs approved.", client: "Final approved designs with all revisions incorporated." },
+      { phase: "Phase 3 — Development", days: "Days 8–17", activity: "All pages developed. Cart, checkout, payment gateway and admin panel built and integrated.", client: "Complete store on staging — cart, checkout, payment and admin panel." },
+      { phase: "Phase 4 — Testing", days: "Days 18–20", activity: "End-to-end checkout testing, payment testing in sandbox mode, mobile and cross-browser testing.", client: "Full QA report, sandbox payment test results and mobile test screenshots." },
+      { phase: "Phase 5 — Launch", days: "Day 21", activity: "Live deployment. Payment gateway switched to production mode. Analytics and SEO finalised.", client: "Live store with payment gateway active, analytics and SEO configured." },
     ],
     totalDays: "21 Working Days",
   },
@@ -257,9 +257,9 @@ const PROPOSAL_DATA = {
     included: ["Full SEO audit and competitor analysis", "Keyword research for 10+ target keywords", "On-page SEO for all website pages", "Google Business Profile optimisation", "Monthly blog content (2–4 articles)", "Social media content calendar and posts", "Google Search Console and Analytics setup", "Monthly ranking and traffic report", "Google Ads campaign management (if opted)", "Dedicated account manager"],
     notIncluded: [["Google Ads budget / ad spend", "Client's responsibility — billed directly by Google"], ["Website development or redesign", "Yes — available separately"], ["Paid social media ads budget", "Client's responsibility"], ["Video production for ads", "Yes — available as add-on"], ["Guaranteed ranking results", "Not possible — results depend on competition and algorithm"]],
     timeline: [
-      { phase: "Month 1 — Audit & Foundation", days: "Weeks 1–4", activity: "SEO audit, keyword finalisation, on-page optimisation, Google Business Profile setup, content calendar creation.", client: "Provide website access, Google Analytics and Search Console access." },
-      { phase: "Month 2 — Execution", days: "Weeks 5–8", activity: "Content publishing begins, link building outreach, social media posts go live, Google Ads campaign launched.", client: "Approve content drafts within 2 working days to maintain schedule." },
-      { phase: "Month 3 — Optimisation", days: "Weeks 9–12", activity: "Keyword ranking review, campaign optimisation, content strategy adjustment, detailed performance report.", client: "Review monthly report and share feedback for strategy adjustment." },
+      { phase: "Month 1 — Audit & Foundation", days: "Weeks 1–4", activity: "SEO audit, keyword finalisation, on-page optimisation, Google Business Profile setup, content calendar creation.", client: "SEO audit report, keyword list, optimised pages, GBP updated, content calendar." },
+      { phase: "Month 2 — Execution", days: "Weeks 5–8", activity: "Content publishing begins, link building outreach, social media posts go live, Google Ads campaign launched.", client: "4 published blog posts, social posts live, Ads campaign live, backlink report." },
+      { phase: "Month 3 — Optimisation", days: "Weeks 9–12", activity: "Keyword ranking review, campaign optimisation, content strategy adjustment, detailed performance report.", client: "Monthly ranking report, campaign performance summary, next-month strategy." },
     ],
     totalDays: "Ongoing — minimum 3 months",
   },
@@ -279,10 +279,10 @@ const PROPOSAL_DATA = {
     included: ["Brand discovery questionnaire and mood board", "3 initial logo concepts", "Up to 3 revision rounds on chosen concept", "Primary and secondary colour palette with hex/RGB/CMYK codes", "Typography selection with usage guidance", "Final files in AI, EPS, SVG, PNG and PDF formats", "Black and white version of logo", "Brand usage guidelines document (1–2 pages)", "Full IP transfer on final payment"],
     notIncluded: [["Stationery design (business cards, letterhead)", "Yes — available as add-on"], ["Social media branding kit", "Yes — available as add-on"], ["Packaging design", "Yes — quoted separately"], ["Website design or development", "Yes — separate project"], ["Video or motion logo animation", "Yes — available as add-on"]],
     timeline: [
-      { phase: "Phase 1 — Discovery", days: "Day 1–2", activity: "Brand questionnaire, competitor research and mood board presented for approval.", client: "Fill discovery questionnaire and approve mood board direction." },
-      { phase: "Phase 2 — Concepts", days: "Days 3–4", activity: "Three logo concepts designed and presented with rationale.", client: "Choose preferred concept and share consolidated feedback." },
-      { phase: "Phase 3 — Refinement", days: "Days 5–6", activity: "Chosen concept refined through revision rounds. Colour palette and typography finalised.", client: "Provide revision feedback in one consolidated message per round." },
-      { phase: "Phase 4 — Delivery", days: "Day 7", activity: "Final files prepared in all formats. Brand guidelines document compiled and delivered.", client: "Review final deliverables and clear final payment for file handover." },
+      { phase: "Phase 1 — Discovery", days: "Day 1–2", activity: "Brand questionnaire, competitor research and mood board presented for approval.", client: "Brand questionnaire, competitor analysis and 3 mood board directions." },
+      { phase: "Phase 2 — Concepts", days: "Days 3–4", activity: "Three logo concepts designed and presented with rationale.", client: "3 distinct logo concepts with rationale and black/white variants." },
+      { phase: "Phase 3 — Refinement", days: "Days 5–6", activity: "Chosen concept refined through revision rounds. Colour palette and typography finalised.", client: "Refined logo, final colour palette and typography selection." },
+      { phase: "Phase 4 — Delivery", days: "Day 7", activity: "Final files prepared in all formats. Brand guidelines document compiled and delivered.", client: "Final files in AI, EPS, SVG, PNG, PDF + brand guidelines document." },
     ],
     totalDays: "7 Working Days",
   },
@@ -302,10 +302,10 @@ const PROPOSAL_DATA = {
     included: ["User research: personas and journey maps", "Information architecture and sitemap", "Low-fidelity wireframes for all screens", "Visual design system and component library", "High-fidelity designs for all screens and breakpoints", "All states designed: default, hover, error, empty, loading", "Interactive clickable prototype", "Developer handover file with specs and annotations", "Up to 2 revision rounds per screen", "Figma file ownership transferred on final payment"],
     notIncluded: [["Frontend or backend development", "Yes — available as a separate project"], ["Copywriting or content creation", "Yes — available separately"], ["User testing recruitment and facilitation", "Yes — available as add-on"], ["Motion design / micro-animations", "Yes — available as add-on"], ["Branding / logo design", "Yes — available as separate project"]],
     timeline: [
-      { phase: "Phase 1 — Research & IA", days: "Days 1–3", activity: "User research, personas, journey maps and information architecture completed.", client: "Share existing brand assets, reference products and user feedback if available." },
-      { phase: "Phase 2 — Wireframes", days: "Days 4–6", activity: "Wireframes for all key screens presented and revised.", client: "Approve wireframes before high-fidelity design begins." },
-      { phase: "Phase 3 — Visual Design", days: "Days 7–14", activity: "Design system built. High-fidelity screens designed for all breakpoints.", client: "Provide brand guidelines, approved content and image assets." },
-      { phase: "Phase 4 — Prototype & Handover", days: "Days 15–17", activity: "Interactive prototype built. Developer handover file prepared with all specs and assets.", client: "Review prototype and clear final payment for Figma file handover." },
+      { phase: "Phase 1 — Research & IA", days: "Days 1–3", activity: "User research, personas, journey maps and information architecture completed.", client: "User persona document, journey maps and IA sitemap delivered." },
+      { phase: "Phase 2 — Wireframes", days: "Days 4–6", activity: "Wireframes for all key screens presented and revised.", client: "Low-fidelity wireframes for all screens with user flow annotations." },
+      { phase: "Phase 3 — Visual Design", days: "Days 7–14", activity: "Design system built. High-fidelity screens designed for all breakpoints.", client: "Design system + high-fidelity Figma screens for all breakpoints." },
+      { phase: "Phase 4 — Prototype & Handover", days: "Days 15–17", activity: "Interactive prototype built. Developer handover file prepared with all specs and assets.", client: "Clickable prototype + developer handover file with all specs and assets." },
     ],
     totalDays: "17 Working Days",
   },
@@ -325,11 +325,11 @@ const PROPOSAL_DATA = {
     included: ["Complete requirements analysis and system design document", "Custom frontend built in React", "Custom backend API in Node.js and Express", "MongoDB or PostgreSQL database", "Role-based access control for all user types", "All core business modules as per requirements", "Real-time dashboard with charts and KPIs", "Email notifications and automated alerts", "Excel and PDF export for all reports", "Production deployment to cloud server", "Source code handover to client's private repository", "60-day post-launch support for bug fixes", "Admin user training session"],
     notIncluded: [["Cloud server subscription fees", "Client's responsibility"], ["Third-party API subscription costs", "Client's responsibility"], ["Mobile app version", "Yes — available as separate project"], ["Data migration from existing systems", "Yes — available as add-on"], ["Ongoing feature development after handover", "Yes — available on retainer"]],
     timeline: [
-      { phase: "Phase 1 — Discovery", days: "Days 1–5", activity: "Requirements workshops, system design document, database schema and API architecture finalised.", client: "Assign a point of contact for daily requirement discussions during this phase." },
-      { phase: "Phase 2 — UI Design", days: "Days 6–10", activity: "All screen wireframes and high-fidelity designs for key modules presented for approval.", client: "Approve designs or provide consolidated feedback within 2 working days." },
-      { phase: "Phase 3 — Backend Development", days: "Days 11–25", activity: "All APIs, database models, authentication, business logic and integrations built and tested.", client: "Provide any third-party API credentials and sample data for testing." },
-      { phase: "Phase 4 — Frontend Development", days: "Days 26–38", activity: "All UI screens connected to backend APIs. Dashboard, reports and notifications implemented.", client: "Review each module as it is ready and provide feedback." },
-      { phase: "Phase 5 — Testing & Launch", days: "Days 39–45", activity: "Full QA testing, bug fixes, production deployment, source code handover and admin training.", client: "Conduct UAT, clear final payment and confirm production server details." },
+      { phase: "Phase 1 — Discovery", days: "Days 1–5", activity: "Requirements workshops, system design document, database schema and API architecture finalised.", client: "System design document, ER diagram, API architecture and project plan." },
+      { phase: "Phase 2 — UI Design", days: "Days 6–10", activity: "All screen wireframes and high-fidelity designs for key modules presented for approval.", client: "Wireframes and high-fidelity Figma designs for all modules." },
+      { phase: "Phase 3 — Backend Development", days: "Days 11–25", activity: "All APIs, database models, authentication, business logic and integrations built and tested.", client: "Complete backend APIs documented and tested via Postman/Swagger." },
+      { phase: "Phase 4 — Frontend Development", days: "Days 26–38", activity: "All UI screens connected to backend APIs. Dashboard, reports and notifications implemented.", client: "Fully functional staging application with all modules connected." },
+      { phase: "Phase 5 — Testing & Launch", days: "Days 39–45", activity: "Full QA testing, bug fixes, production deployment, source code handover and admin training.", client: "QA report, production deployment, source code handover and admin training." },
     ],
     totalDays: "45 Working Days",
   },
@@ -349,9 +349,9 @@ const PROPOSAL_DATA = {
     included: ["Social media strategy and content calendar", "12–16 designed posts per month", "Content for Instagram, LinkedIn and Facebook", "Caption copywriting for all posts", "Post scheduling and publishing at optimal times", "Community management — comments and DMs (Mon–Sat)", "Monthly performance analytics report", "Dedicated social media manager", "Content approval workflow before every post"],
     notIncluded: [["Paid social media advertising budget", "Client's responsibility — billed by Meta/LinkedIn"], ["Video shooting and production", "Client to provide raw footage"], ["Influencer marketing and collaborations", "Yes — available as add-on"], ["Logo or brand design", "Yes — available separately"], ["Website development", "Yes — separate project"]],
     timeline: [
-      { phase: "Month 1 — Strategy & Setup", days: "Weeks 1–4", activity: "Brand audit, competitor analysis, content strategy document, content calendar for Month 1 created and approved.", client: "Share brand assets, product/service information, past content and any preferences." },
-      { phase: "Month 2 — Full Execution", days: "Weeks 5–8", activity: "Content published daily as per calendar. Community management begins. Mid-month check-in call.", client: "Approve all content within 24 hours. Share any upcoming offers or events to feature." },
-      { phase: "Month 3 — Optimisation", days: "Weeks 9–12", activity: "Performance analysed, best-performing content types scaled, strategy refined for Month 3 based on data.", client: "Review monthly report and share feedback for content and strategy direction." },
+      { phase: "Month 1 — Strategy & Setup", days: "Weeks 1–4", activity: "Brand audit, competitor analysis, content strategy document, content calendar for Month 1 created and approved.", client: "Content strategy document, Month 1 calendar and 12–16 designed posts." },
+      { phase: "Month 2 — Full Execution", days: "Weeks 5–8", activity: "Content published daily as per calendar. Community management begins. Mid-month check-in call.", client: "All posts published, DMs and comments managed, mid-month review shared." },
+      { phase: "Month 3 — Optimisation", days: "Weeks 9–12", activity: "Performance analysed, best-performing content types scaled, strategy refined for Month 3 based on data.", client: "Monthly analytics report, optimised Month 3 strategy and content calendar." },
     ],
     totalDays: "Ongoing — minimum 3 months",
   },
@@ -371,9 +371,9 @@ const PROPOSAL_DATA = {
     included: ["Cloud server setup and OS configuration", "Firewall and basic security hardening", "Domain DNS and subdomain configuration", "SSL certificate installation and auto-renewal", "Application deployment and Nginx/Apache configuration", "Automated daily backups to cloud storage", "Uptime monitoring with email/WhatsApp alerts", "Monthly server health report", "One-time complete setup and handover documentation"],
     notIncluded: [["Monthly cloud server subscription cost", "Client's responsibility — billed by AWS/DO/Hetzner"], ["Domain registration fees", "Client's responsibility"], ["Application development or bug fixes", "Yes — quoted separately"], ["Managed WAF / DDoS protection (enterprise)", "Yes — available as add-on"], ["24/7 on-call support", "Yes — available on retainer"]],
     timeline: [
-      { phase: "Phase 1 — Planning", days: "Day 1", activity: "Server requirements assessment, technology stack review, hosting platform selection and cost estimation.", client: "Share current setup details, expected traffic and any compliance requirements." },
-      { phase: "Phase 2 — Server Setup", days: "Days 2–3", activity: "Server provisioned, OS configured, firewall rules set, SSL installed and Nginx configured.", client: "Provide domain access, application code/repository access and environment variables." },
-      { phase: "Phase 3 — Deployment", days: "Days 4–5", activity: "Application deployed, tested in production, backups configured and monitoring set up.", client: "Test the live application and confirm everything is functioning correctly." },
+      { phase: "Phase 1 — Planning", days: "Day 1", activity: "Server requirements assessment, technology stack review, hosting platform selection and cost estimation.", client: "Infrastructure plan document with server specs and cost breakdown." },
+      { phase: "Phase 2 — Server Setup", days: "Days 2–3", activity: "Server provisioned, OS configured, firewall rules set, SSL installed and Nginx configured.", client: "Configured server with SSL, firewall and Nginx — ready for deployment." },
+      { phase: "Phase 3 — Deployment", days: "Days 4–5", activity: "Application deployed, tested in production, backups configured and monitoring set up.", client: "Live application, automated backups active, uptime monitoring configured." },
     ],
     totalDays: "5 Working Days (setup)",
   },
@@ -393,25 +393,15 @@ const PROPOSAL_DATA = {
     included: ["Complete requirements analysis", "Dedicated project manager", "Regular progress updates and milestone demos", "All agreed deliverables as per scope document", "Quality assurance and testing", "Final delivery in all agreed formats", "Source code / file handover on final payment", "30-day post-delivery support for bug fixes"],
     notIncluded: [["Any scope beyond what is explicitly agreed", "Will be estimated and quoted separately"], ["Third-party service subscription costs", "Client's responsibility"], ["Ongoing maintenance after support period", "Yes — available on retainer"]],
     timeline: [
-      { phase: "Phase 1 — Discovery", days: "Days 1–3", activity: "Requirements gathering, scope finalisation and project plan agreed.", client: "Assign a point of contact and provide all reference materials." },
-      { phase: "Phase 2 — Design", days: "Days 4–8", activity: "All design work completed and presented for approval.", client: "Provide feedback within agreed turnaround time." },
-      { phase: "Phase 3 — Execution", days: "Days 9 onwards", activity: "Development / production work executed in milestones with regular demos.", client: "Review each milestone and provide timely feedback." },
-      { phase: "Phase 4 — Delivery", days: "Final Days", activity: "Full testing, final delivery and handover of all files and documentation.", client: "Complete final payment before handover." },
+      { phase: "Phase 1 — Discovery", days: "Days 1–3", activity: "Requirements gathering, scope finalisation and project plan agreed.", client: "Scope document, detailed requirements and project plan shared." },
+      { phase: "Phase 2 — Design", days: "Days 4–8", activity: "All design work completed and presented for approval.", client: "All design deliverables presented with rationale and revision support." },
+      { phase: "Phase 3 — Execution", days: "Days 9 onwards", activity: "Development / production work executed in milestones with regular demos.", client: "Milestone demos with working deliverables at each stage." },
+      { phase: "Phase 4 — Delivery", days: "Final Days", activity: "Full testing, final delivery and handover of all files and documentation.", client: "All files, source code, documentation and handover report delivered." },
     ],
     totalDays: "As per agreed project plan",
   },
 };
 
-/* shared page footer for proposal doc */
-function ProposalPageFooter({ client }) {
-  return (
-    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"10px 32px", borderTop:"1px solid #e0e7ff", marginTop:24, fontSize:11, color:"#94a3b8" }}>
-      <span style={{ color:"#1d4ed8", fontWeight:700, letterSpacing:1 }}>CONFIDENTIAL</span>
-      <span>info@nakshatranamahacreations.com | +91 99005 66466 | nakshatranamahacreations.com</span>
-      <span>{client ? `Proposal | ${client}` : "NNC Proposal"}</span>
-    </div>
-  );
-}
 
 /* ────────────────────────────────────────────────────────────────
    ENTERPRISE DOCUMENT COMPONENT (also used for PDF print)
@@ -455,7 +445,7 @@ function QuotationDocument({ q, isProforma = false }) {
               {q.deliveryDate && <tr><td>Delivery</td><td>{fmtDate(q.deliveryDate)}</td></tr>}
               {q.paymentTerms && <tr><td>Payment</td><td>{q.paymentTerms}</td></tr>}
               <tr><td>Branch</td><td>{q.branch}</td></tr>
-              <tr><td>Our GSTIN</td><td>{NNC_GSTIN}</td></tr>
+              <tr><td>Our GSTIN</td><td>{getNncGstin()}</td></tr>
             </tbody></table>
           </div>
         </div>
@@ -488,7 +478,7 @@ function QuotationDocument({ q, isProforma = false }) {
             <div className="qt-doc-footer-co">NNC Nakshatra Namaha Creations Pvt. Ltd.</div>
             <div className="qt-doc-footer-addr">{bi.addr}</div>
             <div className="qt-doc-footer-phone">{bi.phone} · nakshatranamahacreations.com</div>
-            <div className="qt-doc-footer-gstin">GSTIN: {NNC_GSTIN}</div>
+            <div className="qt-doc-footer-gstin">GSTIN: {getNncGstin()}</div>
           </div>
         </div>
       </div>
@@ -499,160 +489,174 @@ function QuotationDocument({ q, isProforma = false }) {
   const pd  = PROPOSAL_DATA[q.serviceCategory] || PROPOSAL_DATA["Other"];
   const cat = q.serviceCategory || "Custom Digital Solutions";
 
-  /* ── Shared style tokens ── */
-  const NAVY    = "#0a1628";
-  const NAVY2   = "#0f2347";
-  const GOLD    = "#c9a84c";
-  const GOLD2   = "#f0c96e";
-  const WHITE   = "#ffffff";
-  const OFFWHITE= "#f9f8f5";
-  const SLATE   = "#64748b";
-  const BODY    = "#374151";
-  const BORDER  = "#e8e4da";
+  /* ── Shared style tokens — Professional Clean Palette ── */
+  const PRIMARY  = "#1e40af";   // rich indigo-blue (headers, accents)
+  const PRIMARY2 = "#2563eb";   // lighter indigo-blue
+  const ACCENT   = "#0ea5e9";   // sky blue highlight
+  const DARK     = "#111827";   // near-black for headings
+  const BODY     = "#374151";   // body text
+  const SLATE    = "#6b7280";   // muted labels
+  const WHITE    = "#ffffff";
+  const OFFWHITE = "#f8fafc";   // page bg tint
+  const LIGHT    = "#f1f5f9";   // light rows
+  const BORDER   = "#e2e8f0";   // dividers
+  const SUCCESS  = "#059669";   // green checkmarks
+  const HEADBG   = "#1e3a8a";   // cover header bg
 
   /* ── Reusable sub-components ── */
   const PageHeader = ({ label }) => (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:32, paddingBottom:0 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-        <div style={{ width:4, height:36, background:`linear-gradient(180deg,${GOLD},${GOLD2})`, borderRadius:2 }}/>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:28, paddingBottom:14, borderBottom:`2px solid ${BORDER}` }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <img src={nncLogo} alt="NNC" style={{ height:30, borderRadius:4 }}/>
         <div>
-          <div style={{ fontSize:12, fontWeight:800, color:NAVY, letterSpacing:.3 }}>Nakshatra Namaha Creations Pvt Ltd</div>
-          <div style={{ fontSize:10, color:GOLD, fontWeight:600, letterSpacing:.5 }}>Your Digital Solutions Partner</div>
+          <div style={{ fontSize:11.5, fontWeight:800, color:DARK, letterSpacing:.2 }}>Nakshatra Namaha Creations Pvt Ltd</div>
+          <div style={{ fontSize:9.5, color:PRIMARY2, fontWeight:600 }}>Your Digital Solutions Partner</div>
         </div>
       </div>
-      <div style={{ fontSize:10, color:SLATE, fontWeight:600, letterSpacing:.5 }}>{label || `Proposal | ${q.clientName || q.clientCompany}`}</div>
+      <div style={{ fontSize:9.5, color:SLATE, fontWeight:600, background:LIGHT, padding:"4px 12px", borderRadius:20, border:`1px solid ${BORDER}` }}>{label || `${cat} Proposal`}</div>
     </div>
   );
 
   const SectionLabel = ({ num, title }) => (
-    <div style={{ marginBottom:18 }}>
-      <div style={{ display:"inline-flex", alignItems:"center", gap:10, marginBottom:6 }}>
-        <div style={{ fontSize:9, fontWeight:800, color:GOLD, letterSpacing:2, textTransform:"uppercase" }}>{num}</div>
-        <div style={{ width:1, height:10, background:GOLD, opacity:.5 }}/>
-        <div style={{ fontSize:9, fontWeight:800, color:SLATE, letterSpacing:2, textTransform:"uppercase" }}>Section</div>
+    <div style={{ marginBottom:20 }}>
+      <div style={{ display:"inline-flex", alignItems:"center", gap:8, marginBottom:6 }}>
+        <div style={{ width:26, height:26, borderRadius:"50%", background:`linear-gradient(135deg,${PRIMARY},${PRIMARY2})`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+          <span style={{ fontSize:10, fontWeight:900, color:WHITE }}>{num}</span>
+        </div>
+        <div style={{ fontSize:9, fontWeight:700, color:ACCENT, letterSpacing:2, textTransform:"uppercase" }}>Section {num}</div>
       </div>
-      <div style={{ fontSize:22, fontWeight:900, color:NAVY, lineHeight:1.15, letterSpacing:-.3 }}>{title}</div>
-      <div style={{ width:40, height:2, background:`linear-gradient(90deg,${GOLD},transparent)`, marginTop:8, borderRadius:1 }}/>
+      <div style={{ fontSize:21, fontWeight:800, color:DARK, lineHeight:1.2, letterSpacing:-.3 }}>{title}</div>
+      <div style={{ width:36, height:3, background:`linear-gradient(90deg,${PRIMARY},${ACCENT})`, marginTop:8, borderRadius:2 }}/>
     </div>
   );
 
   const PageFooter = () => (
-    <div style={{ marginTop:32, paddingTop:12, borderTop:`1px solid ${BORDER}`, display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:9.5 }}>
-      <span style={{ color:GOLD, fontWeight:800, letterSpacing:1 }}>CONFIDENTIAL</span>
+    <div style={{ marginTop:28, paddingTop:10, borderTop:`1px solid ${BORDER}`, display:"flex", justifyContent:"space-between", alignItems:"center", fontSize:9.5 }}>
+      <span style={{ color:PRIMARY, fontWeight:800, letterSpacing:1, textTransform:"uppercase" }}>Confidential</span>
       <span style={{ color:SLATE }}>info@nakshatranamahacreations.com  |  +91 99005 66466  |  nakshatranamahacreations.com</span>
       <span style={{ color:SLATE }}>{q.clientName || q.clientCompany} | Proposal</span>
     </div>
   );
 
   return (
-    <div id="qt-pdf-target" style={{ fontFamily:"'Georgia', 'Times New Roman', serif", fontSize:13, color:BODY, background:WHITE }}>
+    <div id="qt-pdf-target" style={{ fontFamily:"'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif", fontSize:13, color:BODY, background:WHITE }}>
 
       {/* ══════════════════════════════════════════
-          PAGE 1 — PREMIUM COVER
+          PAGE 1 — COVER PAGE
       ══════════════════════════════════════════ */}
-      <div style={{ background:NAVY, minHeight:780, position:"relative", overflow:"hidden", pageBreakAfter:"always", display:"flex", flexDirection:"column" }}>
+      {/* ══ COVER PAGE — clean professional ══ */}
+      <div style={{ minHeight:780, background:WHITE, position:"relative", pageBreakAfter:"always", display:"flex", flexDirection:"column" }}>
 
-        {/* Left gold accent bar */}
-        <div style={{ position:"absolute", left:0, top:0, bottom:0, width:6, background:`linear-gradient(180deg,${GOLD2} 0%,${GOLD} 50%,${GOLD2} 100%)` }}/>
+        {/* Thin top accent line */}
+        <div style={{ height:4, background:`linear-gradient(90deg,${PRIMARY} 0%,${ACCENT} 100%)`, flexShrink:0 }}/>
 
-        {/* Subtle diagonal texture */}
-        <div style={{ position:"absolute", inset:0, backgroundImage:`repeating-linear-gradient(135deg, rgba(255,255,255,.012) 0px, rgba(255,255,255,.012) 1px, transparent 1px, transparent 60px)`, pointerEvents:"none" }}/>
-
-        {/* Gold circle orb top-right */}
-        <div style={{ position:"absolute", right:-80, top:-80, width:340, height:340, borderRadius:"50%", background:`radial-gradient(circle, rgba(201,168,76,.12) 0%, transparent 70%)`, pointerEvents:"none" }}/>
-        <div style={{ position:"absolute", right:40, bottom:-60, width:200, height:200, borderRadius:"50%", background:`radial-gradient(circle, rgba(201,168,76,.07) 0%, transparent 70%)`, pointerEvents:"none" }}/>
-
-        {/* Top header strip */}
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"28px 44px 28px 50px", borderBottom:`1px solid rgba(201,168,76,.2)`, flexShrink:0 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-            <img src={nncLogo} alt="NNC" style={{ height:38, borderRadius:6, filter:"brightness(1.1)" }}/>
+        {/* Header row */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"20px 52px", borderBottom:`1px solid ${BORDER}`, flexShrink:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:32, borderRadius:6 }}/>
             <div>
-              <div style={{ fontSize:13, fontWeight:700, color:WHITE, letterSpacing:.3 }}>Nakshatra Namaha Creations Pvt Ltd</div>
-              <div style={{ fontSize:10, color:GOLD, fontWeight:500, letterSpacing:.8 }}>Your Digital Solutions Partner  |  Bengaluru</div>
+              <div style={{ fontSize:12, fontWeight:700, color:DARK }}>Nakshatra Namaha Creations Pvt Ltd</div>
+              <div style={{ fontSize:9, color:SLATE, marginTop:1 }}>nakshatranamahacreations.com  ·  +91 99005 66466</div>
             </div>
           </div>
           <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:9, fontWeight:700, color:GOLD, letterSpacing:2, textTransform:"uppercase", marginBottom:2 }}>Ref No.</div>
-            <div style={{ fontSize:12, fontFamily:"'Courier New', monospace", color:"rgba(255,255,255,.7)", fontWeight:700 }}>{q.quoteNumber}</div>
+            <div style={{ fontSize:8.5, color:SLATE, textTransform:"uppercase", letterSpacing:1.5, marginBottom:3 }}>Proposal No.</div>
+            <div style={{ fontSize:12, fontWeight:800, color:PRIMARY, fontFamily:"'Courier New',monospace" }}>{q.quoteNumber}</div>
           </div>
         </div>
 
-        {/* Centre content */}
-        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", padding:"48px 44px 32px 50px" }}>
-          {/* Eyebrow pill */}
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, marginBottom:28, alignSelf:"flex-start" }}>
-            <div style={{ width:24, height:1, background:GOLD }}/>
-            <div style={{ fontSize:10, fontWeight:700, color:GOLD, letterSpacing:2.5, textTransform:"uppercase" }}>{pd.techLabel}</div>
-            <div style={{ width:24, height:1, background:GOLD }}/>
-          </div>
+        {/* Main body */}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", justifyContent:"center", padding:"52px 52px 36px" }}>
 
-          {/* Client name */}
-          <div style={{ fontSize:13, fontWeight:600, color:"rgba(255,255,255,.5)", letterSpacing:1, textTransform:"uppercase", marginBottom:10 }}>Exclusively Prepared For</div>
-          <div style={{ fontSize:46, fontWeight:900, color:WHITE, lineHeight:1.05, letterSpacing:-1, marginBottom:6 }}>{q.clientName || q.clientCompany || "Client"}</div>
-          {q.clientCompany && q.clientName !== q.clientCompany && (
-            <div style={{ fontSize:16, color:"rgba(255,255,255,.45)", marginBottom:16, fontStyle:"italic" }}>{q.clientCompany}</div>
+          {/* Overline */}
+          <div style={{ fontSize:10, fontWeight:700, color:PRIMARY, textTransform:"uppercase", letterSpacing:3, marginBottom:20 }}>Project Proposal</div>
+
+          {/* Client name — the hero */}
+          <div style={{ fontSize:54, fontWeight:900, color:DARK, lineHeight:1, letterSpacing:-2, marginBottom:6 }}>
+            {q.clientCompany || q.clientName || "Client"}
+          </div>
+          {q.clientCompany && q.clientName && q.clientName !== q.clientCompany && (
+            <div style={{ fontSize:15, color:SLATE, marginBottom:0, fontWeight:400 }}>{q.clientName}</div>
           )}
 
-          {/* Gold rule */}
-          <div style={{ display:"flex", alignItems:"center", gap:12, margin:"20px 0" }}>
-            <div style={{ flex:1, height:1, background:`linear-gradient(90deg,${GOLD},rgba(201,168,76,.1))` }}/>
+          {/* Divider with service name inline */}
+          <div style={{ display:"flex", alignItems:"center", gap:16, margin:"28px 0" }}>
+            <div style={{ width:40, height:2, background:PRIMARY, borderRadius:1 }}/>
+            <div style={{ fontSize:15, fontWeight:600, color:PRIMARY, letterSpacing:.3 }}>{cat}</div>
+            <div style={{ flex:1, height:1, background:BORDER }}/>
           </div>
 
-          {/* Service title */}
-          <div style={{ fontSize:34, fontWeight:300, color:GOLD2, lineHeight:1.1, letterSpacing:-.5, marginBottom:8 }}>{cat}</div>
-          <div style={{ fontSize:18, fontWeight:700, color:"rgba(255,255,255,.6)", marginBottom:40 }}>Proposal</div>
+          {/* Description */}
+          <div style={{ fontSize:13.5, color:BODY, lineHeight:1.9, maxWidth:500, marginBottom:52 }}>
+            {pd.summary ? pd.summary("").split(".").slice(0,2).join(".").trim() + "." : `A complete ${cat.toLowerCase()} solution crafted for your business.`}
+          </div>
 
-          {/* Info grid */}
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, border:`1px solid rgba(201,168,76,.25)`, borderRadius:10, overflow:"hidden", marginBottom:40 }}>
+          {/* 4 meta items in a clean row */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, border:`1px solid ${BORDER}`, borderRadius:10, overflow:"hidden" }}>
             {[
-              { lbl:"Prepared For",  val: q.clientName || q.clientCompany || "—" },
-              { lbl:"Date",          val: fmtDate(new Date()) },
-              { lbl:"Proposal Type", val: cat },
-              { lbl:"Valid Until",   val: q.validUntil ? fmtDate(q.validUntil) : "30 Days from Issue" },
+              { lbl:"Prepared For", val: q.clientCompany || q.clientName || "—" },
+              { lbl:"Date",         val: fmtDate(new Date()) },
+              { lbl:"Valid Until",  val: q.validUntil ? fmtDate(q.validUntil) : "30 Days" },
+              { lbl:"Est. Delivery",val: pd.totalDays },
             ].map((item, i) => (
-              <div key={i} style={{ padding:"16px 18px", borderRight: i<3 ? `1px solid rgba(201,168,76,.2)` : "none", background: i%2===0 ? "rgba(255,255,255,.03)" : "rgba(255,255,255,.015)" }}>
-                <div style={{ fontSize:9, fontWeight:700, color:GOLD, letterSpacing:1.5, textTransform:"uppercase", marginBottom:6 }}>{item.lbl}</div>
-                <div style={{ fontSize:12, color:WHITE, fontWeight:600, lineHeight:1.4 }}>{item.val}</div>
+              <div key={i} style={{ padding:"16px 18px", borderRight: i < 3 ? `1px solid ${BORDER}` : "none", background: i % 2 === 0 ? WHITE : OFFWHITE }}>
+                <div style={{ fontSize:8.5, fontWeight:700, color:SLATE, textTransform:"uppercase", letterSpacing:1.3, marginBottom:7 }}>{item.lbl}</div>
+                <div style={{ fontSize:12, fontWeight:700, color:DARK, lineHeight:1.4 }}>{item.val}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Bottom confidential strip */}
-        <div style={{ padding:"14px 44px 14px 50px", borderTop:`1px solid rgba(201,168,76,.2)`, display:"flex", justifyContent:"space-between", alignItems:"center", background:"rgba(0,0,0,.2)", flexShrink:0 }}>
-          <span style={{ fontSize:9, fontWeight:800, color:GOLD, letterSpacing:2, textTransform:"uppercase" }}>Confidential</span>
-          <span style={{ fontSize:9.5, color:"rgba(255,255,255,.35)" }}>info@nakshatranamahacreations.com  |  +91 99005 66466  |  nakshatranamahacreations.com</span>
-          <span style={{ fontSize:9, color:"rgba(255,255,255,.35)", fontWeight:600 }}>NNC Digital</span>
+        {/* Bottom bar */}
+        <div style={{ padding:"14px 52px", borderTop:`1px solid ${BORDER}`, display:"flex", justifyContent:"space-between", alignItems:"center", background:OFFWHITE, flexShrink:0 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+            <div style={{ width:6, height:6, borderRadius:"50%", background:PRIMARY }}/>
+            <span style={{ fontSize:9, fontWeight:700, color:PRIMARY, textTransform:"uppercase", letterSpacing:1.5 }}>Confidential</span>
+          </div>
+          <span style={{ fontSize:9, color:SLATE }}>info@nakshatranamahacreations.com  ·  Bengaluru · Mysuru · Mumbai</span>
+          <span style={{ fontSize:9, color:SLATE }}>GSTIN: {getNncGstin()}</span>
         </div>
       </div>
 
       {/* ══════════════════════════════════════════
           PAGE 2 — EXECUTIVE SUMMARY + ABOUT NNC
       ══════════════════════════════════════════ */}
-      <div style={{ padding:"36px 44px 0", background:WHITE, pageBreakAfter:"always" }}>
+      <div style={{ padding:"36px 44px 24px", background:WHITE, pageBreakAfter:"always" }}>
         <PageHeader/>
 
-        <SectionLabel num="01" title={`Executive Summary`}/>
-        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24, textAlign:"justify" }}>{pd.summary(q.clientName || q.clientCompany || "your company")}</div>
+        <SectionLabel num="01" title="Executive Summary"/>
+        <div style={{ fontSize:13, color:BODY, lineHeight:1.95, marginBottom:28, textAlign:"justify" }}>{pd.summary(q.clientName || q.clientCompany || "your company")}</div>
 
-        {/* Stat highlight bar */}
-        <div style={{ display:"grid", gridTemplateColumns:`repeat(${pd.stats.length},1fr)`, marginBottom:40, borderRadius:10, overflow:"hidden", border:`1px solid ${NAVY}` }}>
-          {pd.stats.map((s, i) => (
-            <div key={i} style={{ padding:"20px 14px", textAlign:"center", background: i%2===0 ? NAVY : NAVY2, borderRight: i<pd.stats.length-1 ? `1px solid rgba(201,168,76,.15)` : "none" }}>
-              <div style={{ fontSize:26, fontWeight:900, color:GOLD2, lineHeight:1, fontFamily:"Georgia, serif" }}>{s.val}</div>
-              <div style={{ fontSize:9, color:"rgba(255,255,255,.55)", marginTop:6, textTransform:"uppercase", letterSpacing:1 }}>{s.lbl}</div>
-            </div>
-          ))}
+        {/* Stat highlight — clean inline chips */}
+        <div style={{ display:"grid", gridTemplateColumns:`repeat(${pd.stats.length},1fr)`, gap:12, marginBottom:32 }}>
+          {pd.stats.map((s, i) => {
+            const colors = [PRIMARY, "#0369a1", SUCCESS, "#7c3aed"];
+            const bgs    = ["#eff6ff","#f0f9ff","#f0fdf4","#faf5ff"];
+            const bds    = ["#bfdbfe","#bae6fd","#bbf7d0","#e9d5ff"];
+            const c = colors[i % colors.length];
+            return (
+              <div key={i} style={{ padding:"9px 12px", background:bgs[i%4], border:`1px solid ${bds[i%4]}`, borderRadius:8, display:"flex", flexDirection:"column", gap:3 }}>
+                <div style={{ fontSize:16, fontWeight:900, color:c, lineHeight:1, letterSpacing:-.3 }}>{s.val}</div>
+                <div style={{ fontSize:8.5, fontWeight:600, color:SLATE, textTransform:"uppercase", letterSpacing:.8 }}>{s.lbl}</div>
+              </div>
+            );
+          })}
         </div>
 
         <SectionLabel num="02" title="About Nakshatra Namaha Creations"/>
-        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24, textAlign:"justify" }}>Nakshatra Namaha Creations is a full-service digital agency with over 10 years of experience building websites, mobile apps, CRM systems and digital platforms for businesses across India. We have delivered 565+ projects for clients in trading, manufacturing, healthcare, real estate and professional services. Our in-house team of designers and developers brings the same quality and attention to detail to every engagement — regardless of project size.</div>
+        <div style={{ fontSize:13, color:BODY, lineHeight:1.95, marginBottom:24, textAlign:"justify" }}>Nakshatra Namaha Creations is a full-service digital agency with over 10 years of experience building websites, mobile apps, CRM systems and digital platforms for businesses across India. We have delivered 565+ projects for clients in trading, manufacturing, healthcare, real estate and professional services. Our in-house team of designers and developers brings the same quality and attention to detail to every engagement — regardless of project size.</div>
 
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", borderRadius:10, overflow:"hidden", border:`1px solid ${GOLD}` }}>
-          {[{val:"10+",lbl:"Years in Business"},{val:"565+",lbl:"Projects Delivered"},{val:"35+",lbl:"In-House Experts"},{val:"4",lbl:"Office Locations"}].map((s,i)=>(
-            <div key={i} style={{ padding:"18px 12px", textAlign:"center", background: i%2===0 ? OFFWHITE : WHITE, borderRight: i<3 ? `1px solid ${BORDER}` : "none" }}>
-              <div style={{ fontSize:24, fontWeight:900, color:NAVY, lineHeight:1, fontFamily:"Georgia, serif" }}>{s.val}</div>
-              <div style={{ fontSize:9, color:SLATE, marginTop:5, textTransform:"uppercase", letterSpacing:1 }}>{s.lbl}</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:0, border:`1px solid ${BORDER}`, borderRadius:10, overflow:"hidden" }}>
+          {[
+            {val:"10+", lbl:"Years in Business"},
+            {val:"565+",lbl:"Projects Delivered"},
+            {val:"35+", lbl:"In-House Experts"},
+            {val:"4",   lbl:"Office Locations"},
+          ].map((s,i)=>(
+            <div key={i} style={{ padding:"22px 16px", background: i%2===0 ? WHITE : OFFWHITE, borderRight: i<3 ? `1px solid ${BORDER}` : "none", display:"flex", flexDirection:"column", gap:6 }}>
+              <div style={{ fontSize:10, fontWeight:700, color:SLATE, textTransform:"uppercase", letterSpacing:1.5 }}>{s.lbl}</div>
+              <div style={{ fontSize:32, fontWeight:900, color:DARK, lineHeight:1, letterSpacing:-1 }}>{s.val}</div>
+              <div style={{ width:24, height:3, background:PRIMARY, borderRadius:2, marginTop:2 }}/>
             </div>
           ))}
         </div>
@@ -663,28 +667,28 @@ function QuotationDocument({ q, isProforma = false }) {
       {/* ══════════════════════════════════════════
           PAGE 3 — SCOPE OF WORK
       ══════════════════════════════════════════ */}
-      <div style={{ padding:"36px 44px 0", background:WHITE, pageBreakAfter:"always" }}>
+      <div style={{ padding:"36px 44px 24px", background:WHITE, pageBreakAfter:"always" }}>
         <PageHeader/>
         <SectionLabel num="03" title="Scope of Work"/>
-        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24, textAlign:"justify" }}>The following sections describe every deliverable included in this engagement for <strong>{q.clientName || q.clientCompany}</strong>. Each item is individually scoped and executed — not a template.</div>
+        <div style={{ fontSize:13, color:BODY, lineHeight:1.95, marginBottom:24, textAlign:"justify" }}>The following describes every deliverable included in this engagement for <strong style={{ color:DARK }}>{q.clientName || q.clientCompany}</strong>. Each item is individually scoped and executed to meet your specific business goals.</div>
 
         {pd.scope.map((s, i) => (
-          <div key={i} style={{ display:"flex", gap:0, marginBottom:14, borderRadius:8, overflow:"hidden", border:`1px solid ${BORDER}` }}>
-            {/* number tab */}
-            <div style={{ flexShrink:0, width:48, background: i%2===0 ? NAVY : NAVY2, display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <span style={{ fontSize:13, fontWeight:900, color:GOLD2, fontFamily:"Georgia, serif" }}>{s.num}</span>
+          <div key={i} style={{ display:"flex", gap:0, marginBottom:12, borderRadius:10, overflow:"hidden", border:`1px solid ${BORDER}`, boxShadow:"0 1px 3px rgba(0,0,0,.04)" }}>
+            {/* number badge */}
+            <div style={{ flexShrink:0, width:52, background: i%2===0 ? PRIMARY : PRIMARY2, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <span style={{ fontSize:14, fontWeight:800, color:WHITE }}>{s.num}</span>
             </div>
             {/* content */}
-            <div style={{ flex:1, padding:"12px 18px", background: i%2===0 ? WHITE : OFFWHITE }}>
-              <div style={{ fontSize:13, fontWeight:700, color:NAVY, marginBottom:4, letterSpacing:.1 }}>{s.title}</div>
-              <div style={{ fontSize:11.5, color:SLATE, lineHeight:1.75, textAlign:"justify" }}>{s.desc}</div>
+            <div style={{ flex:1, padding:"13px 18px", background: i%2===0 ? WHITE : OFFWHITE }}>
+              <div style={{ fontSize:13, fontWeight:700, color:DARK, marginBottom:4 }}>{s.title}</div>
+              <div style={{ fontSize:11.5, color:SLATE, lineHeight:1.8, textAlign:"justify" }}>{s.desc}</div>
             </div>
           </div>
         ))}
 
         {q.notes && (
-          <div style={{ marginTop:20, padding:"14px 18px", background:OFFWHITE, borderRadius:8, borderLeft:`3px solid ${GOLD}` }}>
-            <div style={{ fontSize:9, fontWeight:800, color:GOLD, textTransform:"uppercase", letterSpacing:1.5, marginBottom:6 }}>Additional Notes</div>
+          <div style={{ marginTop:20, padding:"14px 18px", background:"#eff6ff", borderRadius:8, borderLeft:`4px solid ${PRIMARY2}` }}>
+            <div style={{ fontSize:9.5, fontWeight:700, color:PRIMARY, textTransform:"uppercase", letterSpacing:1.5, marginBottom:6 }}>Additional Notes</div>
             <div style={{ fontSize:12, color:BODY, lineHeight:1.8, whiteSpace:"pre-wrap" }}>{q.notes}</div>
           </div>
         )}
@@ -694,35 +698,35 @@ function QuotationDocument({ q, isProforma = false }) {
       {/* ══════════════════════════════════════════
           PAGE 4 — DELIVERABLES + TIMELINE
       ══════════════════════════════════════════ */}
-      <div style={{ padding:"36px 44px 0", background:WHITE, pageBreakAfter:"always" }}>
+      <div style={{ padding:"36px 44px 24px", background:WHITE, pageBreakAfter:"always" }}>
         <PageHeader/>
         <SectionLabel num="04" title="What Is Included"/>
 
         <div style={{ columns:2, columnGap:32, marginBottom:28 }}>
           {pd.included.map((item, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:9, padding:"5px 0", borderBottom:`1px solid ${BORDER}`, breakInside:"avoid" }}>
-              <span style={{ color:GOLD, fontWeight:900, fontSize:13, flexShrink:0, lineHeight:1.6 }}>✓</span>
-              <span style={{ fontSize:11.5, color:BODY, lineHeight:1.7 }} dangerouslySetInnerHTML={{ __html: item.replace(/^([^—]+)—/, '<strong style="color:#0a1628">$1</strong> —') }}/>
+            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"6px 0", borderBottom:`1px solid ${BORDER}`, breakInside:"avoid" }}>
+              <span style={{ color:SUCCESS, fontWeight:900, fontSize:14, flexShrink:0, lineHeight:1.55 }}>✓</span>
+              <span style={{ fontSize:11.5, color:BODY, lineHeight:1.7 }} dangerouslySetInnerHTML={{ __html: item.replace(/^([^—]+)—/, `<strong style="color:${DARK}">$1</strong> —`) }}/>
             </div>
           ))}
         </div>
 
         {pd.notIncluded.length > 0 && (
           <>
-            <div style={{ fontSize:13, fontWeight:700, color:NAVY, marginBottom:10, paddingBottom:6, borderBottom:`2px solid ${GOLD}`, display:"inline-block" }}>What is NOT Included</div>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11.5, marginBottom:28 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:DARK, marginBottom:10, paddingBottom:6, borderBottom:`3px solid ${PRIMARY2}`, display:"inline-block" }}>Not Included in This Package</div>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11.5, marginBottom:28, borderRadius:8, overflow:"hidden" }}>
               <thead>
-                <tr style={{ background:NAVY }}>
-                  <th style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5 }}>Item</th>
-                  <th style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5 }}>Status</th>
-                  <th style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5 }}>Available Separately</th>
+                <tr style={{ background:`linear-gradient(135deg,${HEADBG},${PRIMARY})` }}>
+                  <th style={{ padding:"10px 14px", color:WHITE, textAlign:"left", fontWeight:600, fontSize:10, letterSpacing:.5 }}>Item</th>
+                  <th style={{ padding:"10px 14px", color:WHITE, textAlign:"left", fontWeight:600, fontSize:10, letterSpacing:.5 }}>Status</th>
+                  <th style={{ padding:"10px 14px", color:WHITE, textAlign:"left", fontWeight:600, fontSize:10, letterSpacing:.5 }}>Available Separately</th>
                 </tr>
               </thead>
               <tbody>
                 {pd.notIncluded.map(([item, avail], i) => (
                   <tr key={i} style={{ background: i%2===0 ? OFFWHITE : WHITE }}>
                     <td style={{ padding:"9px 14px", color:BODY, borderBottom:`1px solid ${BORDER}` }}>{item}</td>
-                    <td style={{ padding:"9px 14px", color:SLATE, borderBottom:`1px solid ${BORDER}` }}>Not included</td>
+                    <td style={{ padding:"9px 14px", borderBottom:`1px solid ${BORDER}` }}><span style={{ fontSize:10, fontWeight:600, color:"#b91c1c", background:"#fef2f2", padding:"2px 8px", borderRadius:4 }}>Not included</span></td>
                     <td style={{ padding:"9px 14px", color:SLATE, borderBottom:`1px solid ${BORDER}` }}>{avail}</td>
                   </tr>
                 ))}
@@ -732,49 +736,60 @@ function QuotationDocument({ q, isProforma = false }) {
         )}
 
         <SectionLabel num="05" title={`Project Timeline — ${pd.totalDays}`}/>
-        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11.5 }}>
-          <thead>
-            <tr style={{ background:NAVY }}>
-              {["Phase","Duration","Activities","Client Action Required"].map((h,i)=>(
-                <th key={h} style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5, width: i===0?"22%": i===1?"11%": i===2?"33%":"auto" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {pd.timeline.map((t, i) => (
-              <tr key={i} style={{ background: i%2===0 ? OFFWHITE : WHITE }}>
-                <td style={{ padding:"10px 14px", fontWeight:700, color:NAVY, borderBottom:`1px solid ${BORDER}`, verticalAlign:"top", lineHeight:1.5 }}>{t.phase}</td>
-                <td style={{ padding:"10px 14px", fontWeight:700, color:GOLD, borderBottom:`1px solid ${BORDER}`, verticalAlign:"top", whiteSpace:"nowrap" }}>{t.days}</td>
-                <td style={{ padding:"10px 14px", color:BODY, borderBottom:`1px solid ${BORDER}`, verticalAlign:"top", lineHeight:1.7 }}>{t.activity}</td>
-                <td style={{ padding:"10px 14px", color:SLATE, borderBottom:`1px solid ${BORDER}`, verticalAlign:"top", lineHeight:1.7, fontStyle:"italic" }}>{t.client}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* Timeline cards */}
+        <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+          {pd.timeline.map((t, i) => (
+            <div key={i} style={{ display:"flex", gap:0, alignItems:"stretch", marginBottom:10 }}>
+              {/* Step number + connector */}
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", marginRight:16, flexShrink:0 }}>
+                <div style={{ width:34, height:34, borderRadius:"50%", background: i===0 ? PRIMARY : i===pd.timeline.length-1 ? SUCCESS : OFFWHITE, border:`2px solid ${i===0 ? PRIMARY : i===pd.timeline.length-1 ? SUCCESS : BORDER}`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <span style={{ fontSize:12, fontWeight:800, color: i===0||i===pd.timeline.length-1 ? WHITE : SLATE }}>{i+1}</span>
+                </div>
+                {i < pd.timeline.length-1 && <div style={{ width:2, flex:1, background:BORDER, minHeight:8, marginTop:4 }}/>}
+              </div>
+              {/* Card */}
+              <div style={{ flex:1, border:`1px solid ${BORDER}`, borderRadius:8, overflow:"hidden", marginBottom: i < pd.timeline.length-1 ? 0 : 0 }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 16px", background: i===0 ? PRIMARY : i===pd.timeline.length-1 ? "#f0fdf4" : OFFWHITE, borderBottom:`1px solid ${BORDER}` }}>
+                  <div style={{ fontSize:12, fontWeight:700, color: i===0 ? WHITE : DARK }}>{t.phase}</div>
+                  <div style={{ fontSize:10, fontWeight:700, color: i===0 ? "rgba(255,255,255,.8)" : PRIMARY, background: i===0 ? "rgba(255,255,255,.15)" : "#eff6ff", padding:"2px 10px", borderRadius:12, border: i===0 ? "none" : `1px solid #bfdbfe` }}>{t.days}</div>
+                </div>
+                <div style={{ padding:"10px 16px", display:"grid", gridTemplateColumns:"1fr 1fr", gap:"6px 20px", background:WHITE }}>
+                  <div>
+                    <div style={{ fontSize:8.5, fontWeight:700, color:SLATE, textTransform:"uppercase", letterSpacing:1, marginBottom:3 }}>Activities</div>
+                    <div style={{ fontSize:11.5, color:BODY, lineHeight:1.7 }}>{t.activity}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:8.5, fontWeight:700, color:PRIMARY, textTransform:"uppercase", letterSpacing:1, marginBottom:3 }}>NNC Deliverable</div>
+                    <div style={{ fontSize:11.5, color:SLATE, lineHeight:1.7, fontStyle:"italic" }}>{t.client}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
         <PageFooter/>
       </div>
 
       {/* ══════════════════════════════════════════
           PAGE 5 — INVESTMENT
       ══════════════════════════════════════════ */}
-      <div style={{ padding:"36px 44px 0", background:WHITE, pageBreakAfter:"always" }}>
+      <div style={{ padding:"36px 44px 24px", background:WHITE, pageBreakAfter:"always" }}>
         <PageHeader/>
         <SectionLabel num="06" title="Investment &amp; Payment Schedule"/>
-        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24 }}>The investment for this engagement for <strong>{q.clientName || q.clientCompany}</strong> is as follows. Payment is structured in two equal milestones for your convenience.</div>
+        <div style={{ fontSize:13, color:BODY, lineHeight:1.9, marginBottom:24 }}>The investment for this engagement for <strong style={{ color:DARK }}>{q.clientName || q.clientCompany}</strong> is outlined below. Payment is structured in two milestones for your convenience.</div>
 
-        {/* Total callout — premium dark */}
-        <div style={{ background:`linear-gradient(135deg,${NAVY} 0%,${NAVY2} 100%)`, borderRadius:12, padding:"24px 32px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between", border:`1px solid rgba(201,168,76,.3)`, position:"relative", overflow:"hidden" }}>
-          <div style={{ position:"absolute", right:-40, top:-40, width:200, height:200, borderRadius:"50%", background:`radial-gradient(circle,rgba(201,168,76,.08),transparent 70%)` }}/>
+        {/* Total callout — clean blue */}
+        <div style={{ background:`linear-gradient(135deg,${HEADBG} 0%,${PRIMARY} 60%,${PRIMARY2} 100%)`, borderRadius:12, padding:"24px 32px", marginBottom:24, display:"flex", alignItems:"center", justifyContent:"space-between", position:"relative", overflow:"hidden" }}>
+          <div style={{ position:"absolute", right:-40, top:-40, width:200, height:200, borderRadius:"50%", background:"rgba(255,255,255,.05)" }}/>
           <div>
-            <div style={{ fontSize:9, fontWeight:700, color:GOLD, letterSpacing:2, textTransform:"uppercase", marginBottom:8 }}>{cat.toUpperCase()}</div>
-            <div style={{ fontSize:40, fontWeight:900, color:WHITE, lineHeight:1, fontFamily:"Georgia, serif" }}>&#8377; {fmt(q.subtotal || q.total)}</div>
-            <div style={{ fontSize:11, color:"rgba(255,255,255,.45)", marginTop:6 }}>Excluding GST</div>
+            <div style={{ fontSize:9.5, fontWeight:600, color:"rgba(255,255,255,.55)", letterSpacing:2, textTransform:"uppercase", marginBottom:8 }}>{cat.toUpperCase()} — Complete Package</div>
+            <div style={{ fontSize:42, fontWeight:800, color:WHITE, lineHeight:1 }}>&#8377; {fmt(q.subtotal || q.total)}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", marginTop:6 }}>Excluding GST</div>
           </div>
           <div style={{ textAlign:"right", position:"relative", zIndex:1 }}>
-            <div style={{ fontSize:11, color:"rgba(255,255,255,.5)", marginBottom:4 }}>Complete Delivery Package</div>
-            <div style={{ fontSize:14, fontWeight:800, color:GOLD2 }}>+ {q.tax || 18}% GST applicable</div>
-            <div style={{ marginTop:10, padding:"6px 16px", background:`rgba(201,168,76,.15)`, borderRadius:20, border:`1px solid rgba(201,168,76,.3)`, display:"inline-block" }}>
-              <span style={{ fontSize:10, fontWeight:700, color:GOLD, letterSpacing:1 }}>TOTAL: &#8377; {fmt(q.total)}</span>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.55)", marginBottom:6 }}>+ {q.tax || 18}% GST applicable</div>
+            <div style={{ fontSize:13, fontWeight:800, color:WHITE, background:"rgba(255,255,255,.15)", padding:"8px 18px", borderRadius:8, border:"1px solid rgba(255,255,255,.2)" }}>
+              Total Payable: &#8377; {fmt(q.total)}
             </div>
           </div>
         </div>
@@ -782,7 +797,7 @@ function QuotationDocument({ q, isProforma = false }) {
         {/* Line items table */}
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, marginBottom:24 }}>
           <thead>
-            <tr style={{ borderBottom:`2px solid ${GOLD}` }}>
+            <tr style={{ borderBottom:`2px solid ${PRIMARY2}` }}>
               <th style={{ padding:"10px 14px", textAlign:"left", color:SLATE, fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:.5, width:44 }}>#</th>
               <th style={{ padding:"10px 14px", textAlign:"left", color:SLATE, fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:.5 }}>Deliverable</th>
               <th style={{ padding:"10px 14px", textAlign:"right", color:SLATE, fontWeight:700, fontSize:10, textTransform:"uppercase", letterSpacing:.5 }}>Amount</th>
@@ -792,39 +807,39 @@ function QuotationDocument({ q, isProforma = false }) {
             {(q.lineItems||[]).map((it, i) => (
               <tr key={i} style={{ background: i%2===0 ? OFFWHITE : WHITE, borderBottom:`1px solid ${BORDER}` }}>
                 <td style={{ padding:"12px 14px" }}>
-                  <div style={{ width:28, height:28, borderRadius:50, background:NAVY, color:GOLD2, fontSize:11, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"Georgia, serif" }}>{i+1}</div>
+                  <div style={{ width:28, height:28, borderRadius:"50%", background:`linear-gradient(135deg,${PRIMARY},${PRIMARY2})`, color:WHITE, fontSize:11, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center" }}>{i+1}</div>
                 </td>
-                <td style={{ padding:"12px 14px", fontWeight:600, color:NAVY }}>{it.description}</td>
-                <td style={{ padding:"12px 14px", textAlign:"right", fontWeight:700, color:NAVY, fontSize:13 }}>&#8377; {fmt(it.amount)}</td>
+                <td style={{ padding:"12px 14px", fontWeight:600, color:DARK }}>{it.description}</td>
+                <td style={{ padding:"12px 14px", textAlign:"right", fontWeight:700, color:DARK, fontSize:13 }}>&#8377; {fmt(it.amount)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr style={{ borderTop:`1px solid ${BORDER}` }}>
               <td/><td style={{ padding:"8px 14px", color:SLATE, fontSize:12 }}>Subtotal</td>
-              <td style={{ padding:"8px 14px", textAlign:"right", fontWeight:700, color:NAVY }}>&#8377; {fmt(q.subtotal)}</td>
+              <td style={{ padding:"8px 14px", textAlign:"right", fontWeight:700, color:DARK }}>&#8377; {fmt(q.subtotal)}</td>
             </tr>
             {q.discount > 0 && (
-              <tr><td/><td style={{ padding:"4px 14px", color:"#16a34a", fontSize:12 }}>Discount</td><td style={{ padding:"4px 14px", textAlign:"right", color:"#16a34a", fontWeight:700 }}>− &#8377; {fmt(q.discount)}</td></tr>
+              <tr><td/><td style={{ padding:"4px 14px", color:SUCCESS, fontSize:12 }}>Discount</td><td style={{ padding:"4px 14px", textAlign:"right", color:SUCCESS, fontWeight:700 }}>− &#8377; {fmt(q.discount)}</td></tr>
             )}
             {q.tax > 0 && (
               <tr><td/><td style={{ padding:"4px 14px", color:SLATE, fontSize:12 }}>GST @ {q.tax}%</td><td style={{ padding:"4px 14px", textAlign:"right", color:SLATE, fontWeight:700 }}>&#8377; {fmt(gstAmt)}</td></tr>
             )}
-            <tr style={{ background:NAVY }}>
+            <tr style={{ background:`linear-gradient(135deg,${HEADBG},${PRIMARY})` }}>
               <td/>
-              <td style={{ padding:"14px", color:WHITE, fontWeight:800, fontSize:14 }}>Total Payable (incl. GST)</td>
-              <td style={{ padding:"14px", textAlign:"right", color:GOLD2, fontWeight:900, fontSize:18, fontFamily:"Georgia, serif" }}>&#8377; {fmt(q.total)}</td>
+              <td style={{ padding:"14px", color:WHITE, fontWeight:700, fontSize:14 }}>Total Payable (incl. GST)</td>
+              <td style={{ padding:"14px", textAlign:"right", color:WHITE, fontWeight:900, fontSize:18 }}>&#8377; {fmt(q.total)}</td>
             </tr>
           </tfoot>
         </table>
 
         {/* Payment schedule */}
-        <div style={{ fontSize:14, fontWeight:700, color:NAVY, marginBottom:12, paddingBottom:6, borderBottom:`2px solid ${GOLD}`, display:"inline-block" }}>Payment Schedule</div>
+        <div style={{ fontSize:13, fontWeight:700, color:DARK, marginBottom:12, paddingBottom:6, borderBottom:`3px solid ${PRIMARY2}`, display:"inline-block" }}>Payment Schedule</div>
         <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, marginBottom:14 }}>
           <thead>
-            <tr style={{ background:NAVY }}>
+            <tr style={{ background:`linear-gradient(135deg,${HEADBG},${PRIMARY})` }}>
               {["Milestone","Amount","GST","Total Payable","When Due"].map(h=>(
-                <th key={h} style={{ padding:"10px 14px", color:GOLD2, textAlign:"left", fontWeight:700, fontSize:10, letterSpacing:.5 }}>{h}</th>
+                <th key={h} style={{ padding:"10px 14px", color:WHITE, textAlign:"left", fontWeight:600, fontSize:10, letterSpacing:.5 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -835,65 +850,140 @@ function QuotationDocument({ q, isProforma = false }) {
               const gst  = (half * (q.tax||18)) / 100;
               return (
                 <tr key={i} style={{ background: i%2===0 ? OFFWHITE : WHITE, borderBottom:`1px solid ${BORDER}` }}>
-                  <td style={{ padding:"12px 14px", fontWeight:700, color:NAVY }}>{label}</td>
-                  <td style={{ padding:"12px 14px", fontWeight:700, color:NAVY }}>&#8377; {fmt(half)}</td>
+                  <td style={{ padding:"12px 14px", fontWeight:700, color:DARK }}>{label}</td>
+                  <td style={{ padding:"12px 14px", fontWeight:700, color:DARK }}>&#8377; {fmt(half)}</td>
                   <td style={{ padding:"12px 14px", color:SLATE }}>&#8377; {fmt(gst)}</td>
-                  <td style={{ padding:"12px 14px", fontWeight:800, color:WHITE, background:NAVY2 }}>&#8377; {fmt(half+gst)}</td>
+                  <td style={{ padding:"12px 14px", fontWeight:800, color:WHITE, background:PRIMARY }}>&#8377; {fmt(half+gst)}</td>
                   <td style={{ padding:"12px 14px", color:SLATE, fontStyle:"italic" }}>{when}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <div style={{ fontSize:11, color:SLATE, lineHeight:1.7, padding:"10px 14px", background:OFFWHITE, borderRadius:6, border:`1px solid ${BORDER}` }}>Accepted payment modes: Bank Transfer (NEFT / IMPS / RTGS), UPI, Cheque. A GST Invoice will be raised at each milestone. PAN and GSTIN details will be provided on the invoice.</div>
+        <div style={{ fontSize:11, color:SLATE, lineHeight:1.7, padding:"10px 16px", background:"#eff6ff", borderRadius:8, border:`1px solid #bfdbfe` }}>Accepted payment modes: Bank Transfer (NEFT / IMPS / RTGS), UPI, Cheque. A GST Invoice will be raised at each milestone.</div>
         <PageFooter/>
       </div>
 
       {/* ══════════════════════════════════════════
           PAGE 6 — TERMS & CLOSING
       ══════════════════════════════════════════ */}
-      <div style={{ padding:"36px 44px 0", background:WHITE }}>
+      <div style={{ padding:"36px 44px 24px", background:WHITE }}>
         <PageHeader/>
         <SectionLabel num="07" title="Terms &amp; Conditions"/>
 
-        {(q.terms || DEFAULT_TERMS[q.serviceCategory] || "").split("\n").filter(Boolean).map((line, i) => (
-          <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"10px 14px", background: i%2===0 ? OFFWHITE : WHITE, borderRadius:6, marginBottom:6, border:`1px solid ${BORDER}` }}>
-            <div style={{ flexShrink:0, width:20, height:20, borderRadius:"50%", background:NAVY, color:GOLD2, fontSize:9, fontWeight:900, display:"flex", alignItems:"center", justifyContent:"center", marginTop:1 }}>{i+1}</div>
-            <div style={{ fontSize:12, color:BODY, lineHeight:1.8 }}>{line.replace(/^\d+\.\s*/, "")}</div>
-          </div>
-        ))}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:8 }}>
+          {(q.terms || DEFAULT_TERMS[q.serviceCategory] || "").split("\n").filter(Boolean).map((line, i) => (
+            <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"12px 14px", background:WHITE, borderRadius:8, border:`1px solid ${BORDER}`, boxShadow:"0 1px 4px rgba(0,0,0,.04)" }}>
+              <div style={{ flexShrink:0, width:20, height:20, borderRadius:6, background:PRIMARY, color:WHITE, fontSize:9, fontWeight:800, display:"flex", alignItems:"center", justifyContent:"center", marginTop:1 }}>{i+1}</div>
+              <div style={{ fontSize:11.5, color:BODY, lineHeight:1.8 }}>{line.replace(/^\d+\.\s*/, "")}</div>
+            </div>
+          ))}
+        </div>
 
         {/* CTA closing box */}
-        <div style={{ marginTop:36, borderRadius:12, overflow:"hidden", display:"flex", border:`1px solid ${GOLD}` }}>
+        <div style={{ marginTop:32, borderRadius:12, overflow:"hidden", display:"flex", border:`1px solid ${BORDER}`, boxShadow:"0 2px 12px rgba(30,64,175,.08)" }}>
           <div style={{ flex:"0 0 55%", padding:"28px 32px", background:OFFWHITE, borderRight:`1px solid ${BORDER}` }}>
-            <div style={{ fontSize:9, fontWeight:800, color:GOLD, letterSpacing:2, textTransform:"uppercase", marginBottom:8 }}>Next Step</div>
-            <div style={{ fontSize:18, fontWeight:800, color:NAVY, marginBottom:10, lineHeight:1.3 }}>Ready to get started?</div>
-            <div style={{ fontSize:13, color:BODY, lineHeight:1.8 }}>Confirm this proposal and your <strong>{cat.toLowerCase()}</strong> can be delivered in <strong>{pd.totalDays}</strong>. Reply to this proposal or contact us directly to proceed.</div>
+            <div style={{ fontSize:9.5, fontWeight:700, color:PRIMARY, letterSpacing:2, textTransform:"uppercase", marginBottom:8 }}>Next Step</div>
+            <div style={{ fontSize:18, fontWeight:800, color:DARK, marginBottom:10, lineHeight:1.3 }}>Ready to get started?</div>
+            <div style={{ fontSize:13, color:BODY, lineHeight:1.85 }}>Confirm this proposal and your <strong style={{ color:DARK }}>{cat.toLowerCase()}</strong> can be delivered in <strong style={{ color:PRIMARY }}>{pd.totalDays}</strong>. Reply to this proposal or contact us directly.</div>
           </div>
-          <div style={{ flex:1, padding:"28px 28px", background:NAVY, display:"flex", flexDirection:"column", justifyContent:"center" }}>
-            <div style={{ fontSize:9, fontWeight:700, color:GOLD, letterSpacing:2, textTransform:"uppercase", marginBottom:12 }}>Contact Us</div>
-            <div style={{ fontSize:20, fontWeight:900, color:GOLD2, marginBottom:8, fontFamily:"Georgia, serif" }}>+91 99005 66466</div>
+          <div style={{ flex:1, padding:"28px 28px", background:`linear-gradient(135deg,${HEADBG},${PRIMARY})`, display:"flex", flexDirection:"column", justifyContent:"center" }}>
+            <div style={{ fontSize:9.5, fontWeight:700, color:"rgba(255,255,255,.6)", letterSpacing:2, textTransform:"uppercase", marginBottom:12 }}>Contact Us</div>
+            <div style={{ fontSize:20, fontWeight:800, color:WHITE, marginBottom:8 }}>+91 99005 66466</div>
             <div style={{ fontSize:11, color:"rgba(255,255,255,.6)", marginBottom:4 }}>info@nakshatranamahacreations.com</div>
-            <div style={{ fontSize:11, color:GOLD, fontWeight:600 }}>nakshatranamahacreations.com</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,.75)", fontWeight:600 }}>nakshatranamahacreations.com</div>
           </div>
         </div>
 
         {/* Signature row */}
-        <div style={{ marginTop:36, display:"flex", justifyContent:"space-between", alignItems:"flex-end", padding:"20px 0", borderTop:`1px solid ${BORDER}` }}>
+        <div style={{ marginTop:32, display:"flex", justifyContent:"space-between", alignItems:"flex-end", padding:"20px 0", borderTop:`1px solid ${BORDER}` }}>
           <div>
             <div style={{ width:140, height:1, background:SLATE, marginBottom:8 }}/>
             <div style={{ fontSize:10, color:SLATE, marginBottom:2 }}>Authorised Signatory</div>
-            <div style={{ fontSize:12, fontWeight:700, color:NAVY }}>Nakshatra Namaha Creations</div>
+            <div style={{ fontSize:12, fontWeight:700, color:DARK }}>Nakshatra Namaha Creations</div>
           </div>
           <div style={{ textAlign:"right" }}>
-            <div style={{ fontSize:12, fontWeight:700, color:NAVY }}>NNC Nakshatra Namaha Creations Pvt. Ltd.</div>
+            <div style={{ fontSize:12, fontWeight:700, color:DARK }}>Nakshatra Namaha Creations Pvt. Ltd.</div>
             <div style={{ fontSize:10.5, color:SLATE, marginTop:3 }}>{bi.addr}</div>
-            <div style={{ fontSize:10.5, color:GOLD, marginTop:3, fontWeight:600 }}>{bi.phone}  ·  nakshatranamahacreations.com</div>
-            <div style={{ fontSize:10, color:SLATE, marginTop:3 }}>GSTIN: {NNC_GSTIN}</div>
+            <div style={{ fontSize:10.5, color:PRIMARY2, marginTop:3, fontWeight:600 }}>{bi.phone}  ·  nakshatranamahacreations.com</div>
+            <div style={{ fontSize:10, color:SLATE, marginTop:3 }}>GSTIN: {getNncGstin()}</div>
           </div>
         </div>
 
         <PageFooter/>
+      </div>
+
+      {/* ══════════════════════════════════════════
+          PAGE 7 — THANK YOU
+      ══════════════════════════════════════════ */}
+      <div style={{ minHeight:780, background:WHITE, display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" }}>
+        {/* top accent line */}
+        <div style={{ height:4, background:`linear-gradient(90deg,${PRIMARY},${ACCENT})`, flexShrink:0 }}/>
+
+        {/* main center content */}
+        <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"52px 48px 32px", textAlign:"center" }}>
+
+          {/* Logo */}
+          <div style={{ width:72, height:72, borderRadius:18, background:OFFWHITE, border:`1px solid ${BORDER}`, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:28 }}>
+            <img src={nncLogo} alt="NNC" style={{ height:52 }}/>
+          </div>
+
+          {/* Thank you heading */}
+          <div style={{ fontSize:11, fontWeight:700, color:PRIMARY, textTransform:"uppercase", letterSpacing:3, marginBottom:14 }}>Thank You</div>
+          <div style={{ fontSize:42, fontWeight:900, color:DARK, lineHeight:1.1, letterSpacing:-1.5, marginBottom:16 }}>We appreciate your trust.</div>
+          <div style={{ width:48, height:3, background:`linear-gradient(90deg,${PRIMARY},${ACCENT})`, borderRadius:2, margin:"0 auto 24px" }}/>
+          <div style={{ fontSize:14, color:BODY, lineHeight:1.9, maxWidth:520, marginBottom:48 }}>
+            We look forward to partnering with <strong style={{ color:DARK }}>{q.clientCompany || q.clientName || "you"}</strong> on this <strong style={{ color:PRIMARY }}>{cat}</strong> project. Our team is ready to begin as soon as you confirm this proposal. Please feel free to reach out with any questions.
+          </div>
+
+          {/* Contact highlight */}
+          <div style={{ display:"flex", alignItems:"center", gap:24, marginBottom:52, padding:"16px 32px", background:OFFWHITE, borderRadius:10, border:`1px solid ${BORDER}` }}>
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontSize:9, fontWeight:700, color:SLATE, textTransform:"uppercase", letterSpacing:1.5, marginBottom:4 }}>Call Us</div>
+              <div style={{ fontSize:15, fontWeight:800, color:PRIMARY, whiteSpace:"nowrap" }}>+91 99005 66466</div>
+            </div>
+            <div style={{ width:1, height:36, background:BORDER }}/>
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontSize:9, fontWeight:700, color:SLATE, textTransform:"uppercase", letterSpacing:1.5, marginBottom:4 }}>Email Us</div>
+              <div style={{ fontSize:13, fontWeight:700, color:PRIMARY }}>info@nakshatranamahacreations.com</div>
+            </div>
+            <div style={{ width:1, height:36, background:BORDER }}/>
+            <div style={{ textAlign:"center" }}>
+              <div style={{ fontSize:9, fontWeight:700, color:SLATE, textTransform:"uppercase", letterSpacing:1.5, marginBottom:4 }}>Website</div>
+              <div style={{ fontSize:13, fontWeight:700, color:PRIMARY }}>nakshatranamahacreations.com</div>
+            </div>
+          </div>
+
+          {/* Branch offices */}
+          <div style={{ width:"100%", maxWidth:640 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:SLATE, textTransform:"uppercase", letterSpacing:2, marginBottom:16 }}>Our Offices</div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+              {[
+                { city:"Bengaluru", addr:"Darshan Plaza, 1st Floor,\nChannasandra, Karnataka 560 098" },
+                { city:"Mysuru",    addr:"Suswani Towers, JP Nagar\n2nd Stage, Karnataka 570 008" },
+                { city:"Mumbai",    addr:"Lodha Signet, Kolshet Rd,\nThane West, Maharashtra 400 607" },
+              ].map((o,i) => (
+                <div key={i} style={{ borderRadius:10, border:`1px solid ${BORDER}`, overflow:"hidden", textAlign:"left" }}>
+                  <div style={{ padding:"10px 14px", background:PRIMARY, display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ width:6, height:6, borderRadius:"50%", background:ACCENT }}/>
+                    <div style={{ fontSize:11, fontWeight:800, color:WHITE, letterSpacing:.3 }}>{o.city}</div>
+                  </div>
+                  <div style={{ padding:"12px 14px", background:OFFWHITE }}>
+                    <div style={{ fontSize:10.5, color:BODY, lineHeight:1.8, whiteSpace:"pre-line" }}>{o.addr}</div>
+                    <div style={{ fontSize:10, color:PRIMARY, fontWeight:600, marginTop:6 }}>+91 99005 66466</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* bottom bar */}
+        <div style={{ padding:"14px 52px", borderTop:`1px solid ${BORDER}`, display:"flex", justifyContent:"space-between", alignItems:"center", background:OFFWHITE, flexShrink:0 }}>
+          <span style={{ fontSize:9, fontWeight:700, color:PRIMARY, textTransform:"uppercase", letterSpacing:1.5 }}>Confidential</span>
+          <span style={{ fontSize:9, color:SLATE }}>Nakshatra Namaha Creations Pvt Ltd  ·  GSTIN: {getNncGstin()}</span>
+          <span style={{ fontSize:9, color:SLATE, fontWeight:600 }}>{q.quoteNumber}</span>
+        </div>
       </div>
 
     </div>
@@ -1282,23 +1372,29 @@ export default function QuotationPage() {
         {/* ══ LIST MODE ══ */}
         {mode === "list" && (
           <>
-            {/* ── NNC Company Showcase Banner ── */}
-            <div className="qt-brand-banner">
-              <div className="qt-brand-left">
-                <h2 className="qt-brand-heading">Nakshatra Namaha Creations</h2>
-                <p className="qt-brand-tagline">Transforming businesses with cutting-edge digital solutions since 2018</p>
-                <div className="qt-brand-services">
-                  {["🌐 Website Development","📱 Mobile Apps","🛒 E-Commerce","🔍 SEO & Marketing","🎨 Logo & Branding","☁️ Cloud Solutions"].map(s => (
-                    <span key={s} className="qt-service-chip">{s}</span>
-                  ))}
+            {/* ── NNC Company Banner ── */}
+            <div style={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:14, padding:"20px 28px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between", gap:24, boxShadow:"0 1px 6px rgba(0,0,0,.05)" }}>
+              {/* Left */}
+              <div style={{ display:"flex", alignItems:"center", gap:16 }}>
+                <img src={nncLogo} alt="NNC" style={{ height:44, borderRadius:10 }}/>
+                <div>
+                  <div style={{ fontSize:15, fontWeight:800, color:"#111827", letterSpacing:-.3 }}>Nakshatra Namaha Creations</div>
+                  <div style={{ fontSize:11.5, color:"#6b7280", marginTop:2 }}>Digital Agency · Bengaluru · Mysuru · Mumbai</div>
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:8 }}>
+                    {["Website","Mobile App","E-Commerce","SEO","Logo & Branding","Cloud"].map(s => (
+                      <span key={s} style={{ fontSize:10, fontWeight:600, color:"#1e40af", background:"#eff6ff", border:"1px solid #bfdbfe", borderRadius:20, padding:"2px 10px" }}>{s}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
-              <div className="qt-brand-right">
-                <div className="qt-brand-stat"><span className="qt-bs-num">500+</span><span className="qt-bs-lbl">Projects Delivered</span></div>
-                <div className="qt-brand-divider"/>
-                <div className="qt-brand-stat"><span className="qt-bs-num">350+</span><span className="qt-bs-lbl">Happy Clients</span></div>
-                <div className="qt-brand-divider"/>
-                <div className="qt-brand-stat"><span className="qt-bs-num">6+</span><span className="qt-bs-lbl">Years Experience</span></div>
+              {/* Right stats */}
+              <div style={{ display:"flex", alignItems:"center", gap:0, flexShrink:0, border:"1px solid #e2e8f0", borderRadius:10, overflow:"hidden" }}>
+                {[{num:"500+",lbl:"Projects"},{num:"350+",lbl:"Clients"},{num:"6+",lbl:"Years"}].map((s,i)=>(
+                  <div key={i} style={{ padding:"14px 24px", textAlign:"center", borderRight: i<2 ? "1px solid #e2e8f0" : "none", background: i===1 ? "#f8fafc" : "#fff" }}>
+                    <div style={{ fontSize:20, fontWeight:900, color:"#1e40af", lineHeight:1 }}>{s.num}</div>
+                    <div style={{ fontSize:9.5, color:"#6b7280", marginTop:4, textTransform:"uppercase", letterSpacing:1 }}>{s.lbl}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
