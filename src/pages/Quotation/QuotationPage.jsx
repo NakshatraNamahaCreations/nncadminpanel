@@ -1055,8 +1055,14 @@ export default function QuotationPage() {
     } catch {}
   }, []);
 
-  useEffect(() => { fetchQuotations(); }, [fetchQuotations]);
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  /* Run both fetches in parallel on first load; stats only on mount */
+  useEffect(() => {
+    fetchQuotations();
+  }, [fetchQuotations]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []); // stats only once on mount
 
   /* ─── Enquiry autocomplete ─── */
   const searchEnquiries = (val) => {
@@ -1117,8 +1123,14 @@ export default function QuotationPage() {
     try {
       const url    = editingId ? `${API}/api/quotations/${editingId}` : `${API}/api/quotations`;
       const method = editingId ? "PUT" : "POST";
-      const res    = await fetch(url, { method, headers: authHeader(), body: JSON.stringify(formData) });
-      const json   = await res.json();
+      let res  = await fetch(url, { method, headers: authHeader(), body: JSON.stringify(formData) });
+      let json = await res.json();
+      // Retry once on quote number conflict (race condition)
+      if (!json.success && res.status === 409) {
+        await new Promise(r => setTimeout(r, 200));
+        res  = await fetch(url, { method, headers: authHeader(), body: JSON.stringify(formData) });
+        json = await res.json();
+      }
       if (json.success) {
         toast.success(editingId ? "Quotation updated" : "Quotation created");
         backToList();
