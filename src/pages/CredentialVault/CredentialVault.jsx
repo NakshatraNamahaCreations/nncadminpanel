@@ -149,9 +149,9 @@ function CredCard({ cred, onReveal, revealedPasswords, onCopy, copied, onPin, on
 function CredModal({ initial, onClose, onSave }) {
   const [form, setForm] = useState({
     label: "", category: "Other", username: "", password: "",
-    url: "", notes: "", tags: "", pinned: false,
+    url: "", notes: "", pinned: false,
     ...initial,
-    tags: Array.isArray(initial?.tags) ? initial.tags.join(", ") : "",
+    tags: Array.isArray(initial?.tags) ? initial.tags.join(", ") : (initial?.tags || ""),
   });
   const [showPass, setShowPass] = useState(false);
   const [saving, setSaving] = useState(false);
