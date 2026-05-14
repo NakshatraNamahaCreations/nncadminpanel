@@ -1676,7 +1676,30 @@ export default function QuotationPage() {
                     <input value={formData.clientPhone} onChange={e => setFormData(f => ({ ...f, clientPhone: e.target.value }))} placeholder="+91 98765 43210" />
                   </div>
                   <div className="qt-field">
-                    <label>Email</label>
+                    <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>Email</span>
+                      <button
+                        type="button"
+                        disabled={saving || sending || !formData.clientEmail?.trim()}
+                        onClick={handleSaveAndSend}
+                        title={
+                          !formData.clientEmail?.trim()
+                            ? "Enter client email first"
+                            : `Save and send to ${formData.clientEmail}${formData.senderEmail ? ` (CC: ${formData.senderEmail})` : ""}`
+                        }
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          padding: "3px 9px", borderRadius: 6, border: "none",
+                          background: !formData.clientEmail?.trim() ? "#e2e8f0" : "linear-gradient(135deg,#2563eb,#7c3aed)",
+                          color: !formData.clientEmail?.trim() ? "#94a3b8" : "#fff",
+                          fontSize: 11, fontWeight: 700, cursor: !formData.clientEmail?.trim() ? "not-allowed" : "pointer",
+                          textTransform: "uppercase", letterSpacing: ".3px",
+                        }}
+                      >
+                        {sending ? <RefreshCcw size={11} className="qt-spin" /> : <Send size={11} />}
+                        {sending ? "Sending" : "Send Now"}
+                      </button>
+                    </label>
                     <input type="email" value={formData.clientEmail} onChange={e => setFormData(f => ({ ...f, clientEmail: e.target.value }))} placeholder="client@example.com" />
                   </div>
                   <div className="qt-field">
